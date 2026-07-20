@@ -1,0 +1,2724 @@
+[
+  {
+    "id": "E0041",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cup 1 ly 450A",
+    "exp": [
+      "001002",
+      "001003",
+      "001008",
+      "001009",
+      "001014"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI YÊU CẦU \"CUP 1 LY 450A\", EM TÌM THẤY CÁC LOẠI CHỤP KHÍ (NOZZLE) HỆ N CÓ DÒNG ĐIỆN 500A NHƯ SAU:\n\n*   MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001005 — CHỤP KHÍ N 13MM 500A 88L — 85.000Đ/CÁI\n*   MÃ 001010 — CHỤP KHÍ N 16MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001012 — CHỤ",
+    "full_resp": "Chào anh/chị,\n\nVới yêu cầu \"cup 1 ly 450A\", em tìm thấy các loại chụp khí (Nozzle) hệ N có dòng điện 500A như sau:\n\n*   Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n*   Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n*   Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n*   Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n*   Mã 001015 — Chụp khí N 16mm 500A 84L — 90.000đ/cái\n*   Mã CN501671 — Chụp khí carbon 16mm 71L — 238.000đ/cái\n*   Mã CN501684 — Chụp khí carbon 16mm 84L — 225.000đ/cái\n*   Mã CN501688 — Chụp khí carbon 16mm 88L — 238.000đ/cái\n*   Mã CN501971 — Chụp khí carbon 19mm 71L — 238.000đ/cái\n*   Mã CN501984 — Chụp khí carbon 19mm 84L — 225.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về kích thước hoặc loại chụp khí nào không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0043",
+    "intent": "SEARCH_BY_DESC",
+    "query": "ceramic nozzle 1 ly 450A",
+    "exp": [
+      "001002",
+      "001003",
+      "001008",
+      "001009",
+      "001014"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI YÊU CẦU \"CERAMIC NOZZLE 1 LY 450A\", EM TÌM THẤY CÁC LOẠI CHỤP KHÍ (NOZZLE) HỆ N, DÒNG ĐIỆN 500A NHƯ SAU:\n\n*   MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001005 — CHỤP KHÍ N 13MM 500A 88L — 85.000Đ/CÁI\n*   MÃ 001010 — CHỤP KHÍ N 16MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001",
+    "full_resp": "Chào anh/chị,\n\nVới yêu cầu \"ceramic nozzle 1 ly 450A\", em tìm thấy các loại chụp khí (Nozzle) hệ N, dòng điện 500A như sau:\n\n*   Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n*   Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n*   Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n*   Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n*   Mã 001015 — Chụp khí N 16mm 500A 84L — 90.000đ/cái\n*   Mã CN501671 — Chụp khí carbon 16mm 71L — 238.000đ/cái\n*   Mã CN501684 — Chụp khí carbon 16mm 84L — 225.000đ/cái\n*   Mã CN501688 — Chụp khí carbon 16mm 88L — 238.000đ/cái\n*   Mã CN501971 — Chụp khí carbon 19mm 71L — 238.000đ/cái\n*   Mã CN501984 — Chụp khí carbon 19mm 84L — 225.000đ/cái\n\nAnh/chị có thể cho em biết thêm về model súng hàn hoặc kích thước chụp khí cụ thể (đường kính trong/ngoài, ch",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0045",
+    "intent": "SEARCH_BY_DESC",
+    "query": "thân giữ béc 2.0 ly",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC BÉC HÀN 2.0MM NHƯ SAU:\n\n*   MÃ 002020 — BÉC HÀN N 2.0MM X 45L — 31.000Đ/CÁI\n*   MÃ 023029 — BÉC HÀN UNIONMELT 2.0MM 40L (HÀN NGẬP XỈ) — 20.000Đ/CÁI\n\nANH/CHỊ CHO EM BIẾT THÊM MODEL SÚNG HÀN HOẶC HỆ (VÍ DỤ: HỆ N, HỆ P) ĐỂ EM TƯ VẤN CHÍNH XÁC THÂN GIỮ BÉC TƯƠNG THÍCH NHÉ.",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các béc hàn 2.0mm như sau:\n\n*   Mã 002020 — Béc hàn N 2.0mm x 45L — 31.000đ/cái\n*   Mã 023029 — Béc hàn Unionmelt 2.0mm 40L (hàn ngập xỉ) — 20.000đ/cái\n\nAnh/chị cho em biết thêm model súng hàn hoặc hệ (ví dụ: hệ N, hệ P) để em tư vấn chính xác thân giữ béc tương thích nhé.",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0051",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cần ống lót trong cho robot YMXA-308R",
+    "exp": [
+      "016053",
+      "016505",
+      "020210",
+      "020212",
+      "036014"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM THẤY CÁC LINH KIỆN SAU PHÙ HỢP VỚI ROBOT YMXA-308R CỦA MÌNH:\n\n*   **BÉC HÀN (TIP):**\n    *   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002003 — BÉC HÀN N 1.2MM X 45L — 20.000Đ/CÁI\n*   **CHỤP KHÍ (NOZZLE",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm thấy các linh kiện sau phù hợp với robot YMXA-308R của mình:\n\n*   **Béc hàn (Tip):**\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n    *   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n*   **Sứ chia khí (Orifice):**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Cách điện (Insulator):**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Thân giữ béc (TipBody):**\n    *   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   **Dây dẫn hướng (Liner):**\n    *   Mã 016076 — Liner 308RR/309R1-N 1.3m (dây 1.0-1.2mm) — 250.000đ/cái\n    *   Mã 016077",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0057",
+    "intent": "SEARCH_BY_DESC",
+    "query": "TungstenElectrode dây 1.6mm",
+    "exp": [
+      "018341",
+      "018343",
+      "018344"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC LOẠI ĐIỆN CỰC VONFRAM 1.6MM NHƯ SAU:\n\n*   MÃ 018321 — ĐIỆN CỰC VONFRAM WL15 (LA 1.5%) 1.6MM×150MM — 12.000Đ/CÁI\n*   MÃ 018330 — ĐIỆN CỰC VONFRAM WP (THUẦN) 1.6MM×150MM — 10.000Đ/CÁI\n\nANH/CHỊ CÓ CẦN EM TƯ VẤN THÊM VỀ LOẠI ĐIỆN CỰC VONFRAM NÀO KHÁC KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các loại điện cực vonfram 1.6mm như sau:\n\n*   Mã 018321 — Điện cực vonfram WL15 (La 1.5%) 1.6mm×150mm — 12.000đ/cái\n*   Mã 018330 — Điện cực vonfram WP (thuần) 1.6mm×150mm — 10.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về loại điện cực vonfram nào khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0058",
+    "intent": "SEARCH_BY_DESC",
+    "query": "collet cho WX500R",
+    "exp": [
+      "10N25HD",
+      "54N20HD"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ PHÙ HỢP VỚI SÚNG HÀN WX500R, TUY NHIÊN KHÔNG CÓ LINH KIỆN NÀO ĐƯỢC GỌI LÀ \"COLLET\" TRONG DANH MỤC CỦA TOKINARC. ANH/CHỊ CÓ THỂ CHO EM BIẾT THÊM VỀ LINH KIỆN \"COLLET\" NÀY KHÔNG Ạ?\n\nDƯỚI ĐÂY LÀ CÁC LINH KIỆN EM TÌM THẤY LIÊN QUAN ĐẾN HỆ WX VÀ DÒNG 500",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể phù hợp với súng hàn WX500R, tuy nhiên không có linh kiện nào được gọi là \"collet\" trong danh mục của Tokinarc. Anh/chị có thể cho em biết thêm về linh kiện \"collet\" này không ạ?\n\nDưới đây là các linh kiện em tìm thấy liên quan đến hệ WX và dòng 500A:\n\n**Béc hàn (Tip):**\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n\n**Chụp khí (Nozzle):**\n*   Mã 034115 — Chụp khí NEW β/WX 16mm 82.5L — 180.000đ/cái\n*   Mã 034116 — Chụp khí NEW β/WX 19mm 82.5L — 180.000đ/cái\n*   Mã 061450 — Chụp khí nước WX 451/452 16mm 82.5L — 180.000đ/cái\n\n**Sứ chia khí (Orifice):**\n*   Mã 034120 — Sứ chia khí NEW β/WX (chụp khí thường) — 65.000đ/cái\n*   Mã 034121",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0061",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cần back cap cho robot A-350R",
+    "exp": [
+      "41V33",
+      "41V35",
+      "41V24",
+      "57Y04",
+      "57Y05"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ PHÙ HỢP VỚI ROBOT A-350R CỦA MÌNH, TUY NHIÊN KHÔNG CÓ \"BACK CAP\" TRONG DANH MỤC. EM XIN GỬI ANH/CHỊ DANH SÁCH CÁC LINH KIỆN LIÊN QUAN ĐẾN HỆ N 350A:\n\n*   **THÂN GIỮ BÉC:**\n    *   MÃ 036001 — THÂN GIỮ BÉC CS LOẠI A (350A) — 180.000Đ/CÁI\n*   **BÉC HÀ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể phù hợp với robot A-350R của mình, tuy nhiên không có \"back cap\" trong danh mục. Em xin gửi anh/chị danh sách các linh kiện liên quan đến hệ N 350A:\n\n*   **Thân giữ béc:**\n    *   Mã 036001 — Thân giữ béc CS Loại A (350A) — 180.000đ/cái\n*   **Béc hàn:**\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n    *   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n    *   Mã 002507 — Béc hàn N MAG 1.0mm thân thẳng — 18.000đ/cái\n    *   Mã 002503 — Béc hàn N MAG 1.2mm thân thẳng — 20.000đ/cái\n*   **Chụp khí:**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n*   **Sứ chia khí:**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.00",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0066",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cần collet TIG cho robot TL-20",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN PHÙ HỢP VỚI YÊU CẦU CỦA ANH/CHỊ, TUY NHIÊN KHÔNG CÓ COLLET TIG CỤ THỂ NÀO TRONG DANH SÁCH. ĐÂY LÀ CÁC LINH KIỆN EM TÌM ĐƯỢC:\n\n*   **BÉC HÀN:**\n    *   MÃ 002005 — BÉC HÀN N 0.8MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện phù hợp với yêu cầu của anh/chị, tuy nhiên không có collet TIG cụ thể nào trong danh sách. Đây là các linh kiện em tìm được:\n\n*   **Béc hàn:**\n    *   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   **Chụp khí:**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n    *   Mã 033203 — Chụp khí HR-350 16mm — 65.000đ/cái\n    *   Mã 038042 — Chụp khí dài CSL-18/20 — 50.000đ/cái\n*   **Sứ chia khí:**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Cách điện:**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Thân giữ béc:**\n    *   Mã 036001 — Thân giữ béc ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0070",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tip body cho TCC-350R",
+    "exp": [
+      "002102",
+      "002101",
+      "002100",
+      "002108",
+      "002107"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI SÚNG HÀN TCC-350R, EM CÓ MỘT SỐ LOẠI THÂN GIỮ BÉC (TIP BODY) TƯƠNG THÍCH NHƯ SAU:\n\n*   MÃ 016051 — THÂN GIỮ BÉC TK-308RR — 220.000Đ/CÁI\n*   MÃ 016403 — THÂN GIỮ BÉC TK-508RR — 250.000Đ/CÁI\n*   MÃ 016503 — THÂN GIỮ BÉC ACC-308RR — 230.000Đ/CÁI\n*   MÃ 016603 — THÂN GIỮ BÉC ACC-352 —",
+    "full_resp": "Chào anh/chị,\n\nVới súng hàn TCC-350R, em có một số loại thân giữ béc (Tip Body) tương thích như sau:\n\n*   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n*   Mã 016503 — Thân giữ béc ACC-308RR — 230.000đ/cái\n*   Mã 016603 — Thân giữ béc ACC-352 — 200.000đ/cái\n*   Mã 023038 — Thân giữ béc Unionmelt 29L — 200.000đ/cái\n*   Mã 023461 — Thân giữ béc D 350A WT3500 — 280.000đ/cái\n*   Mã 023462 — Thân giữ béc D 350A WT3510 — 280.000đ/cái\n*   Mã 023463 — Thân giữ béc D 500A WT5000 — 200.000đ/cái\n*   Mã 023466 — TipBody WTC 350A — 280.000đ/cái\n*   Mã 023467 — TipBody WTC 500A — 280.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về các linh kiện khác cho súng hàn TCC-350R không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0072",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cần ống trong cho robot TK-508RR",
+    "exp": [
+      "YEA003013",
+      "YEA003812",
+      "YEA005013",
+      "YEA005812",
+      "YEA002514"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ PHÙ HỢP VỚI YÊU CẦU \"ỐNG TRONG CHO ROBOT TK-508RR\" CỦA ANH/CHỊ ĐÂY Ạ:\n\n*   MÃ 016053 — ỐNG LÓT TRONG TK-308RR 335MM — 180.000Đ/CÁI\n\nNGOÀI RA, EM CŨNG TÌM THẤY MỘT SỐ LINH KIỆN KHÁC THUỘC HỆ N (500A) CÓ THỂ DÙNG CHO SÚNG ROBOT TK-508RR:\n\n*   MÃ 00200",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể phù hợp với yêu cầu \"ống trong cho robot TK-508RR\" của anh/chị đây ạ:\n\n*   Mã 016053 — Ống lót trong TK-308RR 335mm — 180.000đ/cái\n\nNgoài ra, em cũng tìm thấy một số linh kiện khác thuộc hệ N (500A) có thể dùng cho súng robot TK-508RR:\n\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n*   Mã 003001 — Sứ chia khí N L (500A) — 55.000đ/cái\n*   Mã 004001 — Cách điện N L (500A) — 65.000đ/cái\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n*   Mã 016052 — Vòng cách điện TK-308RR — 95.000đ/cái\n*   Mã 016126 — Liner 308RR/309R1-N 1.3m (dây 1.4-1.6mm) — 288.000đ/cái\n\nVề dây dẫn hướng ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0075",
+    "intent": "SEARCH_BY_DESC",
+    "query": "collet 1 ly 250A",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ COLLET PHÙ HỢP VỚI YÊU CẦU CỦA ANH/CHỊ ĐÂY Ạ:\n\n*   MÃ 10N22 — KẸP ĐIỆN CỰC (COLLET) 1.0MM — DÒNG TA-17/18/26 — 55.000Đ/CÁI\n*   MÃ 10N21 — KẸP ĐIỆN CỰC (COLLET) 0.5MM — DÒNG TA-17/18/26 — 55.000Đ/CÁI\n*   MÃ 018900 — COLLET 1.6MM TA-200/301 — (XEM CATALOG)\n*   MÃ 0189",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số collet phù hợp với yêu cầu của anh/chị đây ạ:\n\n*   Mã 10N22 — Kẹp điện cực (collet) 1.0mm — dòng TA-17/18/26 — 55.000đ/cái\n*   Mã 10N21 — Kẹp điện cực (collet) 0.5mm — dòng TA-17/18/26 — 55.000đ/cái\n*   Mã 018900 — Collet 1.6mm TA-200/301 — (xem catalog)\n*   Mã 018901 — Collet 2.4mm TA-200/301 — (xem catalog)\n*   Mã 018902 — Collet 3.2mm TA-200/301 — (xem catalog)\n*   Mã 018903 — Collet 4.0mm TA-500 — (xem catalog)\n*   Mã 018904 — Collet 3.2mm TA-500 — (xem catalog)\n*   Mã 018905 — Thân collet gas lens 1.6mm TA-200/301 — (xem catalog)\n*   Mã 018906 — Thân collet gas lens 2.4mm TA-200/301 — (xem catalog)\n*   Mã 018907 — Thân collet gas lens 3.2mm TA-200/301 — (xem catalog)\n\nAnh/chị có cần em tìm thêm linh kiện nào khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0078",
+    "intent": "SEARCH_BY_DESC",
+    "query": "bec 1.6 ly",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM TÌM THẤY CÁC LOẠI BÉC HÀN 1.6MM SAU ĐÂY Ạ:\n\n*   MÃ 002004 — BÉC HÀN N 1.6MM X 45L — 24.000Đ/CÁI\n*   MÃ 002010 — BÉC HÀN N DÀI 1.6MM 69L — 22.000Đ/CÁI\n*   MÃ 002019 — BÉC HÀN N HÀN NHÔM 1.6MM — 31.000Đ/CÁI\n*   MÃ 002107 — BÉC HÀN TCC 1.6MM — 20.000Đ/CÁI\n*   MÃ 002501 — BÉC HÀN N MAG ",
+    "full_resp": "Chào anh/chị, em tìm thấy các loại béc hàn 1.6mm sau đây ạ:\n\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   Mã 002010 — Béc hàn N dài 1.6mm 69L — 22.000đ/cái\n*   Mã 002019 — Béc hàn N hàn nhôm 1.6mm — 31.000đ/cái\n*   Mã 002107 — Béc hàn TCC 1.6mm — 20.000đ/cái\n*   Mã 002501 — Béc hàn N MAG 1.6mm thân thẳng — 24.000đ/cái\n*   Mã 002506 — Béc hàn N MIG 1.6mm thân thẳng — 24.000đ/cái\n*   Mã 016032 — Béc hàn MAN 1.6mm ngắn — 22.000đ/cái\n*   Mã 023011 — Béc hàn D 1.6mm — 26.000đ/cái\n*   Mã 023027 — Béc hàn Unionmelt 1.6mm 40L (hàn ngập xỉ) — 20.000đ/cái\n*   Mã 023044 — Béc hàn D hàn nhôm 1.6mm — 24.000đ/cái\n\nAnh/chị đang dùng súng hàn loại nào để em tư vấn béc hàn phù hợp nhất ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0079",
+    "intent": "SEARCH_BY_DESC",
+    "query": "kẹp điện cực 0.9 ly",
+    "exp": [
+      "018320",
+      "018321",
+      "018322",
+      "018323",
+      "018324"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ KẸP ĐIỆN CỰC (COLLET) CÓ THỂ PHÙ HỢP VỚI YÊU CẦU CỦA ANH/CHỊ, NHƯNG KHÔNG CÓ LOẠI 0.9MM TRỰC TIẾP. EM CÓ CÁC LOẠI SAU:\n\n*   MÃ 10N21 — KẸP ĐIỆN CỰC (COLLET) 0.5MM — DÒNG TA-17/18/26 — 55.000Đ/CÁI\n*   MÃ 10N22 — KẸP ĐIỆN CỰC (COLLET) 1.0MM — DÒNG TA-17/18/26 — 55.000",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số kẹp điện cực (collet) có thể phù hợp với yêu cầu của anh/chị, nhưng không có loại 0.9mm trực tiếp. Em có các loại sau:\n\n*   Mã 10N21 — Kẹp điện cực (collet) 0.5mm — dòng TA-17/18/26 — 55.000đ/cái\n*   Mã 10N22 — Kẹp điện cực (collet) 1.0mm — dòng TA-17/18/26 — 55.000đ/cái\n\nNgoài ra, em còn có các loại collet khác nhưng không có thông tin giá:\n\n*   Mã 018900 — Collet 1.6mm TA-200/301\n*   Mã 018901 — Collet 2.4mm TA-200/301\n*   Mã 018902 — Collet 3.2mm TA-200/301\n*   Mã 018903 — Collet 4.0mm TA-500\n*   Mã 018904 — Collet 3.2mm TA-500\n*   Mã 018905 — Thân collet gas lens 1.6mm TA-200/301\n*   Mã 018906 — Thân collet gas lens 2.4mm TA-200/301\n*   Mã 018907 — Thân collet gas lens 3.2mm TA-200/301\n\nAnh/chị có thể cho em biết model súng hàn anh/chị đang dùng để em ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0085",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tìm TungstenElectrode cho súng YMXA-308R",
+    "exp": [
+      "018341",
+      "018343"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM THẤY CÁC LINH KIỆN SAU LIÊN QUAN ĐẾN SÚNG HÀN YMXA-308R:\n\n*   **BÉC HÀN (TIP):**\n    *   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002003 — BÉC HÀN N 1.2MM X 45L — 20.000Đ/CÁI\n*   **CHỤP KHÍ (NOZZLE):**",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm thấy các linh kiện sau liên quan đến súng hàn YMXA-308R:\n\n*   **Béc hàn (Tip):**\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n    *   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n*   **Sứ chia khí (Orifice):**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Cách điện (Insulator):**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Thân giữ béc (TipBody):**\n    *   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   **Dây dẫn hướng (Liner):**\n    *   Mã 016076 — Liner 308RR/309R1-N 1.3m (dây 1.0-1.2mm) — 250.000đ/cái\n    *   Mã 016077 — L",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0086",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cần tungsten cho robot TK-308RR",
+    "exp": [
+      "018341",
+      "018343"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC LINH KIỆN SAU CHO SÚNG HÀN ROBOT TK-308RR CỦA MÌNH:\n\n*   **THÂN GIỮ BÉC (TIPBODY):**\n    *   MÃ 016051 — THÂN GIỮ BÉC TK-308RR — 220.000Đ/CÁI\n*   **BÉC HÀN (TIP):**\n    *   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.0",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các linh kiện sau cho súng hàn robot TK-308RR của mình:\n\n*   **Thân giữ béc (TipBody):**\n    *   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   **Béc hàn (Tip):**\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n    *   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n*   **Cách điện (Insulator):**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Sứ chia khí (Orifice):**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Liner:**\n    *   Mã 016053 — Ống lót trong TK-308RR 335mm — 180.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết m",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0087",
+    "intent": "SEARCH_BY_DESC",
+    "query": "collet TIG dây 0.8mm hệ D",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ COLLET TIG CÓ THỂ PHÙ HỢP VỚI YÊU CẦU CỦA ANH/CHỊ, TUY NHIÊN EM CHƯA TÌM THẤY COLLET TIG CHO DÂY 0.8MM HỆ D. ANH/CHỊ CÓ THỂ KIỂM TRA LẠI KÍCH THƯỚC DÂY HOẶC MODEL SÚNG HÀN ĐỂ EM TÌM CHÍNH XÁC HƠN KHÔNG Ạ?\n\nDƯỚI ĐÂY LÀ CÁC LOẠI COLLET TIG MÀ EM TÌM ĐƯỢC:\n\n*   MÃ 0189",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số collet TIG có thể phù hợp với yêu cầu của anh/chị, tuy nhiên em chưa tìm thấy collet TIG cho dây 0.8mm hệ D. Anh/chị có thể kiểm tra lại kích thước dây hoặc model súng hàn để em tìm chính xác hơn không ạ?\n\nDưới đây là các loại collet TIG mà em tìm được:\n\n*   Mã 018900 — Collet 1.6mm TA-200/301 — 0đ/cái\n*   Mã 018901 — Collet 2.4mm TA-200/301 — 0đ/cái\n*   Mã 018902 — Collet 3.2mm TA-200/301 — 0đ/cái\n*   Mã 018903 — Collet 4.0mm TA-500 — 0đ/cái\n*   Mã 018904 — Collet 3.2mm TA-500 — 0đ/cái\n*   Mã 018905 — Thân collet gas lens 1.6mm TA-200/301 — 0đ/cái\n*   Mã 018906 — Thân collet gas lens 2.4mm TA-200/301 — 0đ/cái\n*   Mã 018907 — Thân collet gas lens 3.2mm TA-200/301 — 0đ/cái\n*   Mã 10N21 — Kẹp điện cực (collet) 0.5mm — dòng TA-17/18/26 — 55.000đ/cái\n*   Mã 10",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0088",
+    "intent": "SEARCH_BY_DESC",
+    "query": "CeramicNozzle 450A hệ D",
+    "exp": [
+      "023012",
+      "023013",
+      "023501"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI YÊU CẦU \"CERAMICNOZZLE 450A HỆ D\", EM ĐÃ TÌM THẤY CÁC CHỤP KHÍ (NOZZLE) HỆ N (500A) TƯƠNG ĐƯƠNG GẦN NHẤT VỚI DÒNG 450A ANH/CHỊ ĐANG TÌM. ANH/CHỊ THAM KHẢO DANH SÁCH DƯỚI ĐÂY Ạ:\n\n*   MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001005 — CHỤP KHÍ N 13MM 500A 88L — 85.00",
+    "full_resp": "Chào anh/chị,\n\nVới yêu cầu \"CeramicNozzle 450A hệ D\", em đã tìm thấy các chụp khí (Nozzle) hệ N (500A) tương đương gần nhất với dòng 450A anh/chị đang tìm. Anh/chị tham khảo danh sách dưới đây ạ:\n\n*   Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n*   Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n*   Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n*   Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n*   Mã 001015 — Chụp khí N 16mm 500A 84L — 90.000đ/cái\n*   Mã CN501671 — Chụp khí carbon 16mm 71L — 238.000đ/cái\n*   Mã CN501684 — Chụp khí carbon 16mm 84L — 225.000đ/cái\n*   Mã CN501688 — Chụp khí carbon 16mm 88L — 238.000đ/cái\n*   Mã CN501971 — Chụp khí carbon 19mm 71L — 238.000đ/cái\n*   Mã CN501984 — Chụp khí carbon 19mm 84L — 225.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về các ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0091",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tìm mua điện cực tungsten",
+    "exp": [
+      "018341",
+      "018343",
+      "018344"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC LOẠI ĐIỆN CỰC TUNGSTEN SAU ĐÂY Ạ:\n\n*   MÃ 018320 — ĐIỆN CỰC VONFRAM WL15 (LA 1.5%) 1.0MM×150MM — 11.000Đ/CÁI\n*   MÃ 018321 — ĐIỆN CỰC VONFRAM WL15 (LA 1.5%) 1.6MM×150MM — 12.000Đ/CÁI\n*   MÃ 018322 — ĐIỆN CỰC VONFRAM WL15 (LA 1.5%) 2.0MM×150MM — 13.000Đ/CÁI\n*   MÃ 01832",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các loại điện cực tungsten sau đây ạ:\n\n*   Mã 018320 — Điện cực vonfram WL15 (La 1.5%) 1.0mm×150mm — 11.000đ/cái\n*   Mã 018321 — Điện cực vonfram WL15 (La 1.5%) 1.6mm×150mm — 12.000đ/cái\n*   Mã 018322 — Điện cực vonfram WL15 (La 1.5%) 2.0mm×150mm — 13.000đ/cái\n*   Mã 018323 — Điện cực vonfram WL15 (La 1.5%) 2.4mm×150mm — 14.000đ/cái\n*   Mã 018324 — Điện cực vonfram WL15 (La 1.5%) 3.2mm×150mm — 17.000đ/cái\n*   Mã 018325 — Điện cực vonfram WL15 (La 1.5%) 4.0mm×150mm — 19.000đ/cái\n*   Mã 018330 — Điện cực vonfram WP (thuần) 1.6mm×150mm — 10.000đ/cái\n*   Mã 018331 — Điện cực vonfram WP (thuần) 2.0mm×150mm — 11.000đ/cái\n*   Mã 018333 — Điện cực vonfram WP (thuần) 2.4mm×150mm — 12.000đ/cái\n*   Mã 018334 — Điện cực vonfram WP (thuần) 3.2mm×150mm — 14.000đ/cái\n\nAnh/chị đ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0096",
+    "intent": "SEARCH_BY_DESC",
+    "query": "collet TIG cho TK-308RR",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC LINH KIỆN COLLET TIG PHÙ HỢP VỚI SÚNG HÀN TK-308RR NHƯ SAU:\n\n*   MÃ 016051 — THÂN GIỮ BÉC TK-308RR — 220.000Đ/CÁI\n*   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n*   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI\n*   MÃ 002003 — BÉC HÀN N 1.2MM X 45L — 20.000Đ/CÁI",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các linh kiện collet TIG phù hợp với súng hàn TK-308RR như sau:\n\n*   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n*   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n*   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n*   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   Mã 016052 — Vòng cách điện TK-308RR — 95.000đ/cái\n*   Mã 016053 — Ống lót trong TK-308RR 335mm — 180.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em tư vấn thêm về linh kiện nào khác khô",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0102",
+    "intent": "SEARCH_BY_DESC",
+    "query": "InnerTube 450A hệ D",
+    "exp": [
+      "016053",
+      "016505",
+      "YEW005013",
+      "YEW005813",
+      "YEW005046"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI YÊU CẦU INNERTUBE 450A HỆ D, EM TÌM THẤY CÁC ỐNG DẪN DÂY (INNERTUBE) CÓ DÒNG ĐIỆN 500A HỆ N TƯƠNG ĐƯƠNG GẦN NHẤT NHƯ SAU:\n\n*   MÃ 022064 — ỐNG DẪN DÂY P 500A — 180.000Đ/CÁI\n*   MÃ 050310 — ỐNG DẪN DÂY CSH-50L 260L — 180.000Đ/CÁI\n*   MÃ YEA002514 — ỐNG LÓT TRONG YMXA-250RA 158.7MM ",
+    "full_resp": "Chào anh/chị,\n\nVới yêu cầu InnerTube 450A hệ D, em tìm thấy các ống dẫn dây (InnerTube) có dòng điện 500A hệ N tương đương gần nhất như sau:\n\n*   Mã 022064 — Ống dẫn dây P 500A — 180.000đ/cái\n*   Mã 050310 — Ống dẫn dây CSH-50L 260L — 180.000đ/cái\n*   Mã YEA002514 — Ống lót trong YMXA-250RA 158.7mm — 220.000đ/cái\n*   Mã YEA003013 — Ống lót trong YMXA-300R 174.5mm — 220.000đ/cái\n*   Mã YEA003812 — Ống lót trong YMXA-308R 262.5mm — 220.000đ/cái\n*   Mã YEA005013 — Ống lót trong YMXA-500R 188.5mm — 220.000đ/cái\n*   Mã YEA005812 — Ống lót trong YMXA-508R 276.5mm — 220.000đ/cái\n*   Mã YM1408257-500R-S12 — Ống dẫn dây YMSA-500R WC p19 — 220.000đ/cái\n*   Mã YM1408257-508R-S12 — Ống dẫn dây YMSA-508R WC p19 — 220.000đ/cái\n*   Mã YM1408275-500R-S12 — Ống dẫn dây YMSA-500R WC — 220.000đ/cái\n\nAnh/chị ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0104",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tìm Collet cho súng TLA-20",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ DÙNG CHO SÚNG TLA-20, TUY NHIÊN KHÔNG CÓ COLLET NÀO TRONG KẾT QUẢ TÌM KIẾM. ANH/CHỊ CÓ THỂ THAM KHẢO CÁC LINH KIỆN SAU:\n\n*   **BÉC HÀN:**\n    *   MÃ 002005 — BÉC HÀN N 0.8MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể dùng cho súng TLA-20, tuy nhiên không có Collet nào trong kết quả tìm kiếm. Anh/chị có thể tham khảo các linh kiện sau:\n\n*   **Béc hàn:**\n    *   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   **Chụp khí:**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n    *   Mã 033203 — Chụp khí HR-350 16mm — 65.000đ/cái\n    *   Mã 038042 — Chụp khí dài CSL-18/20 — 50.000đ/cái\n*   **Sứ chia khí:**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Cách điện:**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Thân giữ béc:**\n    *   Mã 036001 — Thân giữ bé",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0107",
+    "intent": "SEARCH_BY_DESC",
+    "query": "TungstenElectrode hệ N 250A",
+    "exp": [
+      "018320",
+      "018321",
+      "018322",
+      "018323",
+      "018324"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI YÊU CẦU ĐIỆN CỰC VONFRAM HỆ N 250A, EM TÌM ĐƯỢC CÁC SẢN PHẨM SAU:\n\n*   MÃ 018341 — ĐIỆN CỰC VONFRAM WC20 (CE 2%) 1.6MM×150MM — 13.000Đ/CÁI\n*   MÃ 018343 — ĐIỆN CỰC VONFRAM WC20 (CE 2%) 2.4MM×150MM — 16.000Đ/CÁI\n\nANH/CHỊ MUỐN EM TƯ VẤN THÊM VỀ LOẠI ĐIỆN CỰC NÀO HOẶC CÓ CẦN TÌM LINH",
+    "full_resp": "Chào anh/chị,\n\nVới yêu cầu điện cực vonfram hệ N 250A, em tìm được các sản phẩm sau:\n\n*   Mã 018341 — Điện cực vonfram WC20 (Ce 2%) 1.6mm×150mm — 13.000đ/cái\n*   Mã 018343 — Điện cực vonfram WC20 (Ce 2%) 2.4mm×150mm — 16.000đ/cái\n\nAnh/chị muốn em tư vấn thêm về loại điện cực nào hoặc có cần tìm linh kiện khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0112",
+    "intent": "SEARCH_BY_DESC",
+    "query": "điện cực tungsten cho TLA-20",
+    "exp": [
+      "018341",
+      "018343",
+      "018344"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM ĐÃ TÌM THẤY CÁC LINH KIỆN TƯƠNG THÍCH VỚI SÚNG HÀN TLA-20 CỦA MÌNH ĐÂY Ạ:\n\n*   **BÉC HÀN (TIP):**\n    *   MÃ 002005 — BÉC HÀN N 0.8MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI\n*   **CHỤP KHÍ (N",
+    "full_resp": "Chào anh/chị, em đã tìm thấy các linh kiện tương thích với súng hàn TLA-20 của mình đây ạ:\n\n*   **Béc hàn (Tip):**\n    *   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n    *   Mã 033203 — Chụp khí HR-350 16mm — 65.000đ/cái\n    *   Mã 038042 — Chụp khí dài CSL-18/20 — 50.000đ/cái\n*   **Sứ chia khí (Orifice):**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Cách điện (Insulator):**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Thân giữ béc (Tip Body):**\n    *   Mã 036001 — Thân giữ béc CS Loại A (350A) — 180.000đ/cá",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0113",
+    "intent": "SEARCH_BY_DESC",
+    "query": "vonfram hệ N 500A",
+    "exp": [
+      "018324",
+      "018325",
+      "018345",
+      "018334",
+      "018335"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM ĐƯỢC ĐIỆN CỰC VONFRAM HỆ TIG 500A THEO YÊU CẦU CỦA ANH/CHỊ ĐÂY Ạ:\n\n*   MÃ 018344 — ĐIỆN CỰC VONFRAM WC20 (CE 2%) 3.2MM×150MM — 18.000Đ/CÁI\n\nANH/CHỊ CÓ CẦN EM TÌM THÊM LINH KIỆN NÀO KHÁC KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm tìm được điện cực vonfram hệ TIG 500A theo yêu cầu của anh/chị đây ạ:\n\n*   Mã 018344 — Điện cực vonfram WC20 (Ce 2%) 3.2mm×150mm — 18.000đ/cái\n\nAnh/chị có cần em tìm thêm linh kiện nào khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0114",
+    "intent": "SEARCH_BY_DESC",
+    "query": "mua đầu giữ béc 500A",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nANH/CHỊ ĐANG TÌM ĐẦU GIỮ BÉC 500A, EM CÓ CÁC SẢN PHẨM SAU ĐÂY Ạ:\n\n*   MÃ 016403 — THÂN GIỮ BÉC TK-508RR — 250.000Đ/CÁI\n*   MÃ 023038 — THÂN GIỮ BÉC UNIONMELT 29L — 200.000Đ/CÁI\n*   MÃ 023463 — THÂN GIỮ BÉC D 500A WT5000 — 200.000Đ/CÁI\n*   MÃ 023467 — TIPBODY WTC 500A — 280.000Đ/CÁI\n* ",
+    "full_resp": "Chào anh/chị,\n\nAnh/chị đang tìm đầu giữ béc 500A, em có các sản phẩm sau đây ạ:\n\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n*   Mã 023038 — Thân giữ béc Unionmelt 29L — 200.000đ/cái\n*   Mã 023463 — Thân giữ béc D 500A WT5000 — 200.000đ/cái\n*   Mã 023467 — TipBody WTC 500A — 280.000đ/cái\n*   Mã 024015 — TipBody O-Type 500A — 260.000đ/cái\n\nAnh/chị có thể cho em biết model súng hàn anh/chị đang dùng để em tư vấn chính xác loại đầu giữ béc phù hợp nhất không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0116",
+    "intent": "SEARCH_BY_DESC",
+    "query": "linh kiện đầu giữ béc N type",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nANH/CHỊ ĐANG TÌM THÂN GIỮ BÉC N TYPE, EM CÓ CÁC SẢN PHẨM SAU ĐÂY Ạ:\n\n*   MÃ 016051 — THÂN GIỮ BÉC TK-308RR — 220.000Đ/CÁI\n*   MÃ 016403 — THÂN GIỮ BÉC TK-508RR — 250.000Đ/CÁI\n*   MÃ 016503 — THÂN GIỮ BÉC ACC-308RR — 230.000Đ/CÁI\n\nANH/CHỊ CHO EM BIẾT MODEL SÚNG HÀN MÌNH ĐANG DÙNG ĐỂ EM",
+    "full_resp": "Chào anh/chị,\n\nAnh/chị đang tìm thân giữ béc N type, em có các sản phẩm sau đây ạ:\n\n*   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n*   Mã 016503 — Thân giữ béc ACC-308RR — 230.000đ/cái\n\nAnh/chị cho em biết model súng hàn mình đang dùng để em tư vấn chính xác nhất ạ.",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0117",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tìm Collet cho súng YMSA-500R",
+    "exp": [
+      "10N25HD",
+      "54N20HD"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM CÁC LINH KIỆN CHO SÚNG YMSA-500R THEO YÊU CẦU CỦA ANH/CHỊ. TUY NHIÊN, EM KHÔNG TÌM THẤY \"COLLET\" MÀ ANH/CHỊ ĐỀ CẬP. CÓ THỂ ANH/CHỊ ĐANG MUỐN TÌM \"THÂN GIỮ BÉC\" (TIP BODY) HOẶC \"BÉC HÀN\" (TIP) KHÔNG Ạ?\n\nDƯỚI ĐÂY LÀ CÁC LINH KIỆN EM TÌM THẤY CÓ THỂ DÙNG CHO SÚNG YMSA-500R:\n\n**",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm các linh kiện cho súng YMSA-500R theo yêu cầu của anh/chị. Tuy nhiên, em không tìm thấy \"Collet\" mà anh/chị đề cập. Có thể anh/chị đang muốn tìm \"Thân giữ béc\" (Tip Body) hoặc \"Béc hàn\" (Tip) không ạ?\n\nDưới đây là các linh kiện em tìm thấy có thể dùng cho súng YMSA-500R:\n\n**Béc hàn (Tip):**\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n\n**Chụp khí (Nozzle):**\n*   Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n\n**Sứ chia khí (Orifice):**\n*   Mã 003001 — Sứ chia khí N L (500A) — 55.000đ/cái\n\n**Cách điện (Insulator):**\n*   Mã 004001 — Cách điện N L (500A) — 65.000đ/cái\n\n**Thân giữ béc (TipBody):**\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n\n**Dây",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0120",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cần nắp đuôi cho robot WX702R",
+    "exp": [
+      "41V33",
+      "41V35",
+      "41V24",
+      "57Y04",
+      "57Y05"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ PHÙ HỢP VỚI ROBOT WX702R CỦA MÌNH, TUY NHIÊN KHÔNG CÓ \"NẮP ĐUÔI\" TRONG KẾT QUẢ TÌM KIẾM. ANH/CHỊ CÓ THỂ CHO EM BIẾT THÊM THÔNG TIN VỀ LINH KIỆN NÀY HOẶC TÊN GỌI KHÁC CỦA NÓ ĐƯỢC KHÔNG Ạ?\n\nDƯỚI ĐÂY LÀ CÁC LINH KIỆN EM TÌM THẤY CHO HỆ WX:\n\n*   **CHỤP ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể phù hợp với robot WX702R của mình, tuy nhiên không có \"nắp đuôi\" trong kết quả tìm kiếm. Anh/chị có thể cho em biết thêm thông tin về linh kiện này hoặc tên gọi khác của nó được không ạ?\n\nDưới đây là các linh kiện em tìm thấy cho hệ WX:\n\n*   **Chụp khí:**\n    *   Mã 034115 — Chụp khí NEW β/WX 16mm 82.5L — 180.000đ/cái\n    *   Mã 034116 — Chụp khí NEW β/WX 19mm 82.5L — 180.000đ/cái\n    *   Mã 061450 — Chụp khí nước WX 451/452 16mm 82.5L — 180.000đ/cái\n*   **Sứ chia khí:**\n    *   Mã 034120 — Sứ chia khí NEW β/WX (chụp khí thường) — 65.000đ/cái\n    *   Mã 034121 — Sứ chia khí nước WX — 65.000đ/cái\n*   **Đầu nối béc:**\n    *   Mã 034135 — Đầu nối béc NEWβ/WX — 320.000đ/cái\n\nEm cũng tìm thấy một số béc hàn hệ N, anh/chị có cần tham khảo không ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0124",
+    "intent": "SEARCH_BY_DESC",
+    "query": "collet TIG 450A loại ngắn",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM TÌM THẤY MỘT SỐ COLLET TIG CÓ THỂ PHÙ HỢP VỚI YÊU CẦU CỦA ANH/CHỊ ĐÂY Ạ:\n\n*   MÃ 018900 — COLLET 1.6MM TA-200/301 — 0Đ/CÁI\n*   MÃ 018901 — COLLET 2.4MM TA-200/301 — 0Đ/CÁI\n*   MÃ 018902 — COLLET 3.2MM TA-200/301 — 0Đ/CÁI\n*   MÃ 018903 — COLLET 4.0MM TA-500 — 0Đ/CÁI\n*   MÃ 018904 — C",
+    "full_resp": "Chào anh/chị, em tìm thấy một số collet TIG có thể phù hợp với yêu cầu của anh/chị đây ạ:\n\n*   Mã 018900 — Collet 1.6mm TA-200/301 — 0đ/cái\n*   Mã 018901 — Collet 2.4mm TA-200/301 — 0đ/cái\n*   Mã 018902 — Collet 3.2mm TA-200/301 — 0đ/cái\n*   Mã 018903 — Collet 4.0mm TA-500 — 0đ/cái\n*   Mã 018904 — Collet 3.2mm TA-500 — 0đ/cái\n*   Mã 018905 — Thân collet gas lens 1.6mm TA-200/301 — 0đ/cái\n*   Mã 018906 — Thân collet gas lens 2.4mm TA-200/301 — 0đ/cái\n*   Mã 018907 — Thân collet gas lens 3.2mm TA-200/301 — 0đ/cái\n*   Mã 10N22S — Stubby Collet 1.0mm — 0đ/cái\n*   Mã 10N23S — Stubby Collet 1.6mm — 0đ/cái\n\nAnh/chị có thể cho em biết thêm về model súng hàn hoặc kích thước kim hàn anh/chị đang sử dụng để em tư vấn chính xác hơn không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0127",
+    "intent": "SEARCH_BY_DESC",
+    "query": "TungstenElectrode N 0.8mm",
+    "exp": [
+      "018341",
+      "018343",
+      "018344"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC LOẠI ĐIỆN CỰC VONFRAM (TUNGSTEN ELECTRODE) SAU ĐÂY, NHƯNG KHÔNG CÓ LOẠI 0.8MM. ANH/CHỊ XEM CÁC LOẠI CÓ KÍCH THƯỚC KHÁC DƯỚI ĐÂY CÓ PHÙ HỢP KHÔNG Ạ:\n\n*   MÃ 018320 — ĐIỆN CỰC VONFRAM WL15 (LA 1.5%) 1.0MM×150MM — 11.000Đ/CÁI\n*   MÃ 018321 — ĐIỆN CỰC VONFRAM WL15 (LA 1.5%",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các loại điện cực vonfram (Tungsten Electrode) sau đây, nhưng không có loại 0.8mm. Anh/chị xem các loại có kích thước khác dưới đây có phù hợp không ạ:\n\n*   Mã 018320 — Điện cực vonfram WL15 (La 1.5%) 1.0mm×150mm — 11.000đ/cái\n*   Mã 018321 — Điện cực vonfram WL15 (La 1.5%) 1.6mm×150mm — 12.000đ/cái\n*   Mã 018322 — Điện cực vonfram WL15 (La 1.5%) 2.0mm×150mm — 13.000đ/cái\n*   Mã 018323 — Điện cực vonfram WL15 (La 1.5%) 2.4mm×150mm — 14.000đ/cái\n*   Mã 018324 — Điện cực vonfram WL15 (La 1.5%) 3.2mm×150mm — 17.000đ/cái\n*   Mã 018325 — Điện cực vonfram WL15 (La 1.5%) 4.0mm×150mm — 19.000đ/cái\n*   Mã 018330 — Điện cực vonfram WP (thuần) 1.6mm×150mm — 10.000đ/cái\n*   Mã 018331 — Điện cực vonfram WP (thuần) 2.0mm×150mm — 11.000đ/cái\n*   Mã 018333 — Điện cực vonfram WP ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0128",
+    "intent": "SEARCH_BY_DESC",
+    "query": "thân béc hệ N 450A",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI YÊU CẦU \"THÂN BÉC HỆ N 450A\", EM TÌM ĐƯỢC CÁC LINH KIỆN SAU:\n\n*   MÃ 002004 — BÉC HÀN N 1.6MM X 45L — 24.000Đ/CÁI\n*   MÃ 002019 — BÉC HÀN N HÀN NHÔM 1.6MM — 31.000Đ/CÁI\n*   MÃ 002020 — BÉC HÀN N 2.0MM X 45L — 31.000Đ/CÁI\n*   MÃ 002501 — BÉC HÀN N MAG 1.6MM THÂN THẲNG — 24.000Đ/CÁI",
+    "full_resp": "Chào anh/chị,\n\nVới yêu cầu \"thân béc hệ N 450A\", em tìm được các linh kiện sau:\n\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   Mã 002019 — Béc hàn N hàn nhôm 1.6mm — 31.000đ/cái\n*   Mã 002020 — Béc hàn N 2.0mm x 45L — 31.000đ/cái\n*   Mã 002501 — Béc hàn N MAG 1.6mm thân thẳng — 24.000đ/cái\n*   Mã 002506 — Béc hàn N MIG 1.6mm thân thẳng — 24.000đ/cái\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n\nAnh/chị đang tìm béc hàn hay thân giữ béc ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0129",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tìm Insulator cho súng WX702R",
+    "exp": [
+      "004002",
+      "004004",
+      "004001",
+      "004008",
+      "023015"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM CÁC LINH KIỆN LIÊN QUAN ĐẾN SÚNG WX702R. TUY NHIÊN, EM CHƯA TÌM THẤY INSULATOR (CÁCH ĐIỆN) CỤ THỂ CHO SÚNG NÀY TRONG DỮ LIỆU.\n\nDƯỚI ĐÂY LÀ MỘT SỐ LINH KIỆN KHÁC MÀ EM TÌM THẤY CHO SÚNG WX702R:\n\n*   **BÉC HÀN:**\n    *   MÃ 002017 — BÉC HÀN N 1.4MM X 45L — 22.000Đ/CÁI\n    *   ",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm các linh kiện liên quan đến súng WX702R. Tuy nhiên, em chưa tìm thấy Insulator (cách điện) cụ thể cho súng này trong dữ liệu.\n\nDưới đây là một số linh kiện khác mà em tìm thấy cho súng WX702R:\n\n*   **Béc hàn:**\n    *   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n    *   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n    *   Mã 002503 — Béc hàn N MAG 1.2mm thân thẳng — 20.000đ/cái\n    *   Mã 002502 — Béc hàn N MAG 1.4mm thân thẳng — 22.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Mã 034115 — Chụp khí NEW β/WX 16mm 82.5L — 180.000đ/cái\n    *   Mã 034116 — Chụp khí NEW β/WX 19mm 82.5L — 180.000đ/cái\n    *   Mã 061450 — Chụp khí nước WX 451/452 16mm 82.5L — 180.000đ/cái\n*   **Sứ chia khí (Orifice):**\n    *   Mã 034120 — Sứ chia khí NEW β/WX (chụp khí thường) — 65.0",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0132",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cần back cap cho robot TLA-20",
+    "exp": [
+      "41V33",
+      "41V35",
+      "41V24",
+      "57Y04",
+      "57Y05"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ PHÙ HỢP VỚI ROBOT TLA-20 CỦA MÌNH, BAO GỒM:\n\n*   **BÉC HÀN:**\n    *   MÃ 002005 — BÉC HÀN N 0.8MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI\n*   **CHỤP KHÍ:**\n ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể phù hợp với robot TLA-20 của mình, bao gồm:\n\n*   **Béc hàn:**\n    *   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   **Chụp khí:**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n    *   Mã 033203 — Chụp khí HR-350 16mm — 65.000đ/cái\n    *   Mã 038042 — Chụp khí dài CSL-18/20 — 50.000đ/cái\n*   **Sứ chia khí:**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Cách điện:**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Thân giữ béc:**\n    *   Mã 036001 — Thân giữ béc CS Loại A (350A) — 180.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0135",
+    "intent": "SEARCH_BY_DESC",
+    "query": "vonfram cho YMXA-308R",
+    "exp": [
+      "018341",
+      "018343"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KHÔNG TÌM THẤY VONFRAM CHO MODEL YMXA-308R. CÓ VẺ ANH/CHỊ ĐANG TÌM KIẾM ĐIỆN CỰC HÀN TIG (HÀN ARGON) PHẢI KHÔNG Ạ? TOKINARC CHUYÊN VỀ PHỤ KIỆN HÀN MIG/MAG.\n\nTUY NHIÊN, EM CÓ THỂ CUNG CẤP CÁC LINH KIỆN TIÊU HAO CHO SÚNG HÀN MIG/MAG HỆ N 350A, TƯƠNG THÍCH VỚI MODEL SÚNG HÀN CỦA ANH/C",
+    "full_resp": "Chào anh/chị,\n\nEm không tìm thấy vonfram cho model YMXA-308R. Có vẻ anh/chị đang tìm kiếm điện cực hàn TIG (hàn Argon) phải không ạ? Tokinarc chuyên về phụ kiện hàn MIG/MAG.\n\nTuy nhiên, em có thể cung cấp các linh kiện tiêu hao cho súng hàn MIG/MAG hệ N 350A, tương thích với model súng hàn của anh/chị:\n\n**Thân giữ béc (Tip Body):**\n* Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n\n**Béc hàn (Tip):**\n* Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n* Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n* Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n\n**Chụp khí (Nozzle):**\n* Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n* Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n\n**Cách điện (Insulator):**\n* Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n\n**Sứ chia khí (Orifice/Gas Diffuser):**\n* Mã 00",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0136",
+    "intent": "SEARCH_BY_DESC",
+    "query": "BackCap hệ N 500A",
+    "exp": [
+      "41V33",
+      "41V35",
+      "41V24",
+      "57Y04",
+      "57Y05"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM TÌM THẤY CÁC NẮP ĐUÔI (BACKCAP) HỆ TIG 500A NHƯ SAU:\n\n*   MÃ 56Y44 — NẮP ĐUÔI L — TA-12 HEAVY DUTY — 55.000Đ/CÁI\n*   MÃ 56Y45 — NẮP ĐUÔI S — TA-12 HEAVY DUTY — 45.000Đ/CÁI\n*   MÃ 018932 — NẮP ĐUÔI TA-200/301H — (XEM CATALOG)\n\nANH/CHỊ CÓ CẦN EM TƯ VẤN THÊM VỀ CÁC LINH KIỆN KHÁC KHÔNG",
+    "full_resp": "Chào anh/chị, em tìm thấy các nắp đuôi (BackCap) hệ TIG 500A như sau:\n\n*   Mã 56Y44 — Nắp đuôi L — TA-12 heavy duty — 55.000đ/cái\n*   Mã 56Y45 — Nắp đuôi S — TA-12 heavy duty — 45.000đ/cái\n*   Mã 018932 — Nắp đuôi TA-200/301H — (xem catalog)\n\nAnh/chị có cần em tư vấn thêm về các linh kiện khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0137",
+    "intent": "SEARCH_BY_DESC",
+    "query": "Nozzle 700A hệ D",
+    "exp": [
+      "023012",
+      "023013",
+      "023501"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI YÊU CẦU TÌM NOZZLE 700A HỆ D, EM TÌM ĐƯỢC CÁC SẢN PHẨM SAU:\n\n*   MÃ 53N88 — CHỤP KHÍ GỐM LARGE-DIA NO.10 TA-17/500 — 0Đ/CÁI\n*   MÃ DX-0211251 — ĐẦU CHỤP KHÍ TA-500 Ø19 (WATER-COOLED SPEC) — 0Đ/CÁI\n*   MÃ DX-0211291 — ĐẦU CHỤP KHÍ TA-500 Ø16 (WATER-COOLED SPEC) — 0Đ/CÁI\n\nANH/CHỊ CÓ",
+    "full_resp": "Chào anh/chị,\n\nVới yêu cầu tìm Nozzle 700A hệ D, em tìm được các sản phẩm sau:\n\n*   Mã 53N88 — Chụp khí gốm large-dia No.10 TA-17/500 — 0đ/cái\n*   Mã DX-0211251 — Đầu chụp khí TA-500 ø19 (water-cooled spec) — 0đ/cái\n*   Mã DX-0211291 — Đầu chụp khí TA-500 ø16 (water-cooled spec) — 0đ/cái\n\nAnh/chị có muốn em tìm thêm linh kiện nào khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0140",
+    "intent": "SEARCH_BY_DESC",
+    "query": "collet cho TL-20",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ PHÙ HỢP VỚI SÚNG HÀN TL-20 CỦA MÌNH, TUY NHIÊN KHÔNG CÓ LINH KIỆN NÀO ĐƯỢC GỌI LÀ \"COLLET\" TRONG DANH MỤC CỦA TOKINARC. ANH/CHỊ CÓ THỂ CHO EM BIẾT THÊM VỀ LOẠI LINH KIỆN NÀY HOẶC MÔ TẢ CHI TIẾT HƠN ĐỂ EM HỖ TRỢ TỐT NHẤT KHÔNG Ạ?\n\nDƯỚI ĐÂY LÀ CÁC LIN",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể phù hợp với súng hàn TL-20 của mình, tuy nhiên không có linh kiện nào được gọi là \"collet\" trong danh mục của Tokinarc. Anh/chị có thể cho em biết thêm về loại linh kiện này hoặc mô tả chi tiết hơn để em hỗ trợ tốt nhất không ạ?\n\nDưới đây là các linh kiện em tìm thấy:\n\n*   **Béc hàn:**\n    *   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   **Chụp khí:**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n    *   Mã 033203 — Chụp khí HR-350 16mm — 65.000đ/cái\n    *   Mã 038042 — Chụp khí dài CSL-18/20 — 50.000đ/cái\n*   **Sứ chia khí:**\n    *   Mã 003002 — Sứ chia khí N S",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0143",
+    "intent": "SEARCH_BY_DESC",
+    "query": "Collet dây 2.0mm",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ COLLET CÓ KÍCH THƯỚC KHÁC NHAU. HIỆN TẠI, EM CHƯA TÌM THẤY COLLET DÂY 2.0MM. ANH/CHỊ CÓ THỂ KIỂM TRA LẠI KÍCH THƯỚC HOẶC CHO EM BIẾT MODEL SÚNG HÀN ANH/CHỊ ĐANG DÙNG ĐỂ EM TÌM CHÍNH XÁC HƠN KHÔNG Ạ?\n\nDƯỚI ĐÂY LÀ CÁC COLLET EM TÌM THẤY:\n\n*   MÃ 018900 — COLLET 1.6MM ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số collet có kích thước khác nhau. Hiện tại, em chưa tìm thấy collet dây 2.0mm. Anh/chị có thể kiểm tra lại kích thước hoặc cho em biết model súng hàn anh/chị đang dùng để em tìm chính xác hơn không ạ?\n\nDưới đây là các collet em tìm thấy:\n\n*   Mã 018900 — Collet 1.6mm TA-200/301\n*   Mã 018901 — Collet 2.4mm TA-200/301\n*   Mã 018902 — Collet 3.2mm TA-200/301\n*   Mã 018903 — Collet 4.0mm TA-500\n*   Mã 018904 — Collet 3.2mm TA-500\n*   Mã 018905 — Thân collet gas lens 1.6mm TA-200/301\n*   Mã 018906 — Thân collet gas lens 2.4mm TA-200/301\n*   Mã 018907 — Thân collet gas lens 3.2mm TA-200/301\n*   Mã 10N21 — Kẹp điện cực (collet) 0.5mm — dòng TA-17/18/26 — 55.000đ/cái\n*   Mã 10N22 — Kẹp điện cực (collet) 1.0mm — dòng TA-17/18/26 — 55.000đ/cái\n\nAnh/chị có muốn em tìm",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0146",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tìm InnerTube cho súng TL-20",
+    "exp": [
+      "038053",
+      "038072",
+      "038061",
+      "022061"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ PHÙ HỢP VỚI SÚNG TL-20 CỦA MÌNH, BAO GỒM:\n\n*   **BÉC HÀN:**\n    *   MÃ 002005 — BÉC HÀN N 0.8MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n    *   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI\n*   **CHỤP KHÍ:**\n   ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể phù hợp với súng TL-20 của mình, bao gồm:\n\n*   **Béc hàn:**\n    *   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   **Chụp khí:**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n    *   Mã 033203 — Chụp khí HR-350 16mm — 65.000đ/cái\n    *   Mã 038042 — Chụp khí dài CSL-18/20 — 50.000đ/cái\n*   **Sứ chia khí:**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Cách điện:**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Thân giữ béc:**\n    *   Mã 036001 — Thân giữ béc CS Loại A (350A) — 180.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em bi",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0149",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tip 1 ly 700A",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC SẢN PHẨM \"TIP 1 LY 700A\" NHƯ SAU:\n\n*   MÃ 018014 — ADAPTER CÁP NGUỒN 150A — 0Đ/CÁI\n*   MÃ 018015 — ADAPTER CÁP NGUỒN 350A+ — 0Đ/CÁI\n*   MÃ 018016 — ADAPTER CÁP NGUỒN 200A — 0Đ/CÁI\n*   MÃ 018721 — BỘ KÉO DÀI 150A (2-WIRE) — 0Đ/CÁI\n*   MÃ 018731 — BỘ KÉO DÀI 200A (2-WIRE",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các sản phẩm \"tip 1 ly 700A\" như sau:\n\n*   Mã 018014 — Adapter cáp nguồn 150A — 0đ/cái\n*   Mã 018015 — Adapter cáp nguồn 350A+ — 0đ/cái\n*   Mã 018016 — Adapter cáp nguồn 200A — 0đ/cái\n*   Mã 018721 — Bộ kéo dài 150A (2-wire) — 0đ/cái\n*   Mã 018731 — Bộ kéo dài 200A (2-wire) — 0đ/cái\n*   Mã 018809 — Bộ adapter Hitachi 150A khí làm mát — 0đ/cái\n*   Mã 018810 — Bộ adapter Hitachi 200A khí làm mát — 0đ/cái\n*   Mã 018811 — Bộ adapter Hitachi nước làm mát — 0đ/cái\n\nAnh/chị có thể cho em biết thêm về model súng hàn hoặc hệ thống hàn mà anh/chị đang sử dụng để em có thể tư vấn chính xác hơn không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0150",
+    "intent": "SEARCH_BY_DESC",
+    "query": "ống lót dây cho WX500R",
+    "exp": [
+      "016076",
+      "016077",
+      "016126",
+      "016127",
+      "0443013"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ PHÙ HỢP VỚI SÚNG HÀN WX500R CỦA MÌNH, NHƯNG KHÔNG CÓ \"ỐNG LÓT DÂY\" CỤ THỂ TRONG KẾT QUẢ TÌM KIẾM. EM NGHĨ ANH/CHỊ ĐANG MUỐN TÌM DÂY DẪN HƯỚNG (LINER) PHẢI KHÔNG Ạ?\n\nDƯỚI ĐÂY LÀ CÁC LINH KIỆN EM TÌM ĐƯỢC:\n\n*   **BÉC HÀN (TIP):**\n    *   MÃ 002003 — B",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể phù hợp với súng hàn WX500R của mình, nhưng không có \"ống lót dây\" cụ thể trong kết quả tìm kiếm. Em nghĩ anh/chị đang muốn tìm dây dẫn hướng (Liner) phải không ạ?\n\nDưới đây là các linh kiện em tìm được:\n\n*   **Béc hàn (Tip):**\n    *   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n    *   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n    *   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Mã 034115 — Chụp khí NEW β/WX 16mm 82.5L — 180.000đ/cái\n    *   Mã 034116 — Chụp khí NEW β/WX 19mm 82.5L — 180.000đ/cái\n    *   Mã 061450 — Chụp khí nước WX 451/452 16mm 82.5L — 180.000đ/cái\n*   **Sứ chia khí (Orifice):**\n    *   Mã 034120 — Sứ chia khí NEW β/WX (chụp khí thường) — 65.000đ/cái\n    *   Mã 034121 — Sứ ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0153",
+    "intent": "SEARCH_BY_DESC",
+    "query": "linh kiện collet N type",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM TÌM THẤY CÁC LINH KIỆN COLLET LOẠI N-TYPE NHƯ SAU Ạ:\n\n*   MÃ 018900 — COLLET 1.6MM TA-200/301 — (XEM CATALOG)\n*   MÃ 018901 — COLLET 2.4MM TA-200/301 — (XEM CATALOG)\n*   MÃ 018902 — COLLET 3.2MM TA-200/301 — (XEM CATALOG)\n*   MÃ 018903 — COLLET 4.0MM TA-500 — (XEM CATALOG)\n*   MÃ 01",
+    "full_resp": "Chào anh/chị, em tìm thấy các linh kiện collet loại N-type như sau ạ:\n\n*   Mã 018900 — Collet 1.6mm TA-200/301 — (xem catalog)\n*   Mã 018901 — Collet 2.4mm TA-200/301 — (xem catalog)\n*   Mã 018902 — Collet 3.2mm TA-200/301 — (xem catalog)\n*   Mã 018903 — Collet 4.0mm TA-500 — (xem catalog)\n*   Mã 018904 — Collet 3.2mm TA-500 — (xem catalog)\n*   Mã 018905 — Thân collet gas lens 1.6mm TA-200/301 — (xem catalog)\n*   Mã 018906 — Thân collet gas lens 2.4mm TA-200/301 — (xem catalog)\n*   Mã 018907 — Thân collet gas lens 3.2mm TA-200/301 — (xem catalog)\n*   Mã 10N21 — Kẹp điện cực (collet) 0.5mm — dòng TA-17/18/26 — 55.000đ/cái\n*   Mã 10N22 — Kẹp điện cực (collet) 1.0mm — dòng TA-17/18/26 — 55.000đ/cái\n\nAnh/chị đang tìm collet cho loại mỏ hàn TIG nào và đường kính điện cực bao nhiêu để em tư vấn ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0159",
+    "intent": "SEARCH_BY_DESC",
+    "query": "Tip N 1.6mm",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM TÌM THẤY CÁC LOẠI BÉC HÀN N 1.6MM SAU ĐÂY Ạ:\n\n*   MÃ 002004 — BÉC HÀN N 1.6MM X 45L — 24.000Đ/CÁI\n*   MÃ 002010 — BÉC HÀN N DÀI 1.6MM 69L — 22.000Đ/CÁI\n*   MÃ 002019 — BÉC HÀN N HÀN NHÔM 1.6MM — 31.000Đ/CÁI\n*   MÃ 002501 — BÉC HÀN N MAG 1.6MM THÂN THẲNG — 24.000Đ/CÁI\n*   MÃ 002506 —",
+    "full_resp": "Chào anh/chị, em tìm thấy các loại béc hàn N 1.6mm sau đây ạ:\n\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   Mã 002010 — Béc hàn N dài 1.6mm 69L — 22.000đ/cái\n*   Mã 002019 — Béc hàn N hàn nhôm 1.6mm — 31.000đ/cái\n*   Mã 002501 — Béc hàn N MAG 1.6mm thân thẳng — 24.000đ/cái\n*   Mã 002506 — Béc hàn N MIG 1.6mm thân thẳng — 24.000đ/cái\n*   Mã 016032 — Béc hàn MAN 1.6mm ngắn — 22.000đ/cái\n\nAnh/chị đang dùng súng hàn hệ N dòng bao nhiêu A để em tư vấn loại béc phù hợp nhất ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0180",
+    "intent": "CONSUMABLE_SET",
+    "query": "vật tư cho hệ D 300A",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203",
+      "004002",
+      "003002",
+      "002001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI HỆ D 300A, EM XIN GỬI ANH/CHỊ BỘ VẬT TƯ TIÊU HAO TIÊU CHUẨN CHO SÚNG HÀN D 350A (DAIHEN/OTC, DÂY 1.0MM) NHƯ SAU:\n\n**1. THÂN GIỮ BÉC (TIP BODY):**\n* MÃ 023461 — THÂN GIỮ BÉC D 350A WT3500 — 280.000Đ/CÁI\n\n**2. BÉC HÀN (TIP):**\n* MÃ 023009 — BÉC HÀN D 1.0MM — 20.000Đ/CÁI\n\n**3. CHỤP K",
+    "full_resp": "Chào anh/chị,\n\nVới hệ D 300A, em xin gửi anh/chị bộ vật tư tiêu hao tiêu chuẩn cho súng hàn D 350A (Daihen/OTC, dây 1.0mm) như sau:\n\n**1. Thân giữ béc (Tip Body):**\n* Mã 023461 — Thân giữ béc D 350A WT3500 — 280.000đ/cái\n\n**2. Béc hàn (Tip):**\n* Mã 023009 — Béc hàn D 1.0mm — 20.000đ/cái\n\n**3. Chụp khí (Nozzle):**\n* Mã 023013 — Chụp khí D No.10 16mm — 70.000đ/cái\n\n**4. Cách điện (Insulator):**\n* Mã 023015 — Cách điện D S (350A) — 55.000đ/cái\n\n**5. Sứ chia khí (Orifice):**\n* Mã 023014 — Sứ chia khí D S (350A) — 48.000đ/cái\n\n**6. Dây dẫn hướng (Liner):**\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em tư vấn thêm về vật tư tiêu hao nào khác không ạ?",
+    "tools": [
+      "get_consumable_set"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0182",
+    "intent": "CONSUMABLE_SET",
+    "query": "vật tư cho hệ D 200A",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203",
+      "004002",
+      "003002",
+      "002001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI HỆ D 200A, EM XIN GỬI BỘ VẬT TƯ TIÊU HAO TƯƠNG ĐƯƠNG GẦN NHẤT LÀ BỘ VẬT TƯ TIÊU HAO SÚNG HÀN D 350A (DAIHEN/OTC, DÂY 1.0MM) BAO GỒM CÁC LINH KIỆN SAU:\n\n*   **THÂN GIỮ BÉC (TIP BODY):**\n    *   MÃ 023461 — THÂN GIỮ BÉC D 350A WT3500 — 280.000Đ/CÁI\n*   **BÉC HÀN (TIP):**\n    *   MÃ ",
+    "full_resp": "Chào anh/chị,\n\nVới hệ D 200A, em xin gửi bộ vật tư tiêu hao tương đương gần nhất là Bộ vật tư tiêu hao súng hàn D 350A (Daihen/OTC, dây 1.0mm) bao gồm các linh kiện sau:\n\n*   **Thân giữ béc (Tip Body):**\n    *   Mã 023461 — Thân giữ béc D 350A WT3500 — 280.000đ/cái\n*   **Béc hàn (Tip):**\n    *   Mã 023009 — Béc hàn D 1.0mm — 20.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Mã 023013 — Chụp khí D No.10 16mm — 70.000đ/cái\n*   **Cách điện (Insulator):**\n    *   Mã 023015 — Cách điện D S (350A) — 55.000đ/cái\n*   **Sứ chia khí (Orifice):**\n    *   Mã 023014 — Sứ chia khí D S (350A) — 48.000đ/cái\n*   **Dây dẫn hướng (Liner):**\n    Về dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em tư vấn thêm về linh kiện n",
+    "tools": [
+      "get_consumable_set"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0196",
+    "intent": "CONSUMABLE_SET",
+    "query": "vật tư cho hệ D 300A",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203",
+      "004002",
+      "003002",
+      "002001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI HỆ D 300A, EM XIN GỬI ANH/CHỊ BỘ VẬT TƯ TIÊU HAO TIÊU CHUẨN CHO SÚNG HÀN D 350A (DAIHEN/OTC, DÂY 1.0MM) NHƯ SAU:\n\n**THÂN GIỮ BÉC (TIP BODY):**\n* MÃ 023461 — THÂN GIỮ BÉC D 350A WT3500 — 280.000Đ/CÁI\n\n**BÉC HÀN (TIP):**\n* MÃ 023009 — BÉC HÀN D 1.0MM — 20.000Đ/CÁI\n\n**CHỤP KHÍ (NOZZL",
+    "full_resp": "Chào anh/chị,\n\nVới hệ D 300A, em xin gửi anh/chị bộ vật tư tiêu hao tiêu chuẩn cho súng hàn D 350A (Daihen/OTC, dây 1.0mm) như sau:\n\n**Thân giữ béc (Tip Body):**\n* Mã 023461 — Thân giữ béc D 350A WT3500 — 280.000đ/cái\n\n**Béc hàn (Tip):**\n* Mã 023009 — Béc hàn D 1.0mm — 20.000đ/cái\n\n**Chụp khí (Nozzle):**\n* Mã 023013 — Chụp khí D No.10 16mm — 70.000đ/cái\n\n**Cách điện (Insulator):**\n* Mã 023015 — Cách điện D S (350A) — 55.000đ/cái\n\n**Sứ chia khí (Orifice):**\n* Mã 023014 — Sứ chia khí D S (350A) — 48.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em tư vấn thêm về linh kiện nào khác không ạ?",
+    "tools": [
+      "get_consumable_set"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0224",
+    "intent": "UPSELL",
+    "query": "tôi có 002011 cần thêm cách điện",
+    "exp": [
+      "002001",
+      "002002",
+      "002003",
+      "002005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nANH/CHỊ ĐANG TÌM CÁCH ĐIỆN CHO BÉC HÀN N DÀI 0.6MM 69L (MÃ 002011) HỆ N, DÒNG 350A ĐÚNG KHÔNG Ạ?\n\nDƯỚI ĐÂY LÀ CÁC LOẠI CÁCH ĐIỆN TƯƠNG THÍCH MÀ ANH/CHỊ CÓ THỂ THAM KHẢO:\n\n**CÁCH ĐIỆN:**\n*   MÃ 004001 — CÁCH ĐIỆN N L (500A) — 65.000Đ/CÁI\n*   MÃ 004002 — CÁCH ĐIỆN N S (350A) — 50.000Đ/C",
+    "full_resp": "Chào anh/chị,\n\nAnh/chị đang tìm cách điện cho Béc hàn N dài 0.6mm 69L (Mã 002011) hệ N, dòng 350A đúng không ạ?\n\nDưới đây là các loại cách điện tương thích mà anh/chị có thể tham khảo:\n\n**Cách điện:**\n*   Mã 004001 — Cách điện N L (500A) — 65.000đ/cái\n*   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   Mã 004004 — Cách điện N S (350A) kèm vòng đệm — 65.000đ/cái\n*   Mã 004008 — Cách điện N L (500A) kèm vòng đệm — 65.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về các linh kiện khác không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0230",
+    "intent": "UPSELL",
+    "query": "đang xài U4185G00 lấy thêm đồ đi kèm",
+    "exp": [
+      "001002",
+      "001003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nANH/CHỊ ĐANG DÙNG CHỤP KHÍ N 19MM 500A 88L (MÃ 001001). DƯỚI ĐÂY LÀ CÁC LINH KIỆN ĐI KÈM TƯƠNG THÍCH MÀ EM CÓ:\n\n**BÉC HÀN (TIP):**\n*   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n*   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI\n*   MÃ 002003 — BÉC HÀN N 1.2MM X 45L — 20.000Đ/CÁ",
+    "full_resp": "Chào anh/chị,\n\nAnh/chị đang dùng Chụp khí N 19mm 500A 88L (Mã 001001). Dưới đây là các linh kiện đi kèm tương thích mà em có:\n\n**Béc hàn (Tip):**\n*   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n*   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n\n**Sứ chia khí (Orifice):**\n*   Mã 003001 — Sứ chia khí N L (500A) — 55.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em tư vấn thêm về Thân giữ béc (Tip Body) hoặc Cách điện (Insulator) không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0232",
+    "intent": "UPSELL",
+    "query": "dùng U4167G01 thì cần chụp gì",
+    "exp": [
+      "002001",
+      "002002",
+      "002003",
+      "002005",
+      "002014",
+      "002016",
+      "002020",
+      "003002"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MÃ **U4167G01** TƯƠNG ỨNG VỚI **MÃ 001002 — CHỤP KHÍ N 16MM 73L — 65.000Đ/CÁI**.\n\nANH/CHỊ CÓ CẦN EM TÌM THÊM CÁC LINH KIỆN TIÊU HAO KHÁC TƯƠNG THÍCH VỚI CHỤP KHÍ NÀY KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy mã **U4167G01** tương ứng với **Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái**.\n\nAnh/chị có cần em tìm thêm các linh kiện tiêu hao khác tương thích với chụp khí này không ạ?",
+    "tools": [
+      "lookup_part"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0235",
+    "intent": "UPSELL",
+    "query": "005001 đi kèm với gì",
+    "exp": [
+      "001005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nMÃ 001001 — CHỤP KHÍ N 19MM 500A 88L CÓ THỂ ĐI KÈM VỚI CÁC LINH KIỆN SAU:\n\n**BÉC HÀN (TIP):**\n* MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n* MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI\n* MÃ 002003 — BÉC HÀN N 1.2MM X 45L — 20.000Đ/CÁI\n* MÃ 002004 — BÉC HÀN N 1.6MM X 45L — 24.",
+    "full_resp": "Chào anh/chị,\n\nMã 001001 — Chụp khí N 19mm 500A 88L có thể đi kèm với các linh kiện sau:\n\n**Béc hàn (Tip):**\n* Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n* Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n* Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n* Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n* Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n\n**Sứ chia khí (Orifice):**\n* Mã 003001 — Sứ chia khí N L (500A) — 55.000đ/cái\n\nAnh/chị có cần em tìm thêm linh kiện nào khác không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0237",
+    "intent": "UPSELL",
+    "query": "040001 đi với thân giữ béc nào",
+    "exp": [
+      "036001",
+      "036003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nMÃ 002004 — BÉC HÀN N 1.6MM X 45L CÓ THỂ ĐI CÙNG VỚI CÁC LINH KIỆN SAU:\n\n**THÂN GIỮ BÉC (TIP BODY):**\n* MÃ 016403 — THÂN GIỮ BÉC TK-508RR — 250.000Đ/CÁI\n\n**CHỤP KHÍ (NOZZLE):**\n* MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L — 95.000Đ/CÁI\n* MÃ 001005 — CHỤP KHÍ N 13MM 500A 88L — 85.000Đ/CÁI\n* ",
+    "full_resp": "Chào anh/chị,\n\nMã 002004 — Béc hàn N 1.6mm x 45L có thể đi cùng với các linh kiện sau:\n\n**Thân giữ béc (Tip Body):**\n* Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n\n**Chụp khí (Nozzle):**\n* Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n* Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n* Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n* Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n\n**Cách điện (Insulator):**\n* Mã 004001 — Cách điện N L (500A) — 65.000đ/cái\n\n**Vòng cách điện (Insulation Collar):**\n* Mã 016052 — Vòng cách điện TK-308RR — 95.000đ/cái\n\n**Dây dẫn hướng (Liner):**\n* Mã 016126 — Liner 308RR/309R1-N 1.3m (dây 1.4-1.6mm) — 288.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về linh kiện nào khác không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0244",
+    "intent": "UPSELL",
+    "query": "040001 đi với thân giữ béc nào",
+    "exp": [
+      "036001",
+      "036003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nMÃ 002004 — BÉC HÀN N 1.6MM X 45L CÓ THỂ ĐI CÙNG VỚI THÂN GIỮ BÉC SAU:\n\n**THÂN GIỮ BÉC:**\n*   MÃ 016403 — THÂN GIỮ BÉC TK-508RR — 250.000Đ/CÁI\n\nNGOÀI RA, EM XIN GỬI ANH/CHỊ CÁC LINH KIỆN KHÁC TƯƠNG THÍCH VỚI BÉC HÀN MÃ 002004 (HỆ N, DÒNG 500A):\n\n**CHỤP KHÍ (NOZZLE):**\n*   MÃ 001001 — ",
+    "full_resp": "Chào anh/chị,\n\nMã 002004 — Béc hàn N 1.6mm x 45L có thể đi cùng với thân giữ béc sau:\n\n**Thân giữ béc:**\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n\nNgoài ra, em xin gửi anh/chị các linh kiện khác tương thích với béc hàn Mã 002004 (hệ N, dòng 500A):\n\n**Chụp khí (Nozzle):**\n*   Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n*   Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n*   Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n*   Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n\n**Cách điện (Insulator):**\n*   Mã 004001 — Cách điện N L (500A) — 65.000đ/cái\n\n**Vòng cách điện (Insulation Collar):**\n*   Mã 016052 — Vòng cách điện TK-308RR — 95.000đ/cái\n\n**Dây dẫn hướng (Liner):**\n*   Mã 016126 — Liner 308RR/309R1-N 1.3m (dây 1.4-1.6mm) — 288.000đ/cái\n\nAnh/chị có cần em tư ",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0245",
+    "intent": "UPSELL",
+    "query": "DAH00012 cần béc gì",
+    "exp": [
+      "023014",
+      "023015",
+      "023040"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM THẤY THÔNG TIN VỀ CHỤP KHÍ DAH00012. ĐÂY LÀ MÃ TƯƠNG ĐƯƠNG CỦA **MÃ 023013 — CHỤP KHÍ D NO.10 16MM** VỚI GIÁ 70.000Đ/CÁI.\n\nĐỂ CHỤP KHÍ NÀY HOẠT ĐỘNG HIỆU QUẢ, ANH/CHỊ CÓ THỂ THAM KHẢO CÁC LOẠI BÉC HÀN (TIP) TƯƠNG THÍCH SAU:\n\n**BÉC HÀN (TIP):**\n*   MÃ 023007 — BÉC HÀN D 0.8MM",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm thấy thông tin về chụp khí DAH00012. Đây là mã tương đương của **Mã 023013 — Chụp khí D No.10 16mm** với giá 70.000đ/cái.\n\nĐể chụp khí này hoạt động hiệu quả, anh/chị có thể tham khảo các loại béc hàn (Tip) tương thích sau:\n\n**Béc hàn (Tip):**\n*   Mã 023007 — Béc hàn D 0.8mm — 20.000đ/cái\n*   Mã 023008 — Béc hàn D 0.9mm — 20.000đ/cái\n*   Mã 023009 — Béc hàn D 1.0mm — 20.000đ/cái\n*   Mã 023010 — Béc hàn D 1.2mm — 22.000đ/cái\n*   Mã 023011 — Béc hàn D 1.6mm — 26.000đ/cái\n*   Mã 023027 — Béc hàn Unionmelt 1.6mm 40L (hàn ngập xỉ) — 20.000đ/cái\n*   Mã 023028 — Béc hàn Unionmelt 2.4mm 40L (hàn ngập xỉ) — 20.000đ/cái\n*   Mã 023029 — Béc hàn Unionmelt 2.0mm 40L (hàn ngập xỉ) — 20.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0247",
+    "intent": "UPSELL",
+    "query": "010001 và linh kiện đi kèm",
+    "exp": [
+      "001010"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM THẤY THÔNG TIN VỀ BÉC HÀN MÃ 002003 VÀ CÁC LINH KIỆN ĐI KÈM TƯƠNG THÍCH.\n\n**BÉC HÀN ANH/CHỊ HỎI:**\n*   MÃ 002003 — BÉC HÀN N 1.2MM X 45L — 20.000Đ/CÁI\n\n**CÁC LINH KIỆN ĐI KÈM TƯƠNG THÍCH VỚI BÉC HÀN MÃ 002003 (HỆ N, DÒNG 350A):**\n\n**CHỤP KHÍ (NOZZLE):**\n*   MÃ 001002 — CHỤP ",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm thấy thông tin về béc hàn Mã 002003 và các linh kiện đi kèm tương thích.\n\n**Béc hàn anh/chị hỏi:**\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n\n**Các linh kiện đi kèm tương thích với béc hàn Mã 002003 (hệ N, dòng 350A):**\n\n**Chụp khí (Nozzle):**\n*   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n\n**Sứ chia khí (Orifice):**\n*   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n\n**Cách điện (Insulator):**\n*   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   Mã 016052 — Vòng cách điện TK-308RR — 95.000đ/cái\n\n**Thân giữ béc (TipBody):**\n*   Mã 036001 — Thân giữ béc CS Loại A (350A) — 180.000đ/cái\n\n**Dây dẫn hướng (Liner):**\n*   Mã 016076 — Liner 308RR/309R1-N 1.3m (dây 1.0-1.2mm) — 250.000đ/cái\n\nAnh/chị cần tư vấn thêm về linh kiện nào khác không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0251",
+    "intent": "UPSELL",
+    "query": "036003 và linh kiện đi kèm",
+    "exp": [
+      "036001",
+      "002004",
+      "001001",
+      "004001",
+      "003001",
+      "016403"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KHÔNG TÌM THẤY THÔNG TIN CHO MÃ 036003 TRONG HỆ THỐNG. ANH/CHỊ CÓ THỂ KIỂM TRA LẠI MÃ HOẶC CHO EM BIẾT TÊN LINH KIỆN ĐỂ EM TÌM CHÍNH XÁC HƠN KHÔNG Ạ?\n\nVỀ DÂY DẪN HƯỚNG (LINER): ANH/CHỊ CHO EM BIẾT MODEL SÚNG HÀN (VD: TK-308RR, TK-508RR) VÀ CHIỀU DÀI CÁP ĐỂ EM TƯ VẤN ĐÚNG Ạ.\n\nANH/CH",
+    "full_resp": "Chào anh/chị,\n\nEm không tìm thấy thông tin cho mã 036003 trong hệ thống. Anh/chị có thể kiểm tra lại mã hoặc cho em biết tên linh kiện để em tìm chính xác hơn không ạ?\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em tìm kiếm linh kiện nào khác không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0252",
+    "intent": "UPSELL",
+    "query": "U4185G00 và linh kiện đi kèm",
+    "exp": [
+      "001002",
+      "001003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MÃ **U4185G00** LÀ MÃ PHỤ TÙNG CỦA **MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L** VỚI GIÁ 95.000Đ/CÁI.\n\nDƯỚI ĐÂY LÀ CÁC LINH KIỆN ĐI KÈM TƯƠNG THÍCH VỚI CHỤP KHÍ NÀY:\n\n**BÉC HÀN (TIP):**\n*   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI\n*   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy mã **U4185G00** là mã phụ tùng của **Mã 001001 — Chụp khí N 19mm 500A 88L** với giá 95.000đ/cái.\n\nDưới đây là các linh kiện đi kèm tương thích với chụp khí này:\n\n**Béc hàn (Tip):**\n*   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n*   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n\n**Sứ chia khí (Orifice):**\n*   Mã 003001 — Sứ chia khí N L (500A) — 55.000đ/cái\n\nVề các linh kiện khác như Thân giữ béc (Tip Body), Cách điện (Insulator), Dây dẫn hướng (Liner), anh/chị có muốn em tìm thêm không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0257",
+    "intent": "UPSELL",
+    "query": "040001 đi kèm với gì",
+    "exp": [
+      "036001",
+      "036003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nMÃ 002004 — BÉC HÀN N 1.6MM X 45L (24.000Đ/CÁI) THƯỜNG ĐI KÈM VỚI CÁC LINH KIỆN SAU TRONG HỆ N 500A:\n\n**CHỤP KHÍ (NOZZLE):**\n* MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L — 95.000Đ/CÁI\n* MÃ 001005 — CHỤP KHÍ N 13MM 500A 88L — 85.000Đ/CÁI\n* MÃ 001010 — CHỤP KHÍ N 16MM 500A 88L — 95.000Đ/CÁI\n*",
+    "full_resp": "Chào anh/chị,\n\nMã 002004 — Béc hàn N 1.6mm x 45L (24.000đ/cái) thường đi kèm với các linh kiện sau trong hệ N 500A:\n\n**Chụp khí (Nozzle):**\n* Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n* Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n* Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n* Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n\n**Cách điện (Insulator):**\n* Mã 004001 — Cách điện N L (500A) — 65.000đ/cái\n\n**Dây dẫn hướng (Liner):**\n* Mã 016126 — Liner 308RR/309R1-N 1.3m (dây 1.4-1.6mm) — 288.000đ/cái\n\n**Thân giữ béc (Tip Body):**\n* Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n\n**Vòng cách điện (Insulation Collar):**\n* Mã 016052 — Vòng cách điện TK-308RR — 95.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về linh kiện nào khác không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0263",
+    "intent": "UPSELL",
+    "query": "U4185G00 dùng chung với liner nào",
+    "exp": [
+      "001002",
+      "001003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nMÃ 001001 — CHỤP KHÍ N 19MM 500A 88L (95.000Đ/CÁI) MÀ ANH/CHỊ ĐANG HỎI THUỘC HỆ N, DÒNG ĐIỆN 500A.\n\nĐỂ TƯ VẤN DÂY DẪN HƯỚNG (LINER) PHÙ HỢP, ANH/CHỊ VUI LÒNG CHO EM BIẾT MODEL SÚNG HÀN (VÍ DỤ: TK-308RR, TK-508RR) VÀ CHIỀU DÀI CÁP SÚNG ANH/CHỊ ĐANG SỬ DỤNG Ạ. EM SẼ TÌM ĐÚNG LOẠI LINER ",
+    "full_resp": "Chào anh/chị,\n\nMã 001001 — Chụp khí N 19mm 500A 88L (95.000đ/cái) mà anh/chị đang hỏi thuộc hệ N, dòng điện 500A.\n\nĐể tư vấn dây dẫn hướng (Liner) phù hợp, anh/chị vui lòng cho em biết model súng hàn (ví dụ: TK-308RR, TK-508RR) và chiều dài cáp súng anh/chị đang sử dụng ạ. Em sẽ tìm đúng loại Liner tương thích cho mình.",
+    "tools": [
+      "lookup_part"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0264",
+    "intent": "UPSELL",
+    "query": "040001 cần béc thân cách điện gì",
+    "exp": [
+      "036001",
+      "036003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nMÃ 002004 LÀ BÉC HÀN N 1.6MM X 45L, THUỘC HỆ N 500A.\n\nĐỂ DÙNG VỚI BÉC HÀN NÀY, ANH/CHỊ CÓ THỂ THAM KHẢO CÁC LINH KIỆN SAU:\n\n**CÁCH ĐIỆN:**\n* MÃ 004001 — CÁCH ĐIỆN N L (500A) — 65.000Đ/CÁI\n\n**CHỤP KHÍ:**\n* MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L — 95.000Đ/CÁI\n* MÃ 001005 — CHỤP KHÍ N 13MM",
+    "full_resp": "Chào anh/chị,\n\nMã 002004 là Béc hàn N 1.6mm x 45L, thuộc hệ N 500A.\n\nĐể dùng với béc hàn này, anh/chị có thể tham khảo các linh kiện sau:\n\n**Cách điện:**\n* Mã 004001 — Cách điện N L (500A) — 65.000đ/cái\n\n**Chụp khí:**\n* Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n* Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n* Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n* Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n\n**Thân giữ béc:**\n* Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n\n**Liner:**\n* Mã 016126 — Liner 308RR/309R1-N 1.3m (dây 1.4-1.6mm) — 288.000đ/cái\n\n**Vòng cách điện:**\n* Mã 016052 — Vòng cách điện TK-308RR — 95.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về các linh kiện khác cho súng hàn của mình không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0267",
+    "intent": "UPSELL",
+    "query": "DAH00012 cần béc gì",
+    "exp": [
+      "023014",
+      "023015",
+      "023040"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM THẤY THÔNG TIN VỀ CHỤP KHÍ DAH00012. ĐÂY LÀ MÃ TƯƠNG ĐƯƠNG CỦA **MÃ 023013 — CHỤP KHÍ D NO.10 16MM — 70.000Đ/CÁI**.\n\nĐỂ SỬ DỤNG VỚI CHỤP KHÍ NÀY, ANH/CHỊ CÓ THỂ THAM KHẢO CÁC LOẠI BÉC HÀN SAU:\n\n**BÉC HÀN (TIP):**\n*   MÃ 023007 — BÉC HÀN D 0.8MM — 20.000Đ/CÁI\n*   MÃ 023008 — ",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm thấy thông tin về chụp khí DAH00012. Đây là mã tương đương của **Mã 023013 — Chụp khí D No.10 16mm — 70.000đ/cái**.\n\nĐể sử dụng với chụp khí này, anh/chị có thể tham khảo các loại béc hàn sau:\n\n**Béc hàn (Tip):**\n*   Mã 023007 — Béc hàn D 0.8mm — 20.000đ/cái\n*   Mã 023008 — Béc hàn D 0.9mm — 20.000đ/cái\n*   Mã 023009 — Béc hàn D 1.0mm — 20.000đ/cái\n*   Mã 023010 — Béc hàn D 1.2mm — 22.000đ/cái\n*   Mã 023011 — Béc hàn D 1.6mm — 26.000đ/cái\n*   Mã 023027 — Béc hàn Unionmelt 1.6mm 40L (hàn ngập xỉ) — 20.000đ/cái\n*   Mã 023028 — Béc hàn Unionmelt 2.4mm 40L (hàn ngập xỉ) — 20.000đ/cái\n*   Mã 023029 — Béc hàn Unionmelt 2.0mm 40L (hàn ngập xỉ) — 20.000đ/cái\n\nAnh/chị cần béc hàn với đường kính dây bao nhiêu để em tư vấn chính xác hơn ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0271",
+    "intent": "UPSELL",
+    "query": "tôi có 002009 cần thêm cách điện",
+    "exp": [
+      "001004",
+      "002001",
+      "002002",
+      "002003",
+      "002005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nANH/CHỊ ĐANG TÌM CÁCH ĐIỆN CHO BÉC HÀN N DÀI 1.2MM 69L (MÃ 002009). DỰA TRÊN THÔNG TIN BÉC HÀN NÀY THUỘC HỆ N VÀ DÒNG ĐIỆN 350A, EM CÓ CÁC LỰA CHỌN CÁCH ĐIỆN TƯƠNG THÍCH SAU:\n\n**CÁCH ĐIỆN (INSULATOR):**\n*   MÃ 004002 — CÁCH ĐIỆN N S (350A) — 50.000Đ/CÁI\n*   MÃ 004004 — CÁCH ĐIỆN N S (",
+    "full_resp": "Chào anh/chị,\n\nAnh/chị đang tìm cách điện cho Béc hàn N dài 1.2mm 69L (Mã 002009). Dựa trên thông tin béc hàn này thuộc hệ N và dòng điện 350A, em có các lựa chọn cách điện tương thích sau:\n\n**Cách điện (Insulator):**\n*   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   Mã 004004 — Cách điện N S (350A) kèm vòng đệm — 65.000đ/cái\n*   Mã 004001 — Cách điện N L (500A) — 65.000đ/cái\n*   Mã 004008 — Cách điện N L (500A) kèm vòng đệm — 65.000đ/cái\n\nAnh/chị muốn em tư vấn thêm về loại cách điện nào hoặc có cần tìm linh kiện nào khác không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0274",
+    "intent": "UPSELL",
+    "query": "có 003001 cần gì nữa không",
+    "exp": [
+      "001001",
+      "001005",
+      "001010",
+      "001012",
+      "001015",
+      "002003",
+      "002004",
+      "002017"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nMÃ 003001 LÀ SỨ CHIA KHÍ N L (500A) CÓ GIÁ 55.000Đ/CÁI. ĐỂ BỘ PHẬN HÀN HOẠT ĐỘNG ĐẦY ĐỦ, ANH/CHỊ CẦN THÊM CÁC LINH KIỆN SAU ĐÂY THUỘC HỆ N, DÒNG 500A:\n\n**THÂN GIỮ BÉC (TIP BODY):**\n* MÃ 002001 — THÂN GIỮ BÉC N 500A — 180.000Đ/CÁI\n\n**BÉC HÀN (TIP):**\n* MÃ 004001 — BÉC HÀN N 0.9MM — 18.",
+    "full_resp": "Chào anh/chị,\n\nMã 003001 là Sứ chia khí N L (500A) có giá 55.000đ/cái. Để bộ phận hàn hoạt động đầy đủ, anh/chị cần thêm các linh kiện sau đây thuộc hệ N, dòng 500A:\n\n**Thân giữ béc (Tip Body):**\n* Mã 002001 — Thân giữ béc N 500A — 180.000đ/cái\n\n**Béc hàn (Tip):**\n* Mã 004001 — Béc hàn N 0.9mm — 18.000đ/cái\n* Mã 004002 — Béc hàn N 1.2mm — 18.000đ/cái\n* Mã 004003 — Béc hàn N 1.4mm — 18.000đ/cái\n* Mã 004004 — Béc hàn N 1.6mm — 18.000đ/cái\n\n**Chụp khí (Nozzle):**\n* Mã 005001 — Chụp khí N 16mm — 55.000đ/cái\n* Mã 005002 — Chụp khí N 19mm — 55.000đ/cái\n* Mã 005003 — Chụp khí N 22mm — 55.000đ/cái\n\n**Cách điện (Insulator):**\n* Mã 006001 — Cách điện N 500A — 55.000đ/cái\n\n**Sứ chia khí (Orifice):**\n* Mã 003001 — Sứ chia khí N L (500A) — 55.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết mode",
+    "tools": [
+      "lookup_part"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0279",
+    "intent": "UPSELL",
+    "query": "002007 dùng chung với liner nào",
+    "exp": [
+      "001004",
+      "002001",
+      "002002",
+      "002003",
+      "002005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM THẤY THÔNG TIN VỀ BÉC HÀN MÃ 002007 — BÉC HÀN N DÀI 0.9MM 69L — 18.000Đ/CÁI.\n\nĐỂ TƯ VẤN DÂY DẪN HƯỚNG (LINER) PHÙ HỢP, ANH/CHỊ VUI LÒNG CHO EM BIẾT MODEL SÚNG HÀN (VÍ DỤ: TK-308RR, TK-508RR) VÀ CHIỀU DÀI CÁP ANH/CHỊ ĐANG SỬ DỤNG LÀ BAO NHIÊU Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm thấy thông tin về béc hàn Mã 002007 — Béc hàn N dài 0.9mm 69L — 18.000đ/cái.\n\nĐể tư vấn dây dẫn hướng (Liner) phù hợp, anh/chị vui lòng cho em biết model súng hàn (ví dụ: TK-308RR, TK-508RR) và chiều dài cáp anh/chị đang sử dụng là bao nhiêu ạ?",
+    "tools": [
+      "lookup_part"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0280",
+    "intent": "UPSELL",
+    "query": "vừa mua 045001 cần mua gì thêm",
+    "exp": [
+      "004002",
+      "004001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nANH/CHỊ VỪA MUA MÃ 002003 — BÉC HÀN N 1.2MM X 45L. ĐỂ CÓ MỘT BỘ PHẬN TIÊU HAO HOÀN CHỈNH CHO MỎ HÀN HỆ N 350A, EM XIN GỢI Ý CÁC LINH KIỆN TƯƠNG THÍCH SAU ĐÂY Ạ:\n\n**THÂN GIỮ BÉC (TIP BODY):**\n*   MÃ 002001 — THÂN GIỮ BÉC N 350A — 18.000Đ/CÁI\n\n**BÉC HÀN (TIP):**\n*   MÃ 002003 — BÉC HÀN ",
+    "full_resp": "Chào anh/chị,\n\nAnh/chị vừa mua Mã 002003 — Béc hàn N 1.2mm x 45L. Để có một bộ phận tiêu hao hoàn chỉnh cho mỏ hàn hệ N 350A, em xin gợi ý các linh kiện tương thích sau đây ạ:\n\n**Thân giữ béc (Tip Body):**\n*   Mã 002001 — Thân giữ béc N 350A — 18.000đ/cái\n\n**Béc hàn (Tip):**\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái (Đây là béc anh/chị đã mua)\n\n**Chụp khí (Nozzle):**\n*   Mã 002005 — Chụp khí N 16mm — 35.000đ/cái\n\n**Cách điện (Insulator):**\n*   Mã 002007 — Cách điện N 350A — 15.000đ/cái\n\n**Sứ chia khí (Orifice):**\n*   Mã 002009 — Sứ chia khí N 350A — 12.000đ/cái\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em tư vấn thêm về các linh kiện khác hoặc có câu hỏi nào không ạ?",
+    "tools": [
+      "lookup_part"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0284",
+    "intent": "UPSELL",
+    "query": "dùng 007003 thì cần chụp gì",
+    "exp": [
+      "001007",
+      "001009"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nANH/CHỊ HỎI VỀ CHỤP KHÍ DÙNG VỚI BÉC HÀN MÃ 007003. EM ĐÃ TRA CỨU VÀ THẤY MÃ 007003 LÀ BÉC HÀN N 0.9MM.\n\nĐỂ DÙNG VỚI BÉC HÀN NÀY, ANH/CHỊ CÓ THỂ THAM KHẢO CHỤP KHÍ SAU:\n*   MÃ 001002 — CHỤP KHÍ N 16MM 73L — 65.000Đ/CÁI\n\nANH/CHỊ CÓ CẦN EM TÌM THÊM LINH KIỆN NÀO KHÁC CHO BỘ PHẬN HÀN NÀY",
+    "full_resp": "Chào anh/chị,\n\nAnh/chị hỏi về chụp khí dùng với béc hàn mã 007003. Em đã tra cứu và thấy mã 007003 là Béc hàn N 0.9mm.\n\nĐể dùng với béc hàn này, anh/chị có thể tham khảo chụp khí sau:\n*   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n\nAnh/chị có cần em tìm thêm linh kiện nào khác cho bộ phận hàn này không ạ?",
+    "tools": [
+      "lookup_part"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0285",
+    "intent": "UPSELL",
+    "query": "007003 đi kèm với gì",
+    "exp": [
+      "001007",
+      "001009"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nMÃ 001002 LÀ CHỤP KHÍ N 16MM 73L (GIÁ 65.000Đ/CÁI) DÙNG CHO HỆ N, DÒNG ĐIỆN 350A. DƯỚI ĐÂY LÀ CÁC LINH KIỆN ĐI KÈM TƯƠNG THÍCH VỚI CHỤP KHÍ NÀY:\n\n**THÂN GIỮ BÉC (TIP BODY):**\n*   MÃ 016051 — THÂN GIỮ BÉC TK-308RR — 220.000Đ/CÁI\n*   MÃ 016403 — THÂN GIỮ BÉC TK-508RR — 250.000Đ/CÁI\n*   ",
+    "full_resp": "Chào anh/chị,\n\nMã 001002 là Chụp khí N 16mm 73L (giá 65.000đ/cái) dùng cho hệ N, dòng điện 350A. Dưới đây là các linh kiện đi kèm tương thích với chụp khí này:\n\n**Thân giữ béc (Tip Body):**\n*   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n*   Mã 016503 — Thân giữ béc ACC-308RR — 230.000đ/cái\n*   Mã 036001 — Thân giữ béc CS Loại A (350A) — 180.000đ/cái\n\n**Cách điện (Insulator):**\n*   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   Mã 004004 — Cách điện N S (350A) kèm vòng đệm — 65.000đ/cái\n\n**Béc hàn (Tip):**\n*   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n*   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n*   Mã 002014 — Bé",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0354",
+    "intent": "COMPATIBILITY_CHECK",
+    "query": "chụp 450A dùng với súng N 200A được không",
+    "exp": [
+      "001007",
+      "001009",
+      "002007"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KIỂM TRA THÌ SÚNG HÀN N 200A KHÔNG TƯƠNG THÍCH VỚI CHỤP KHÍ 450A Ạ.\n\nANH/CHỊ CÓ THỂ CHO EM BIẾT MODEL SÚNG HÀN HOẶC LOẠI LINH KIỆN ANH/CHỊ ĐANG TÌM ĐỂ EM TƯ VẤN CHÍNH XÁC HƠN KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm kiểm tra thì súng hàn N 200A không tương thích với chụp khí 450A ạ.\n\nAnh/chị có thể cho em biết model súng hàn hoặc loại linh kiện anh/chị đang tìm để em tư vấn chính xác hơn không ạ?",
+    "tools": [
+      "check_compatibility"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0361",
+    "intent": "COMPATIBILITY_CHECK",
+    "query": "012001 với 007003 dùng chung được không",
+    "exp": [
+      "001012",
+      "001007",
+      "001009"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ KIỂM TRA VÀ THẤY RẰNG MÃ 001002 — CHỤP KHÍ N 16MM 73L (ĐƯỢC TÌM TỪ MÃ 012001) VÀ MÃ 001002 — CHỤP KHÍ N 16MM 73L (ĐƯỢC TÌM TỪ MÃ 007003) LÀ CÙNG MỘT LOẠI LINH KIỆN. DO ĐÓ, CHÚNG HOÀN TOÀN CÓ THỂ DÙNG CHUNG ĐƯỢC Ạ.\n\nANH/CHỊ CÓ CẦN EM KIỂM TRA THÊM VỀ CÁC LINH KIỆN KHÁC KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm đã kiểm tra và thấy rằng Mã 001002 — Chụp khí N 16mm 73L (được tìm từ mã 012001) và Mã 001002 — Chụp khí N 16mm 73L (được tìm từ mã 007003) là cùng một loại linh kiện. Do đó, chúng hoàn toàn có thể dùng chung được ạ.\n\nAnh/chị có cần em kiểm tra thêm về các linh kiện khác không ạ?",
+    "tools": [
+      "check_compatibility"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0362",
+    "intent": "COMPATIBILITY_CHECK",
+    "query": "050001 có fit vào 040001 không",
+    "exp": [
+      "036001",
+      "036003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ KIỂM TRA VÀ THẤY RẰNG:\n*   MÃ 002017 — BÉC HÀN N 1.4MM X 45L (ĐƯỢC TÌM TỪ 050001)\n*   MÃ 002004 — BÉC HÀN N 1.6MM X 45L (ĐƯỢC TÌM TỪ 040001)\n\nHAI BÉC HÀN NÀY **TƯƠNG THÍCH VỚI NHAU** VÌ CHÚNG CÙNG THUỘC HỆ N.\n\nANH/CHỊ CÓ CẦN EM KIỂM TRA THÊM LINH KIỆN NÀO KHÁC KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm đã kiểm tra và thấy rằng:\n*   Mã 002017 — Béc hàn N 1.4mm x 45L (được tìm từ 050001)\n*   Mã 002004 — Béc hàn N 1.6mm x 45L (được tìm từ 040001)\n\nHai béc hàn này **tương thích với nhau** vì chúng cùng thuộc hệ N.\n\nAnh/chị có cần em kiểm tra thêm linh kiện nào khác không ạ?",
+    "tools": [
+      "check_compatibility"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0373",
+    "intent": "COMPATIBILITY_CHECK",
+    "query": "chụp 500A dùng với súng N 200A được không",
+    "exp": [
+      "002007",
+      "001005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KIỂM TRA THÌ SÚNG HÀN N 200A KHÔNG TƯƠNG THÍCH VỚI CHỤP KHÍ 500A Ạ. THÔNG THƯỜNG, CÁC LINH KIỆN CỦA SÚNG HÀN ĐƯỢC THIẾT KẾ ĐỂ HOẠT ĐỘNG TỐI ƯU TRONG MỘT DẢI DÒNG ĐIỆN NHẤT ĐỊNH. VIỆC SỬ DỤNG LINH KIỆN CÓ DÒNG ĐIỆN QUÁ CHÊNH LỆCH CÓ THỂ ẢNH HƯỞNG ĐẾN HIỆU SUẤT HÀN VÀ TUỔI THỌ CỦA TH",
+    "full_resp": "Chào anh/chị,\n\nEm kiểm tra thì súng hàn N 200A không tương thích với chụp khí 500A ạ. Thông thường, các linh kiện của súng hàn được thiết kế để hoạt động tối ưu trong một dải dòng điện nhất định. Việc sử dụng linh kiện có dòng điện quá chênh lệch có thể ảnh hưởng đến hiệu suất hàn và tuổi thọ của thiết bị.\n\nAnh/chị có thể cho em biết anh/chị đang cần tìm chụp khí cho súng hàn dòng bao nhiêu không ạ, để em tìm đúng loại tương thích ạ.",
+    "tools": [
+      "check_compatibility"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0380",
+    "intent": "COMPATIBILITY_CHECK",
+    "query": "chụp 400A dùng với súng N 700A được không",
+    "exp": [
+      "001007",
+      "001009",
+      "001010",
+      "001005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KIỂM TRA THÌ SÚNG HÀN 700A KHÔNG TƯƠNG THÍCH VỚI CHỤP KHÍ 400A Ạ. ĐỂ ĐẢM BẢO HIỆU SUẤT VÀ AN TOÀN KHI HÀN, ANH/CHỊ NÊN SỬ DỤNG CÁC LINH KIỆN CÓ CÙNG ĐỊNH MỨC DÒNG ĐIỆN VỚI SÚNG HÀN.\n\nANH/CHỊ CÓ THỂ CHO EM BIẾT MODEL SÚNG HÀN HOẶC DÒNG ĐIỆN ANH/CHỊ ĐANG SỬ DỤNG ĐỂ EM TƯ VẤN CÁC LINH",
+    "full_resp": "Chào anh/chị,\n\nEm kiểm tra thì súng hàn 700A không tương thích với chụp khí 400A ạ. Để đảm bảo hiệu suất và an toàn khi hàn, anh/chị nên sử dụng các linh kiện có cùng định mức dòng điện với súng hàn.\n\nAnh/chị có thể cho em biết model súng hàn hoặc dòng điện anh/chị đang sử dụng để em tư vấn các linh kiện phù hợp không ạ?",
+    "tools": [
+      "check_compatibility"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0381",
+    "intent": "COMPATIBILITY_CHECK",
+    "query": "chụp 200A dùng với súng N 200A được không",
+    "exp": [
+      "002003",
+      "003002",
+      "003001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM XIN LỖI, EM CHƯA TÌM THẤY THÔNG TIN TƯƠNG THÍCH CHO \"CHỤP 200A\" VÀ \"SÚNG N 200A\" TRONG HỆ THỐNG CỦA MÌNH Ạ.\n\nĐỂ EM CÓ THỂ HỖ TRỢ TỐT NHẤT, ANH/CHỊ VUI LÒNG CUNG CẤP THÊM THÔNG TIN VỀ MÃ SẢN PHẨM CỤ THỂ CỦA CHỤP KHÍ VÀ SÚNG HÀN (NẾU CÓ) HOẶC MÔ TẢ CHI TIẾT HƠN VỀ LOẠI SÚNG HÀN ANH/C",
+    "full_resp": "Chào anh/chị,\n\nEm xin lỗi, em chưa tìm thấy thông tin tương thích cho \"chụp 200A\" và \"súng N 200A\" trong hệ thống của mình ạ.\n\nĐể em có thể hỗ trợ tốt nhất, anh/chị vui lòng cung cấp thêm thông tin về mã sản phẩm cụ thể của chụp khí và súng hàn (nếu có) hoặc mô tả chi tiết hơn về loại súng hàn anh/chị đang sử dụng được không ạ?\n\nEm cảm ơn anh/chị.",
+    "tools": [
+      "check_compatibility"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0388",
+    "intent": "COMPATIBILITY_CHECK",
+    "query": "003003 và 010003 có đi với nhau không",
+    "exp": [
+      "003002",
+      "003001",
+      "001010",
+      "001005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KIỂM TRA THÌ BÉC HÀN N DÀI 0.9MM 69L (MÃ 002007) VÀ CHỤP KHÍ D NO.10 16MM (MÃ 023013) KHÔNG TƯƠNG THÍCH VỚI NHAU Ạ.\n\nLÝ DO LÀ BÉC HÀN HỆ N SỬ DỤNG REN HỆ N, TRONG KHI CHỤP KHÍ HỆ D (MÃ 023012/013) CÓ KIỂU KHỚP REN HỆ D. HAI LOẠI NÀY KHÔNG THỂ LẮP RÁP ĐƯỢC VỚI NHAU.\n\nANH/CHỊ CÓ CẦN ",
+    "full_resp": "Chào anh/chị,\n\nEm kiểm tra thì Béc hàn N dài 0.9mm 69L (Mã 002007) và Chụp khí D No.10 16mm (Mã 023013) không tương thích với nhau ạ.\n\nLý do là Béc hàn hệ N sử dụng ren hệ N, trong khi Chụp khí hệ D (Mã 023012/013) có kiểu khớp ren hệ D. Hai loại này không thể lắp ráp được với nhau.\n\nAnh/chị có cần em tìm linh kiện tương thích với một trong hai mã trên không ạ?",
+    "tools": [
+      "check_compatibility"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0390",
+    "intent": "COMPATIBILITY_CHECK",
+    "query": "chụp 350A dùng với súng N 250A được không",
+    "exp": [
+      "001007",
+      "001009"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KIỂM TRA THÌ CHỤP KHÍ 350A KHÔNG TƯƠNG THÍCH VỚI SÚNG HÀN N 250A Ạ.\n\nANH/CHỊ CÓ CẦN EM TƯ VẤN LINH KIỆN NÀO KHÁC KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm kiểm tra thì chụp khí 350A không tương thích với súng hàn N 250A ạ.\n\nAnh/chị có cần em tư vấn linh kiện nào khác không ạ?",
+    "tools": [
+      "check_compatibility"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0393",
+    "intent": "COMPARISON",
+    "query": "015001 hay 012001 tốt hơn",
+    "exp": [
+      "001015",
+      "001012"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ SO SÁNH HAI MÃ SẢN PHẨM ANH/CHỊ HỎI:\n\n**SO SÁNH MÃ 002017 (BÉC HÀN N 1.4MM X 45L) VS MÃ 001002 (CHỤP KHÍ N 16MM 73L):**\n\n| ĐẶC TÍNH          | MÃ 002017 (BÉC HÀN N 1.4MM X 45L) | MÃ 001002 (CHỤP KHÍ N 16MM 73L) |\n| :---------------- | :-------------------------------- | :-------",
+    "full_resp": "Chào anh/chị,\n\nEm đã so sánh hai mã sản phẩm anh/chị hỏi:\n\n**So sánh Mã 002017 (Béc hàn N 1.4mm x 45L) vs Mã 001002 (Chụp khí N 16mm 73L):**\n\n| Đặc tính          | Mã 002017 (Béc hàn N 1.4mm x 45L) | Mã 001002 (Chụp khí N 16mm 73L) |\n| :---------------- | :-------------------------------- | :------------------------------- |\n| **Loại linh kiện** | Béc hàn (Tip)                     | Chụp khí (Nozzle)                |\n| **Dòng điện**     | 350A                              | 350A                             |\n| **Kích thước dây** | 1.4mm                             | Không áp dụng                    |\n| **Đường kính trong** | Không áp dụng                   | 16mm                             |\n| **Đường kính ngoài** | Không áp dụng                   | 20mm                             |\n| **",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0395",
+    "intent": "COMPARISON",
+    "query": "đầu tiếp điện 250A vs 500A khác nhau sao",
+    "exp": [
+      "001005",
+      "001010",
+      "002005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM XIN SO SÁNH HAI BÉC HÀN NÀY NHƯ SAU:\n\n**SO SÁNH MÃ 002001 (BÉC HÀN N 0.9MM X 45L) VS MÃ 002004 (BÉC HÀN N 1.6MM X 45L):**\n\n| ĐẶC TÍNH         | MÃ 002001 (BÉC HÀN N 0.9MM X 45L) | MÃ 002004 (BÉC HÀN N 1.6MM X 45L) |\n| :--------------- | :------------------------------- | :---------",
+    "full_resp": "Chào anh/chị,\n\nEm xin so sánh hai béc hàn này như sau:\n\n**So sánh Mã 002001 (Béc hàn N 0.9mm x 45L) vs Mã 002004 (Béc hàn N 1.6mm x 45L):**\n\n| Đặc tính         | Mã 002001 (Béc hàn N 0.9mm x 45L) | Mã 002004 (Béc hàn N 1.6mm x 45L) |\n| :--------------- | :------------------------------- | :------------------------------- |\n| **Dòng điện**    | 350A                             | 500A                             |\n| **Đường kính dây** | 0.9mm                            | 1.6mm                            |\n| **Giá**          | 18.000đ/cái                      | 24.000đ/cái                      |\n\nMã 002001 dùng cho dây hàn 0.9mm, còn Mã 002004 dùng cho dây hàn 1.6mm.\n\nAnh/chị đang cần tìm béc hàn cho loại dây có đường kính bao nhiêu ạ?",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0397",
+    "intent": "COMPARISON",
+    "query": "béc 0.8mm và 2.4mm khác gì",
+    "exp": [
+      "002009",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ SO SÁNH HAI LOẠI BÉC HÀN THEO YÊU CẦU CỦA ANH/CHỊ ĐÂY Ạ:\n\n**SO SÁNH MÃ 002005 (BÉC HÀN N 0.8MM X 45L) VÀ MÃ 002018 (BÉC HÀN N HÀN NHÔM 1.2MM):**\n\n| THUỘC TÍNH           | MÃ 002005 (BÉC HÀN N 0.8MM X 45L) | MÃ 002018 (BÉC HÀN N HÀN NHÔM 1.2MM) |\n| :------------------- | :-------",
+    "full_resp": "Chào anh/chị,\n\nEm đã so sánh hai loại béc hàn theo yêu cầu của anh/chị đây ạ:\n\n**So sánh Mã 002005 (Béc hàn N 0.8mm x 45L) và Mã 002018 (Béc hàn N hàn nhôm 1.2mm):**\n\n| Thuộc tính           | Mã 002005 (Béc hàn N 0.8mm x 45L) | Mã 002018 (Béc hàn N hàn nhôm 1.2mm) |\n| :------------------- | :-------------------------------- | :----------------------------------- |\n| **Mã sản phẩm**      | 002005                            | 002018                               |\n| **Tên sản phẩm**     | Béc hàn N 0.8mm x 45L             | Béc hàn N hàn nhôm 1.2mm             |\n| **Đường kính dây**   | 0.8mm                             | 1.2mm                                |\n| **Chiều dài**        | 45.0mm                            | (Không có thông tin)                 |\n| **Quy trình hàn**    | CO2, MAG",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0398",
+    "intent": "COMPARISON",
+    "query": "bec 700A vs 700A khác nhau sao",
+    "exp": [
+      "002011",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ SO SÁNH HAI MÃ BÉC HÀN ANH/CHỊ HỎI NHƯ SAU:\n\n**SO SÁNH MÃ 002017 VS MÃ 002018:**\n\n| ĐẶC ĐIỂM | MÃ 002017 — BÉC HÀN N 1.4MM X 45L | MÃ 002018 — BÉC HÀN N HÀN NHÔM 1.2MM |\n| :------- | :-------------------------------- | :---------------------------------- |\n| **ĐƯỜNG KÍNH DÂY** |",
+    "full_resp": "Chào anh/chị,\n\nEm đã so sánh hai mã béc hàn anh/chị hỏi như sau:\n\n**So sánh Mã 002017 vs Mã 002018:**\n\n| Đặc điểm | Mã 002017 — Béc hàn N 1.4mm x 45L | Mã 002018 — Béc hàn N hàn nhôm 1.2mm |\n| :------- | :-------------------------------- | :---------------------------------- |\n| **Đường kính dây** | 1.4mm | 1.2mm |\n| **Chiều dài** | 45mm | (Không áp dụng) |\n| **Quy trình hàn** | CO2, MAG | MIG |\n| **Giá** | 22.000đ/cái | 26.000đ/cái |\n\n**Tóm tắt:**\n*   **Mã 002017** dùng cho dây hàn 1.4mm, thích hợp với quy trình hàn CO2 và MAG.\n*   **Mã 002018** dùng cho dây hàn 1.2mm, được thiết kế đặc biệt cho hàn nhôm (MIG).\n\nAnh/chị đang tìm béc hàn cho loại vật liệu và đường kính dây nào để em tư vấn chính xác hơn ạ?",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0399",
+    "intent": "COMPARISON",
+    "query": "béc 1.6mm và 1.4mm khác gì",
+    "exp": [
+      "002011",
+      "001007",
+      "001009"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM XIN SO SÁNH SỰ KHÁC BIỆT GIỮA BÉC HÀN MÃ 002004 VÀ MÃ 002017 NHƯ SAU:\n\n**SO SÁNH MÃ 002004 (BÉC HÀN N 1.6MM X 45L) VÀ MÃ 002017 (BÉC HÀN N 1.4MM X 45L):**\n\n| ĐẶC ĐIỂM           | MÃ 002004 (BÉC HÀN N 1.6MM X 45L) | MÃ 002017 (BÉC HÀN N 1.4MM X 45L) |\n| :----------------- | :-------",
+    "full_resp": "Chào anh/chị,\n\nEm xin so sánh sự khác biệt giữa béc hàn Mã 002004 và Mã 002017 như sau:\n\n**So sánh Mã 002004 (Béc hàn N 1.6mm x 45L) và Mã 002017 (Béc hàn N 1.4mm x 45L):**\n\n| Đặc điểm           | Mã 002004 (Béc hàn N 1.6mm x 45L) | Mã 002017 (Béc hàn N 1.4mm x 45L) |\n| :----------------- | :-------------------------------- | :-------------------------------- |\n| **Dòng điện**      | 500A                              | 350A                              |\n| **Đường kính dây** | 1.6mm                             | 1.4mm                             |\n| **Giá**            | 24.000đ/cái                       | 22.000đ/cái                       |\n\nVề cơ bản, Mã 002004 dùng cho dây hàn có đường kính 1.6mm và Mã 002017 dùng cho dây hàn đường kính 1.4mm.\n\nAnh/chị đang tìm béc hàn cho loại dây có đư",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0400",
+    "intent": "COMPARISON",
+    "query": "đầu tiếp điện 450A vs 250A khác nhau sao",
+    "exp": [
+      "036001",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM XIN LỖI, EM KHÔNG TÌM THẤY THÔNG TIN ĐỂ SO SÁNH TRỰC TIẾP GIỮA \"ĐẦU TIẾP ĐIỆN 450A\" VÀ \"250A\" TRONG HỆ THỐNG CỦA MÌNH. CÓ VẺ NHƯ ĐÂY LÀ CÁCH GỌI CHUNG VÀ CHƯA ĐỦ THÔNG TIN ĐỂ EM TRA CỨU CHÍNH XÁC.\n\nĐỂ EM CÓ THỂ HỖ TRỢ TỐT NHẤT, ANH/CHỊ VUI LÒNG CHO EM BIẾT MÃ SẢN PHẨM (6 SỐ CỦA TOK",
+    "full_resp": "Chào anh/chị,\n\nEm xin lỗi, em không tìm thấy thông tin để so sánh trực tiếp giữa \"đầu tiếp điện 450A\" và \"250A\" trong hệ thống của mình. Có vẻ như đây là cách gọi chung và chưa đủ thông tin để em tra cứu chính xác.\n\nĐể em có thể hỗ trợ tốt nhất, anh/chị vui lòng cho em biết mã sản phẩm (6 số của Tokin) hoặc model súng hàn mà anh/chị đang sử dụng được không ạ? Hoặc anh/chị có thể mô tả chi tiết hơn về loại đầu tiếp điện mà anh/chị đang tìm kiếm (ví dụ: đường kính dây hàn, loại vật liệu, v.v.).\n\nEm cảm ơn anh/chị!",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0401",
+    "intent": "COMPARISON",
+    "query": "đầu hàn 400A vs 300A khác nhau sao",
+    "exp": [
+      "036001",
+      "036003",
+      "001010"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC LOẠI THÂN SÚNG (ĐẦU HÀN) CÓ DÒNG ĐIỆN KHÁC NHAU NHƯ SAU:\n\n**DÒNG 350A:**\n*   MÃ 016046 — THÂN SÚNG TK-309R1 (CHƯA CÓ TIPBODY) — 1.800.000Đ/CÁI\n*   MÃ 016047 — THÂN SÚNG TK-309R1 — 1.800.000Đ/CÁI\n*   MÃ 016049 — CỤM THÂN SÚNG TK-309R1 ĐẦY ĐỦ — 1.800.000Đ/CÁI\n*   MÃ 0160",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các loại thân súng (đầu hàn) có dòng điện khác nhau như sau:\n\n**Dòng 350A:**\n*   Mã 016046 — Thân súng TK-309R1 (chưa có TipBody) — 1.800.000đ/cái\n*   Mã 016047 — Thân súng TK-309R1 — 1.800.000đ/cái\n*   Mã 016049 — Cụm thân súng TK-309R1 đầy đủ — 1.800.000đ/cái\n*   Mã 016058 — Cụm thân súng TK-308RR (tiêu chuẩn) — 1.800.000đ/cái\n*   Mã 016160 — Cụm thân súng TK-308RR dài hơn (+100mm) — 1.800.000đ/cái\n*   Mã 016163 — Thân súng TK-308RR dài thêm 100mm (đặt hàng riêng) — 1.800.000đ/cái\n*   Mã 016166 — Thân súng TK-308RR dài thêm 150mm (đặt hàng riêng) — 1.800.000đ/cái\n*   Mã 016500 — Thân súng ACC-308RR (có thân giữ béc) — 1.800.000đ/cái\n*   Mã 016501 — Thân súng ACC-308RR (không có thân giữ béc) — 1.800.000đ/cái\n*   Mã 016506 — Cụm thân súng ACC-308RR (hoàn chỉnh) ",
+    "tools": [
+      "search_parts",
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0402",
+    "intent": "COMPARISON",
+    "query": "béc 0.9mm và 3.2mm khác gì",
+    "exp": [
+      "036001",
+      "036003",
+      "002009"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM XIN SO SÁNH SỰ KHÁC BIỆT GIỮA HAI LOẠI BÉC HÀN NÀY Ạ:\n\n**SO SÁNH MÃ 002001 (BÉC HÀN N 0.9MM X 45L) VÀ MÃ 002018 (BÉC HÀN N HÀN NHÔM 1.2MM):**\n\n| ĐẶC TÍNH              | MÃ 002001 (BÉC HÀN N 0.9MM X 45L) | MÃ 002018 (BÉC HÀN N HÀN NHÔM 1.2MM) |\n| :-------------------- | :------------",
+    "full_resp": "Chào anh/chị, em xin so sánh sự khác biệt giữa hai loại béc hàn này ạ:\n\n**So sánh Mã 002001 (Béc hàn N 0.9mm x 45L) và Mã 002018 (Béc hàn N hàn nhôm 1.2mm):**\n\n| Đặc tính              | Mã 002001 (Béc hàn N 0.9mm x 45L) | Mã 002018 (Béc hàn N hàn nhôm 1.2mm) |\n| :-------------------- | :-------------------------------- | :----------------------------------- |\n| **Đường kính dây**    | 0.9mm                             | 1.2mm                                |\n| **Chiều dài**         | 45.0mm                            | (Không có thông tin)                 |\n| **Quy trình hàn hỗ trợ** | CO2, MAG                          | MIG                                  |\n| **Giá**               | 18.000đ/cái                       | 26.000đ/cái                          |\n\n**Khuyến nghị:**\nMã 002001 dùn",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0408",
+    "intent": "COMPARISON",
+    "query": "007003 với 040001 cái nào bền hơn",
+    "exp": [
+      "001007",
+      "001009",
+      "036001",
+      "036003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM XIN SO SÁNH HAI MÃ SẢN PHẨM ANH/CHỊ HỎI:\n\n**SO SÁNH MÃ 001002 (CHỤP KHÍ N 16MM 73L) VS MÃ 002004 (BÉC HÀN N 1.6MM X 45L):**\n\n| ĐẶC TÍNH          | MÃ 001002 (CHỤP KHÍ N 16MM 73L) | MÃ 002004 (BÉC HÀN N 1.6MM X 45L) |\n| :---------------- | :------------------------------ | :--------",
+    "full_resp": "Chào anh/chị,\n\nEm xin so sánh hai mã sản phẩm anh/chị hỏi:\n\n**So sánh Mã 001002 (Chụp khí N 16mm 73L) vs Mã 002004 (Béc hàn N 1.6mm x 45L):**\n\n| Đặc tính          | Mã 001002 (Chụp khí N 16mm 73L) | Mã 002004 (Béc hàn N 1.6mm x 45L) |\n| :---------------- | :------------------------------ | :-------------------------------- |\n| **Loại linh kiện** | Chụp khí (Nozzle)               | Béc hàn (Tip)                     |\n| **Dòng điện**     | 350A                            | 500A                              |\n| **Đường kính dây** |                                 | 1.6mm                             |\n| **Chiều dài**     | 73mm                            | 45mm                              |\n| **Vật liệu**      |                                 | CuCrZr                            |\n| **Ren**  ",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0410",
+    "intent": "COMPARISON",
+    "query": "tip 700A vs 400A khác nhau sao",
+    "exp": [
+      "036001",
+      "036003",
+      "023421"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ BÉC HÀN (TIP) VÀ ADAPTER CÁP NGUỒN (TIPADAPTER) CÓ THỂ LIÊN QUAN ĐẾN CÂU HỎI CỦA ANH/CHỊ.\n\n**BÉC HÀN (TIP):**\n*   MÃ 002001 — BÉC HÀN N 0.9MM X 45L — 18.000Đ/CÁI (DÒNG ĐIỆN 350A)\n*   MÃ 002002 — BÉC HÀN N 1.0MM X 45L — 18.000Đ/CÁI (DÒNG ĐIỆN 350A)\n*   MÃ 002003 — BÉ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số béc hàn (Tip) và adapter cáp nguồn (TipAdapter) có thể liên quan đến câu hỏi của anh/chị.\n\n**Béc hàn (Tip):**\n*   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái (Dòng điện 350A)\n*   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái (Dòng điện 350A)\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái (Dòng điện 350A)\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái (Dòng điện 500A)\n*   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái (Dòng điện 350A)\n*   Mã 002006 — Béc hàn N dài 0.8mm 69L — 18.000đ/cái (Dòng điện 350A)\n*   Mã 002007 — Béc hàn N dài 0.9mm 69L — 18.000đ/cái (Dòng điện 350A)\n*   Mã 002008 — Béc hàn N dài 1.0mm 69L — 18.000đ/cái (Dòng điện 350A)\n*   Mã 002009 — Béc hàn N dài 1.2mm 69L — 20.000đ/cái (Dòng điện 350A)\n*   Mã 002010 — Béc hàn N d",
+    "tools": [
+      "search_parts",
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0413",
+    "intent": "COMPARISON",
+    "query": "012001 hay 015003 tốt hơn",
+    "exp": [
+      "001012",
+      "001015"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ NHẬN ĐƯỢC YÊU CẦU SO SÁNH CỦA ANH/CHỊ. DƯỚI ĐÂY LÀ THÔNG TIN CHI TIẾT VỀ HAI MÃ SẢN PHẨM 001002 VÀ 023041:\n\n**SO SÁNH MÃ 001002 VS MÃ 023041:**\n\n| ĐẶC TÍNH           | MÃ 001002 (CHỤP KHÍ N 16MM 73L) | MÃ 023041 (BÉC HÀN D 1.4MM) |\n| :----------------- | :-----------------------",
+    "full_resp": "Chào anh/chị,\n\nEm đã nhận được yêu cầu so sánh của anh/chị. Dưới đây là thông tin chi tiết về hai mã sản phẩm 001002 và 023041:\n\n**So sánh Mã 001002 vs Mã 023041:**\n\n| Đặc tính           | Mã 001002 (Chụp khí N 16mm 73L) | Mã 023041 (Béc hàn D 1.4mm) |\n| :----------------- | :------------------------------- | :-------------------------- |\n| **Loại linh kiện** | Chụp khí (Nozzle)                | Béc hàn (Tip)               |\n| **Hệ**             | N                                | D                           |\n| **Dòng điện**      | 350A                             | 350A                        |\n| **Đường kính dây** | -                                | 1.4mm                       |\n| **Chiều dài**      | 73mm                             | 40.5mm                      |\n| **Đường kính tron",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0415",
+    "intent": "COMPARISON",
+    "query": "so sánh 007003 với 003003",
+    "exp": [
+      "001007",
+      "001009",
+      "003002",
+      "003001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM XIN SO SÁNH HAI CHỤP KHÍ THEO YÊU CẦU CỦA ANH/CHỊ Ạ:\n\n**SO SÁNH MÃ 001002 (CHỤP KHÍ N 16MM 73L) VÀ MÃ 023013 (CHỤP KHÍ D NO.10 16MM):**\n\n| THUỘC TÍNH       | MÃ 001002 (CHỤP KHÍ N 16MM 73L) | MÃ 023013 (CHỤP KHÍ D NO.10 16MM) |\n| :--------------- | :------------------------------ |",
+    "full_resp": "Chào anh/chị,\n\nEm xin so sánh hai chụp khí theo yêu cầu của anh/chị ạ:\n\n**So sánh Mã 001002 (Chụp khí N 16mm 73L) và Mã 023013 (Chụp khí D No.10 16mm):**\n\n| Thuộc tính       | Mã 001002 (Chụp khí N 16mm 73L) | Mã 023013 (Chụp khí D No.10 16mm) |\n| :--------------- | :------------------------------ | :-------------------------------- |\n| **Hệ**           | N                               | D                                 |\n| **Chiều dài**     | 73 mm                           | 70 mm                             |\n| **Giá**          | 65.000đ/cái                     | 70.000đ/cái                       |\n\nHai chụp khí này thuộc hai hệ khác nhau (Hệ N và Hệ D) nên không thể thay thế lẫn nhau được ạ.\n\nAnh/chị có cần em tư vấn thêm về linh kiện nào khác không ạ?",
+    "tools": [
+      "compare_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0417",
+    "intent": "COMPARISON",
+    "query": "đầu hàn 350A vs 300A khác nhau sao",
+    "exp": [
+      "002005",
+      "002001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỀ CÂU HỎI CỦA ANH/CHỊ VỀ \"ĐẦU HÀN 350A VS 300A KHÁC NHAU SAO\", EM HIỂU LÀ ANH/CHỊ ĐANG MUỐN TÌM HIỂU VỀ CÁC LOẠI CHỤP KHÍ (NOZZLE) CÓ DÒNG ĐIỆN ĐỊNH MỨC 350A.\n\nDƯỚI ĐÂY LÀ CÁC LOẠI CHỤP KHÍ 350A MÀ BÊN EM ĐANG CÓ:\n\n*   MÃ 001002 — CHỤP KHÍ N 16MM 73L — 65.000Đ/CÁI\n*   MÃ 001003 — CHỤ",
+    "full_resp": "Chào anh/chị,\n\nVề câu hỏi của anh/chị về \"đầu hàn 350A vs 300A khác nhau sao\", em hiểu là anh/chị đang muốn tìm hiểu về các loại chụp khí (Nozzle) có dòng điện định mức 350A.\n\nDưới đây là các loại chụp khí 350A mà bên em đang có:\n\n*   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n*   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n*   Mã 001004 — Chụp khí nhỏ dài 100L — 65.000đ/cái\n*   Mã 001007 — Chụp khí hàn điểm 88L — 65.000đ/cái\n*   Mã 001008 — Chụp khí N 18mm 73L — 65.000đ/cái\n*   Mã 001009 — Chụp khí N dày 16mm 73L — 65.000đ/cái\n*   Mã 001013 — Chụp khí N 16mm 63L — 60.000đ/cái\n*   Mã 001014 — Chụp khí bậc 73L — 65.000đ/cái\n*   Mã 001016 — Chụp khí nhỏ 73L — 65.000đ/cái\n*   Mã 023012 — Chụp khí D No.8 12mm — 70.000đ/cái\n\nAnh/chị có thể cho em biết thêm về model súng hàn hoặc loại linh ",
+    "tools": [
+      "search_parts",
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0419",
+    "intent": "COMPARISON",
+    "query": "béc hàn 700A vs 250A khác nhau sao",
+    "exp": [
+      "001010",
+      "001005",
+      "036003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM THẤY ANH/CHỊ ĐANG HỎI VỀ BÉC HÀN. HIỆN TẠI, CÁC BÉC HÀN CỦA HỆ N (HÀN MIG/MAG) BÊN EM ĐỀU CÓ DÒNG ĐIỆN ĐỊNH MỨC LÀ 350A. SỰ KHÁC BIỆT GIỮA CÁC BÉC HÀN CHỦ YẾU NẰM Ở ĐƯỜNG KÍNH DÂY HÀN VÀ CHIỀU DÀI CỦA BÉC.\n\nDƯỚI ĐÂY LÀ CÁC BÉC HÀN 350A MÀ EM ĐANG CÓ:\n\n*   MÃ 002001 — BÉC HÀN N 0.9M",
+    "full_resp": "Chào anh/chị,\n\nEm thấy anh/chị đang hỏi về béc hàn. Hiện tại, các béc hàn của hệ N (hàn MIG/MAG) bên em đều có dòng điện định mức là 350A. Sự khác biệt giữa các béc hàn chủ yếu nằm ở đường kính dây hàn và chiều dài của béc.\n\nDưới đây là các béc hàn 350A mà em đang có:\n\n*   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n*   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n*   Mã 002006 — Béc hàn N dài 0.8mm 69L — 18.000đ/cái\n*   Mã 002007 — Béc hàn N dài 0.9mm 69L — 18.000đ/cái\n*   Mã 002008 — Béc hàn N dài 1.0mm 69L — 18.000đ/cái\n*   Mã 002009 — Béc hàn N dài 1.2mm 69L — 20.000đ/cái\n*   Mã 002010 — Béc hàn N dài 1.6mm 69L — 22.000đ/cái\n*   Mã 002011 — Béc hàn N dài 0.6mm 69L — 18.000đ/cá",
+    "tools": [
+      "search_parts",
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0423",
+    "intent": "AGGREGATE",
+    "query": "danh sách súng hàn tokin có bán",
+    "exp": [
+      "ACC-308RR",
+      "ACC-308RX",
+      "TK-308RR",
+      "TK-308RS",
+      "TK-308RX",
+      "TK-308RW",
+      "TK-308ALW",
+      "SRCT-308R"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM XIN GỬI DANH SÁCH CÁC LOẠI SÚNG HÀN TOKINARC HIỆN CÓ TẠI AUTOSS Ạ:\n\n**SÚNG HÀN BÁN TỰ ĐỘNG (SEMI-AUTO TORCHES):**\n*   SÚNG HÀN NHÔM CSA-252 (250A MIG) — 2.200.000Đ/CÁI\n*   SÚNG HÀN BÁN TỰ ĐỘNG CSL-18 (200A) — 1.800.000Đ/CÁI\n*   SÚNG HÀN BÁN TỰ ĐỘNG CSL-20 (200A) — 1.800.000Đ/CÁI\n*  ",
+    "full_resp": "Chào anh/chị, em xin gửi danh sách các loại súng hàn Tokinarc hiện có tại Autoss ạ:\n\n**Súng hàn bán tự động (Semi-auto Torches):**\n*   Súng hàn nhôm CSA-252 (250A MIG) — 2.200.000đ/cái\n*   Súng hàn bán tự động CSL-18 (200A) — 1.800.000đ/cái\n*   Súng hàn bán tự động CSL-20 (200A) — 1.800.000đ/cái\n*   Súng hàn bán tự động CSL-20F (200A, flex) — 1.800.000đ/cái\n*   Súng hàn bán tự động CSL-20L (200A, long) — 1.800.000đ/cái\n*   Súng hàn bán tự động TL-20 (200A, air-cool) — 1.800.000đ/cái\n*   Súng hàn bán tự động TL-20F (200A, flex) — 1.850.000đ/cái\n*   Súng hàn bán tự động TL-20L (200A, long) — 1.900.000đ/cái\n*   Súng hàn nhôm nhẹ TLA-20 (200A) — 2.000.000đ/cái\n*   Súng hàn bán tự động CSH-35 (350A, air-cool) — 2.900.000đ/cái\n*   Súng hàn bán tự động CSH-35F (350A, flex) — 3.250.000đ/cái\n*   Sú",
+    "tools": [
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0432",
+    "intent": "AGGREGATE",
+    "query": "bên bạn có những hệ súng nào",
+    "exp": [
+      "ACC-308RR",
+      "ACC-308RX",
+      "TK-308RR",
+      "TK-308RS",
+      "TK-308RX",
+      "TK-308RW",
+      "TK-308ALW",
+      "SRCT-308R"
+    ],
+    "got": "CHÀO ANH/CHỊ, BÊN EM HIỆN CÓ CÁC DÒNG SÚNG HÀN SAU ĐÂY Ạ:\n\n**SÚNG HÀN BÁN TỰ ĐỘNG (SEMI-AUTO MIG/MAG) HỆ N (LÀM MÁT BẰNG KHÍ):**\n*   SÚNG HÀN NHÔM CSA-252 (250A MIG) — 2.200.000Đ/CÁI\n*   SÚNG HÀN BÁN TỰ ĐỘNG CSL-18 (200A) — 1.800.000Đ/CÁI\n*   SÚNG HÀN BÁN TỰ ĐỘNG CSL-20 (200A) — 1.800.000Đ/CÁI\n*   S",
+    "full_resp": "Chào anh/chị, bên em hiện có các dòng súng hàn sau đây ạ:\n\n**Súng hàn bán tự động (Semi-auto MIG/MAG) hệ N (làm mát bằng khí):**\n*   Súng hàn nhôm CSA-252 (250A MIG) — 2.200.000đ/cái\n*   Súng hàn bán tự động CSL-18 (200A) — 1.800.000đ/cái\n*   Súng hàn bán tự động CSL-20 (200A) — 1.800.000đ/cái\n*   Súng hàn bán tự động CSL-20F (200A, flex) — 1.800.000đ/cái\n*   Súng hàn bán tự động CSL-20L (200A, long) — 1.800.000đ/cái\n*   Súng hàn bán tự động TL-20 (200A, air-cool) — 1.800.000đ/cái\n*   Súng hàn bán tự động TL-20F (200A, flex) — 1.850.000đ/cái\n*   Súng hàn bán tự động TL-20L (200A, long) — 1.900.000đ/cái\n*   Súng hàn nhôm nhẹ TLA-20 (200A) — 2.000.000đ/cái\n*   Súng hàn bán tự động CSH-35 (350A, air-cool) — 2.900.000đ/cái\n*   Súng hàn bán tự động CSH-35F (350A, flex) — 3.250.000đ/cái\n*   Súng",
+    "tools": [
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches",
+      "get_torches"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0436",
+    "intent": "AGGREGATE",
+    "query": "có mấy loại liner cho TK-308RR",
+    "exp": [
+      "016076",
+      "016077",
+      "016126",
+      "016127",
+      "0443013",
+      "0443016",
+      "037001",
+      "037002"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM KIẾM CÁC LINH KIỆN LIÊN QUAN ĐẾN SÚNG HÀN TK-308RR. TUY NHIÊN, EM CHƯA TÌM THẤY THÔNG TIN CỤ THỂ VỀ CÁC LOẠI DÂY DẪN HƯỚNG (LINER) CHO MODEL NÀY TRONG DỮ LIỆU HIỆN CÓ.\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN KHÁC TƯƠNG THÍCH VỚI SÚNG HÀN TK-308RR, ANH/CHỊ THAM KHẢO NHÉ:\n\n*   **BÉC HÀN",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm kiếm các linh kiện liên quan đến súng hàn TK-308RR. Tuy nhiên, em chưa tìm thấy thông tin cụ thể về các loại dây dẫn hướng (Liner) cho model này trong dữ liệu hiện có.\n\nEm tìm thấy một số linh kiện khác tương thích với súng hàn TK-308RR, anh/chị tham khảo nhé:\n\n*   **Béc hàn (Tip):**\n    *   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n    *   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n    *   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n    *   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n*   **Sứ chia khí (Orifice):**\n    *   Mã 003002 — Sứ chia khí N S (350A) — 45.000đ/cái\n*   **Cách điện (Insulator):**\n    *   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   **Thân gi",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0437",
+    "intent": "AGGREGATE",
+    "query": "danh sách tip body N 350A",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003",
+      "002017",
+      "023040",
+      "023007"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC THÂN GIỮ BÉC (TIP BODY) HỆ N 350A SAU ĐÂY Ạ:\n\n*   MÃ 016051 — THÂN GIỮ BÉC TK-308RR — 220.000Đ/CÁI\n*   MÃ 016503 — THÂN GIỮ BÉC ACC-308RR — 230.000Đ/CÁI\n\nANH/CHỊ CÓ CẦN EM TƯ VẤN THÊM VỀ CÁC LINH KIỆN KHÁC KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các thân giữ béc (Tip Body) hệ N 350A sau đây ạ:\n\n*   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   Mã 016503 — Thân giữ béc ACC-308RR — 230.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về các linh kiện khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0443",
+    "intent": "AGGREGATE",
+    "query": "có bao nhiêu loại chụp gốm 200A",
+    "exp": [
+      "038040",
+      "038041",
+      "038042"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY 10 LOẠI CHỤP KHÍ (CHỤP GỐM) CÓ THỂ DÙNG CHO DÒNG 350A, KHÔNG CÓ LOẠI CHỤP GỐM 200A Ạ. ANH/CHỊ THAM KHẢO DANH SÁCH DƯỚI ĐÂY NHÉ:\n\n*   MÃ 001002 — CHỤP KHÍ N 16MM 73L — 65.000Đ/CÁI\n*   MÃ 001003 — CHỤP KHÍ N 12MM 73L — 65.000Đ/CÁI\n*   MÃ 001004 — CHỤP KHÍ NHỎ DÀI 100L — 65.0",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy 10 loại chụp khí (chụp gốm) có thể dùng cho dòng 350A, không có loại chụp gốm 200A ạ. Anh/chị tham khảo danh sách dưới đây nhé:\n\n*   Mã 001002 — Chụp khí N 16mm 73L — 65.000đ/cái\n*   Mã 001003 — Chụp khí N 12mm 73L — 65.000đ/cái\n*   Mã 001004 — Chụp khí nhỏ dài 100L — 65.000đ/cái\n*   Mã 001007 — Chụp khí hàn điểm 88L — 65.000đ/cái\n*   Mã 001008 — Chụp khí N 18mm 73L — 65.000đ/cái\n*   Mã 001009 — Chụp khí N dày 16mm 73L — 65.000đ/cái\n*   Mã 001013 — Chụp khí N 16mm 63L — 60.000đ/cái\n*   Mã 001014 — Chụp khí bậc 73L — 65.000đ/cái\n*   Mã 001016 — Chụp khí nhỏ 73L — 65.000đ/cái\n*   Mã 023012 — Chụp khí D No.8 12mm — 70.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về loại chụp khí nào không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0459",
+    "intent": "AGGREGATE",
+    "query": "tất cả nắp hậu 500A hệ N",
+    "exp": [
+      "002004",
+      "002020",
+      "023011",
+      "001001",
+      "001010",
+      "001005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC NẮP HẬU 500A HỆ N NHƯ SAU:\n\n*   MÃ 56Y44 — NẮP ĐUÔI L — TA-12 HEAVY DUTY — 55.000Đ/CÁI\n*   MÃ 56Y45 — NẮP ĐUÔI S — TA-12 HEAVY DUTY — 45.000Đ/CÁI\n\nANH/CHỊ CÓ CẦN EM TÌM THÊM LINH KIỆN NÀO KHÁC KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các nắp hậu 500A hệ N như sau:\n\n*   Mã 56Y44 — Nắp đuôi L — TA-12 heavy duty — 55.000đ/cái\n*   Mã 56Y45 — Nắp đuôi S — TA-12 heavy duty — 45.000đ/cái\n\nAnh/chị có cần em tìm thêm linh kiện nào khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0481",
+    "intent": "INSTALLATION",
+    "query": "vặn béc bao nhiêu Nm TL-35",
+    "exp": [
+      "TL-35"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nĐỐI VỚI VIỆC VẶN BÉC HÀN (CONTACT TIP), LỰC SIẾT KHUYẾN NGHỊ LÀ **3 N·M**.\n\n**LƯU Ý QUAN TRỌNG:**\n*   ANH/CHỊ NÊN SỬ DỤNG DỤNG CỤ CÓ CÀI ĐẶT LỰC SIẾT TRƯỚC (NHƯ HANDY TIP CHANGER MÃ 046703 VỚI TAY CẦM TG3 CỦA TONE) ĐỂ TRÁNH SIẾT QUÁ CHẶT.\n*   SIẾT QUÁ CHẶT CÓ THỂ LÀM HỎNG BÉC HÀN VÀ T",
+    "full_resp": "Chào anh/chị,\n\nĐối với việc vặn béc hàn (Contact Tip), lực siết khuyến nghị là **3 N·m**.\n\n**Lưu ý quan trọng:**\n*   Anh/chị nên sử dụng dụng cụ có cài đặt lực siết trước (như Handy Tip Changer Mã 046703 với tay cầm TG3 của TONE) để tránh siết quá chặt.\n*   Siết quá chặt có thể làm hỏng béc hàn và thân giữ béc (Tip Adapter).\n\n**Linh kiện liên quan:**\n*   Mã 002001 — Béc hàn N 0.9mm x 45L — 18.000đ/cái\n*   Mã 002002 — Béc hàn N 1.0mm x 45L — 18.000đ/cái\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002005 — Béc hàn N 0.8mm x 45L — 18.000đ/cái\n*   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n\nAnh/chị có cần em hướng dẫn chi tiết các bước thay thế béc hàn không ạ?",
+    "tools": [
+      "get_replacement_steps"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0485",
+    "intent": "INSTALLATION",
+    "query": "lực siết thân giữ béc bao nhiêu Nm",
+    "exp": [
+      "002003",
+      "002001",
+      "002002",
+      "002005"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nLỰC SIẾT THÂN GIỮ BÉC ĐƯỢC KHUYẾN NGHỊ LÀ **8 N·M**.\n\n**LƯU Ý QUAN TRỌNG:**\n*   NÊN SỬ DỤNG CỜ LÊ LỰC ĐỂ ĐẢM BẢO LỰC SIẾT CHÍNH XÁC.\n*   KHI THÂN GIỮ BÉC BỊ HỎNG DO NHIỆT HOẶC REN BỊ KẸT, ANH/CHỊ CẦN THAY THẾ CẨN THẬN. SIẾT QUÁ CHẶT CÓ THỂ LÀM HỎNG REN.\n\n**LINH KIỆN LIÊN QUAN:**\n*   M",
+    "full_resp": "Chào anh/chị,\n\nLực siết thân giữ béc được khuyến nghị là **8 N·m**.\n\n**Lưu ý quan trọng:**\n*   Nên sử dụng cờ lê lực để đảm bảo lực siết chính xác.\n*   Khi thân giữ béc bị hỏng do nhiệt hoặc ren bị kẹt, anh/chị cần thay thế cẩn thận. Siết quá chặt có thể làm hỏng ren.\n\n**Linh kiện liên quan:**\n*   Mã 036001 — Thân giữ béc CS Loại A (350A) — 180.000đ/cái\n*   Mã 016403 — Thân giữ béc TK-508RR — 250.000đ/cái\n*   Mã 016051 — Thân giữ béc TK-308RR — 220.000đ/cái\n*   Mã 016503 — Thân giữ béc ACC-308RR — 230.000đ/cái\n\nAnh/chị đang sử dụng loại súng hàn nào để em có thể tư vấn chính xác hơn ạ?",
+    "tools": [
+      "get_replacement_steps"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0497",
+    "intent": "REPAIR",
+    "query": "bắn bi",
+    "exp": [
+      "001002",
+      "001001",
+      "002003",
+      "003001"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM LÀ TRỢ LÝ KỸ THUẬT CỦA AUTOSS. ANH/CHỊ ĐANG GẶP VẤN ĐỀ GÌ VỚI SÚNG HÀN Ạ? ANH/CHỊ CÓ THỂ MÔ TẢ RÕ HƠN VỀ TÌNH TRẠNG \"BẮN BI\" ĐỂ EM HỖ TRỢ TỐT NHẤT KHÔNG Ạ? VÍ DỤ NHƯ:\n\n*   SÚNG HÀN CỦA ANH/CHỊ LÀ LOẠI NÀO (MIG/MAG/TIG)?\n*   TRIỆU CHỨNG \"BẮN BI\" NÀY XẢY RA NHƯ THẾ NÀO (VÍ DỤ: BẮN TÓE",
+    "full_resp": "Chào anh/chị, em là trợ lý kỹ thuật của Autoss. Anh/chị đang gặp vấn đề gì với súng hàn ạ? Anh/chị có thể mô tả rõ hơn về tình trạng \"bắn bi\" để em hỗ trợ tốt nhất không ạ? Ví dụ như:\n\n*   Súng hàn của anh/chị là loại nào (MIG/MAG/TIG)?\n*   Triệu chứng \"bắn bi\" này xảy ra như thế nào (ví dụ: bắn tóe nhiều, mối hàn không đều, có tiếng nổ lách tách...)?\n*   Anh/chị đang hàn vật liệu gì và dùng dây hàn cỡ bao nhiêu?\n\nEm sẽ cố gắng tìm nguyên nhân và cách khắc phục cho anh/chị ạ.",
+    "tools": [],
+    "cause": "no_tool_called",
+    "http_status": 200
+  },
+  {
+    "id": "E0502",
+    "intent": "REPAIR",
+    "query": "súng ACC-308RR bị súng bị rò khí",
+    "exp": [
+      "003001",
+      "003002",
+      "004001",
+      "004002"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG SÚNG HÀN ACC-308RR BỊ RÒ KHÍ CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n*   VÒNG ĐỆM CHỮ O (O-RING) CỦA DÂY DẪN HƯỚNG (LINER) BỊ THIẾU HOẶC HỎNG.\n*   SỨ CHIA KHÍ (ORIFICE) BỊ NỨT HOẶC LẮP KHÔNG ĐÚNG VỊ TRÍ.\n*   CÁCH ĐIỆN (INSULATOR) BỊ HỎNG LÀM KHÍ BỊ RÒ.\n*   BÉC HÀN (NOZZLE) LẮP KH",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng súng hàn ACC-308RR bị rò khí có thể do một số nguyên nhân sau:\n*   Vòng đệm chữ O (O-ring) của dây dẫn hướng (Liner) bị thiếu hoặc hỏng.\n*   Sứ chia khí (Orifice) bị nứt hoặc lắp không đúng vị trí.\n*   Cách điện (Insulator) bị hỏng làm khí bị rò.\n*   Béc hàn (Nozzle) lắp không đúng cách.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Vòng đệm chữ O của dây dẫn hướng (Liner O-ring)\n*   Sứ chia khí (Orifice)\n*   Cách điện (Insulator)\n*   Béc hàn (Nozzle)\n\n**Cảnh báo quan trọng:**\n*   **Rò rỉ khí từ O-ring của dây dẫn hướng:** Vòng đệm chữ O ở cuối dây dẫn hướng giúp ngăn rò rỉ khí. Đảm bảo không bỏ sót khi lắp lại dây dẫn hướng.\n*   **Siết quá chặt bộ chuyển đổi béc hàn:** Siết quá chặt bộ chuyển đổi béc hàn có thể làm hỏng thân súng. Chỉ siết với lực tối đa 8 N·m.\n*   **Siế",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0503",
+    "intent": "REPAIR",
+    "query": "dây hàn bị kẹt không chạy",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM NHẬN THẤY ANH/CHỊ ĐANG GẶP TÌNH TRẠNG DÂY HÀN BỊ KẸT KHÔNG CHẠY. DỰA TRÊN THÔNG TIN NÀY, EM XIN ĐƯA RA MỘT SỐ NGUYÊN NHÂN VÀ LINH KIỆN CẦN KIỂM TRA NHƯ SAU:\n\n**NGUYÊN NHÂN CÓ THỂ:**\n*   DÂY DẪN HƯỚNG (LINER) BỊ TẮC NGHẼN DO MẠT DÂY HÀN HOẶC RỈ SÉT.\n*   ỐNG DẪN BÊN TRONG (INNER TUBE",
+    "full_resp": "Chào anh/chị,\n\nEm nhận thấy anh/chị đang gặp tình trạng dây hàn bị kẹt không chạy. Dựa trên thông tin này, em xin đưa ra một số nguyên nhân và linh kiện cần kiểm tra như sau:\n\n**Nguyên nhân có thể:**\n*   Dây dẫn hướng (Liner) bị tắc nghẽn do mạt dây hàn hoặc rỉ sét.\n*   Ống dẫn bên trong (Inner tube) bị mòn hoặc cong.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Dây dẫn hướng (Liner)\n*   Ống dẫn bên trong (Inner tube)\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có muốn em tìm hiểu thêm về các linh kiện này không ạ?",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0504",
+    "intent": "REPAIR",
+    "query": "súng WX500R bị dây hàn bị kẹt không chạy",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI TÌNH TRẠNG DÂY HÀN BỊ KẸT KHÔNG CHẠY TRÊN SÚNG WX500R, EM THẤY CÓ MỘT SỐ NGUYÊN NHÂN VÀ LINH KIỆN ANH/CHỊ CẦN KIỂM TRA/THAY THẾ NHƯ SAU:\n\n**NGUYÊN NHÂN CÓ THỂ:**\n*   DÂY DẪN HƯỚNG (LINER) BỊ TẮC DO MẠT DÂY HÀN HOẶC RỈ SÉT.\n*   ỐNG DẪN BÊN TRONG (INNER TUBE) BỊ MÒN HOẶC CONG.\n\n**LI",
+    "full_resp": "Chào anh/chị,\n\nVới tình trạng dây hàn bị kẹt không chạy trên súng WX500R, em thấy có một số nguyên nhân và linh kiện anh/chị cần kiểm tra/thay thế như sau:\n\n**Nguyên nhân có thể:**\n*   Dây dẫn hướng (Liner) bị tắc do mạt dây hàn hoặc rỉ sét.\n*   Ống dẫn bên trong (Inner tube) bị mòn hoặc cong.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Dây dẫn hướng (Liner)\n*   Ống dẫn bên trong (Inner tube)\n\n**Lưu ý quan trọng:**\n*   **Cảnh báo:** Luôn loại bỏ ba via sau khi cắt dây dẫn hướng (Liner). Ba via có thể cản trở việc cấp dây.\n\nAnh/chị có thể cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng loại dây dẫn hướng (Liner) phù hợp không ạ?",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0507",
+    "intent": "REPAIR",
+    "query": "khói nhiều bất thường",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG KHÓI NHIỀU BẤT THƯỜNG CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   BÉC HÀN BỊ DÍNH BẮN TÓE.\n*   LỖ BÉC HÀN BỊ MÒN QUÁ GIỚI HẠN.\n*   LỖ CHIA KHÍ BỊ TẮC, LÀM GIẢM LƯỢNG KHÍ BẢO VỆ.\n*   THÔNG SỐ TỐC ĐỘ CẤP DÂY HOẶC ĐIỆN ÁP KHÔNG CHÍNH XÁC.\n\n**LINH KIỆN CẦN KIỂM TRA/THAY:**\n*   MÃ 00",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng khói nhiều bất thường có thể do một số nguyên nhân sau:\n\n*   Béc hàn bị dính bắn tóe.\n*   Lỗ béc hàn bị mòn quá giới hạn.\n*   Lỗ chia khí bị tắc, làm giảm lượng khí bảo vệ.\n*   Thông số tốc độ cấp dây hoặc điện áp không chính xác.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 002001 — Béc hàn N 0.9mm\n*   Mã 003001 — Chụp khí côn 13mm\n*   Mã 004001 — Sứ chia khí\n\nAnh/chị có thể kiểm tra các linh kiện trên và thông số máy để khắc phục tình trạng này. Nếu cần hỗ trợ thêm, anh/chị cứ cho em biết nhé.",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0511",
+    "intent": "REPAIR",
+    "query": "chụp khí bị nám đen",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG CHỤP KHÍ BỊ NÁM ĐEN THƯỜNG LIÊN QUAN ĐẾN VIỆC RÒ RỈ KHÍ HOẶC KHÍ KHÔNG RA ĐỦ, DẪN ĐẾN MỐI HÀN XẤU HOẶC RỖ KHÍ.\n\n**NGUYÊN NHÂN CÓ THỂ:**\n*   VÒNG ĐỆM O-RING CỦA DÂY DẪN HƯỚNG BỊ THIẾU HOẶC HỎNG.\n*   SỨ CHIA KHÍ (ORIFICE) BỊ NỨT HOẶC LẮP KHÔNG ĐÚNG VỊ TRÍ.\n*   CÁCH ĐIỆN (INSU",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng chụp khí bị nám đen thường liên quan đến việc rò rỉ khí hoặc khí không ra đủ, dẫn đến mối hàn xấu hoặc rỗ khí.\n\n**Nguyên nhân có thể:**\n*   Vòng đệm O-ring của dây dẫn hướng bị thiếu hoặc hỏng.\n*   Sứ chia khí (Orifice) bị nứt hoặc lắp không đúng vị trí.\n*   Cách điện (Insulator) bị hỏng, làm khí bị rò.\n*   Chụp khí (Nozzle) lắp không đúng cách.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 002001 — Béc hàn N 0.9mm\n*   Mã 003001 — Sứ chia khí\n*   Mã 004001 — Cách điện\n*   Mã 005001 — Chụp khí\n\nAnh/chị có thể kiểm tra các linh kiện này để xác định nguyên nhân chính xác ạ. Nếu cần hỗ trợ thêm, anh/chị cứ báo em nhé.",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0512",
+    "intent": "REPAIR",
+    "query": "súng A-350R bị chụp khí bị nám đen",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG CHỤP KHÍ BỊ NÁM ĐEN TRÊN SÚNG A-350R THƯỜNG LIÊN QUAN ĐẾN VIỆC RÒ RỈ KHÍ HOẶC KHÍ KHÔNG RA ĐỦ. NGUYÊN NHÂN CÓ THỂ DO:\n*   VÒNG ĐỆM O-RING CỦA DÂY DẪN HƯỚNG BỊ THIẾU HOẶC HỎNG.\n*   SỨ CHIA KHÍ BỊ NỨT HOẶC LẮP KHÔNG ĐÚNG VỊ TRÍ.\n*   CÁCH ĐIỆN BỊ HỎNG LÀM KHÍ BỊ RÒ RỈ.\n*   BÉC",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng chụp khí bị nám đen trên súng A-350R thường liên quan đến việc rò rỉ khí hoặc khí không ra đủ. Nguyên nhân có thể do:\n*   Vòng đệm O-ring của dây dẫn hướng bị thiếu hoặc hỏng.\n*   Sứ chia khí bị nứt hoặc lắp không đúng vị trí.\n*   Cách điện bị hỏng làm khí bị rò rỉ.\n*   Béc hàn lắp không đúng cách.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Vòng đệm O-ring của dây dẫn hướng (Liner O-ring)\n*   Sứ chia khí (Orifice)\n*   Cách điện (Insulator)\n*   Béc hàn (Nozzle)\n\n**Lưu ý quan trọng:**\n*   **Rò rỉ khí từ O-ring dây dẫn hướng:** Vòng đệm O-ring ở cuối dây dẫn hướng giúp ngăn rò rỉ khí. Anh/chị đừng quên lắp nó khi lắp lại dây dẫn hướng.\n*   **Siết quá chặt béc hàn:** Việc siết quá chặt béc hàn có thể làm hỏng cả béc hàn và thân giữ béc. Anh/chị nên siết với lực tối đa 3 N·",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0513",
+    "intent": "REPAIR",
+    "query": "liner bị kẹt dây",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG DÂY HÀN BỊ KẸT KHÔNG CHẠY CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   **DÂY DẪN HƯỚNG (LINER) BỊ TẮC DO MẠT DÂY HOẶC GỈ SÉT:** MẠT DÂY HOẶC GỈ SÉT TÍCH TỤ BÊN TRONG LINER CÓ THỂ LÀM CẢN TRỞ CHUYỂN ĐỘNG CỦA DÂY HÀN.\n*   **ỐNG DẪN BÊN TRONG BỊ MÒN HOẶC CONG:** ỐNG DẪN BỊ MÒN HOẶC ",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng dây hàn bị kẹt không chạy có thể do một số nguyên nhân sau:\n\n*   **Dây dẫn hướng (Liner) bị tắc do mạt dây hoặc gỉ sét:** Mạt dây hoặc gỉ sét tích tụ bên trong liner có thể làm cản trở chuyển động của dây hàn.\n*   **Ống dẫn bên trong bị mòn hoặc cong:** Ống dẫn bị mòn hoặc cong vênh cũng có thể gây kẹt dây.\n*   **Chiều dài dây dẫn hướng (Liner) không chính xác:** Liner quá dài hoặc quá ngắn so với súng hàn có thể ảnh hưởng đến quá trình cấp dây.\n*   **Cuộn dây hàn bị rối:** Dây hàn trên cuộn bị rối cũng là một nguyên nhân phổ biến.\n\n**Linh kiện cần kiểm tra/thay:**\n\nAnh/chị nên kiểm tra dây dẫn hướng (Liner) trước tiên. Về dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em tư ",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0514",
+    "intent": "REPAIR",
+    "query": "súng YMSA-500R bị liner bị kẹt dây",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI TÌNH TRẠNG SÚNG YMSA-500R BỊ KẸT DÂY, NGUYÊN NHÂN CÓ THỂ DO:\n*   DÂY DẪN HƯỚNG (LINER) BỊ TẮC NGHẼN DO MẠT DÂY HOẶC GỈ SÉT.\n*   ỐNG DẪN BÊN TRONG BỊ MÒN HOẶC CONG.\n*   CHIỀU DÀI DÂY DẪN HƯỚNG (LINER) KHÔNG CHÍNH XÁC.\n*   CUỘN DÂY HÀN BỊ RỐI.\n\n**LINH KIỆN CẦN KIỂM TRA/THAY:**\nĐỂ KH",
+    "full_resp": "Chào anh/chị,\n\nVới tình trạng súng YMSA-500R bị kẹt dây, nguyên nhân có thể do:\n*   Dây dẫn hướng (Liner) bị tắc nghẽn do mạt dây hoặc gỉ sét.\n*   Ống dẫn bên trong bị mòn hoặc cong.\n*   Chiều dài dây dẫn hướng (Liner) không chính xác.\n*   Cuộn dây hàn bị rối.\n\n**Linh kiện cần kiểm tra/thay:**\nĐể khắc phục tình trạng này, anh/chị nên kiểm tra và thay thế dây dẫn hướng (Liner).\n\n**Lưu ý quan trọng:**\n*   **Nguy hiểm điện giật:** Dây hàn, béc hàn và thân giữ béc hàn mang điện khi súng đang hoạt động. TUYỆT ĐỐI không chạm vào các bộ phận này khi máy hàn đang BẬT. Luôn TẮT tất cả nguồn điện tại hộp phân phối trước khi kiểm tra hoặc bảo trì.\n*   **O-ring của Liner:** Vòng O-ring ở cuối dây dẫn hướng giúp ngăn rò rỉ khí. Đừng bỏ qua bộ phận này khi lắp lại dây dẫn hướng.\n*   **Bavia Liner:** Sau",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0516",
+    "intent": "REPAIR",
+    "query": "súng TLA-20 bị hồ quang nhảy loạn",
+    "exp": [
+      "002003",
+      "003001",
+      "004001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG HỒ QUANG KHÔNG ỔN ĐỊNH HOẶC NHẢY LOẠN TRÊN SÚNG HÀN TLA-20 CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   LỖ BÉC HÀN BỊ MÒN HOẶC QUÁ CỠ.\n*   LỖ SỨ CHIA KHÍ BỊ TẮC, LÀM GIẢM LƯỢNG KHÍ BẢO VỆ.\n*   CÁCH ĐIỆN BỊ HỎNG, GÂY RÒ RỈ ĐIỆN.\n*   TIẾP XÚC GIỮA BÉC HÀN VÀ DÂY HÀN KÉM.\n\n**LINH KI",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng hồ quang không ổn định hoặc nhảy loạn trên súng hàn TLA-20 có thể do một số nguyên nhân sau:\n\n*   Lỗ béc hàn bị mòn hoặc quá cỡ.\n*   Lỗ sứ chia khí bị tắc, làm giảm lượng khí bảo vệ.\n*   Cách điện bị hỏng, gây rò rỉ điện.\n*   Tiếp xúc giữa béc hàn và dây hàn kém.\n\n**Linh kiện cần kiểm tra/thay:**\nĐể khắc phục tình trạng này, anh/chị nên kiểm tra và thay thế các linh kiện sau:\n\n*   Béc hàn (Contact tip)\n*   Sứ chia khí (Orifice)\n*   Cách điện (Insulator)\n\n**Lưu ý quan trọng:**\n\n*   **Nguy hiểm điện giật:** Dây hàn, béc hàn và thân giữ béc hàn mang điện khi súng đang hoạt động. TUYỆT ĐỐI không chạm vào các bộ phận này khi máy hàn đang BẬT. Luôn TẮT tất cả nguồn điện tại hộp phân phối trước khi kiểm tra hoặc bảo trì.\n*   **Nóng bỏng:** Béc hàn và chụp khí trở nên rất",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0519",
+    "intent": "REPAIR",
+    "query": "dây ra không đều",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM THẤY ANH/CHỊ ĐANG GẶP TÌNH TRẠNG DÂY RA KHÔNG ĐỀU. DỰA TRÊN THÔNG TIN ANH/CHỊ CUNG CẤP, EM PHỎNG ĐOÁN CÓ THỂ NGUYÊN NHÂN LIÊN QUAN ĐẾN CÁC VẤN ĐỀ SAU:\n\n*   **DÂY DẪN HƯỚNG (LINER) BỊ TẮC DO MẠT DÂY HOẶC RỈ SÉT:** ĐIỀU NÀY LÀM CẢN TRỞ DÂY HÀN DI CHUYỂN TRƠN TRU.\n*   **ỐNG DẪN BÊN TRO",
+    "full_resp": "Chào anh/chị, em thấy anh/chị đang gặp tình trạng dây ra không đều. Dựa trên thông tin anh/chị cung cấp, em phỏng đoán có thể nguyên nhân liên quan đến các vấn đề sau:\n\n*   **Dây dẫn hướng (Liner) bị tắc do mạt dây hoặc rỉ sét:** Điều này làm cản trở dây hàn di chuyển trơn tru.\n*   **Ống dẫn bên trong bị mòn hoặc cong:** Ống dẫn bị biến dạng cũng có thể khiến dây hàn bị kẹt.\n\n**Linh kiện cần kiểm tra/thay:**\n\n*   Mã 002001 — Dây dẫn hướng (Liner)\n*   Mã 002002 — Ống dẫn bên trong\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có muốn em tìm kiếm thêm thông tin về các linh kiện này không ạ?",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0520",
+    "intent": "REPAIR",
+    "query": "súng WX500R bị dây ra không đều",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM NHẬN THẤY ANH/CHỊ ĐANG GẶP VẤN ĐỀ DÂY RA KHÔNG ĐỀU VỚI SÚNG WX500R. DỰA TRÊN THÔNG TIN ANH/CHỊ CUNG CẤP, CÓ THỂ SÚNG CỦA MÌNH ĐANG GẶP TÌNH TRẠNG \"DÂY HÀN BỊ KẸT KHÔNG CHẠY\" HOẶC \"HỒ QUANG KHÔNG ỔN ĐỊNH\".\n\n**NGUYÊN NHÂN CÓ THỂ GÂY RA HIỆN TƯỢNG NÀY:**\n\n*   **DÂY DẪN HƯỚNG (LINER) B",
+    "full_resp": "Chào anh/chị,\n\nEm nhận thấy anh/chị đang gặp vấn đề dây ra không đều với súng WX500R. Dựa trên thông tin anh/chị cung cấp, có thể súng của mình đang gặp tình trạng \"dây hàn bị kẹt không chạy\" hoặc \"hồ quang không ổn định\".\n\n**Nguyên nhân có thể gây ra hiện tượng này:**\n\n*   **Dây dẫn hướng (Liner) bị tắc nghẽn do mạt dây hoặc rỉ sét:** Mạt dây hoặc rỉ sét tích tụ trong liner có thể làm cản trở quá trình cấp dây, dẫn đến dây ra không đều hoặc bị kẹt.\n*   **Ống dẫn bên trong (Inner tube) bị mòn hoặc cong:** Ống dẫn bị mòn hoặc cong cũng có thể gây ma sát lớn, làm dây ra không ổn định.\n*   **Lỗ béc hàn (Contact tip) bị mòn hoặc quá cỡ:** Lỗ béc hàn bị mòn hoặc quá cỡ sẽ làm tiếp xúc điện kém, gây ra hồ quang không ổn định.\n*   **Sứ chia khí (Orifice) bị tắc nghẽn làm giảm lượng khí bảo vệ:** ",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0522",
+    "intent": "REPAIR",
+    "query": "súng WX500R bị khí không ra",
+    "exp": [
+      "003001",
+      "003002",
+      "004001",
+      "004002"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI TÌNH TRẠNG SÚNG WX500R BỊ KHÍ KHÔNG RA ĐỦ, EM XIN ĐƯA RA MỘT SỐ NGUYÊN NHÂN VÀ LINH KIỆN CẦN KIỂM TRA/THAY THẾ NHƯ SAU:\n\n**NGUYÊN NHÂN CÓ THỂ:**\n*   VÒNG ĐỆM CHỮ O (O-RING) CỦA DÂY DẪN HƯỚNG (LINER) BỊ THIẾU HOẶC HỎNG.\n*   SỨ CHIA KHÍ (ORIFICE) BỊ NỨT HOẶC LẮP ĐẶT KHÔNG ĐÚNG VỊ TR",
+    "full_resp": "Chào anh/chị,\n\nVới tình trạng súng WX500R bị khí không ra đủ, em xin đưa ra một số nguyên nhân và linh kiện cần kiểm tra/thay thế như sau:\n\n**Nguyên nhân có thể:**\n*   Vòng đệm chữ O (O-ring) của dây dẫn hướng (Liner) bị thiếu hoặc hỏng.\n*   Sứ chia khí (Orifice) bị nứt hoặc lắp đặt không đúng vị trí.\n*   Cách điện (Insulator) bị hỏng làm khí bị rò.\n*   Béc hàn (Nozzle) lắp đặt không đúng cách.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Vòng đệm chữ O của dây dẫn hướng (Liner O-ring)\n*   Sứ chia khí (Orifice)\n*   Cách điện (Insulator)\n*   Béc hàn (Nozzle)\n\n**Lưu ý quan trọng:**\n*   Khi lắp lại cách điện (Insulation Spacer) cho các súng làm mát bằng nước (YMSA-500W/508W và các loại tương tự), luôn phải phủ một lớp silicone. Nếu không, có thể gây ra lỗi chạm đất.\n*   Không siết quá chặt thân giữ ",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0525",
+    "intent": "REPAIR",
+    "query": "tiếng nổ khi hàn",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM THẤY ANH/CHỊ ĐANG GẶP TÌNH TRẠNG TIẾNG NỔ KHI HÀN. DỰA TRÊN THÔNG TIN ANH/CHỊ CUNG CẤP, EM PHỎNG ĐOÁN CÓ THỂ DÂY HÀN ĐANG BỊ KẸT HOẶC CÓ VẤN ĐỀ VỀ CHẤT LƯỢNG MỐI HÀN.\n\n**NẾU DÂY HÀN BỊ KẸT KHÔNG CHẠY (WIRE STUCK):**\nCÁC NGUYÊN NHÂN CÓ THỂ LÀ:\n*   DÂY DẪN HƯỚNG (LINER) BỊ TẮC DO MẠT",
+    "full_resp": "Chào anh/chị,\n\nEm thấy anh/chị đang gặp tình trạng tiếng nổ khi hàn. Dựa trên thông tin anh/chị cung cấp, em phỏng đoán có thể dây hàn đang bị kẹt hoặc có vấn đề về chất lượng mối hàn.\n\n**Nếu dây hàn bị kẹt không chạy (Wire stuck):**\nCác nguyên nhân có thể là:\n*   Dây dẫn hướng (Liner) bị tắc do mạt kim loại hoặc rỉ sét.\n*   Ống dẫn bên trong bị mòn hoặc cong.\n*   Chiều dài dây dẫn hướng không chính xác.\n*   Cuộn dây hàn bị rối.\n\n**Nếu mối hàn xấu, rỗ khí (Poor weld quality):**\nCác nguyên nhân có thể là:\n*   Khí bảo vệ không đủ do lỗ chia khí hoặc béc hàn bị tắc.\n*   Béc hàn bị mòn gây ra hồ quang không ổn định.\n\nĐể khắc phục tình trạng này, anh/chị vui lòng kiểm tra các linh kiện sau:\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 002001 — Béc hàn N 0.9mm\n*   Mã 003001 — Chụp khí N 12mm\n*   Mã ",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0526",
+    "intent": "REPAIR",
+    "query": "súng TL-20 bị tiếng nổ khi hàn",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG SÚNG HÀN TL-20 BỊ TIẾNG NỔ KHI HÀN CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n**NGUYÊN NHÂN CÓ THỂ:**\n*   DÂY DẪN HƯỚNG (LINER) BỊ TẮC DO MẠT DÂY HOẶC GỈ SÉT.\n*   ỐNG DẪN BÊN TRONG BỊ MÒN HOẶC CONG.\n*   CHIỀU DÀI DÂY DẪN HƯỚNG KHÔNG CHÍNH XÁC.\n*   CUỘN DÂY HÀN BỊ RỐI.\n\n**LINH KIỆN ",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng súng hàn TL-20 bị tiếng nổ khi hàn có thể do một số nguyên nhân sau:\n\n**Nguyên nhân có thể:**\n*   Dây dẫn hướng (Liner) bị tắc do mạt dây hoặc gỉ sét.\n*   Ống dẫn bên trong bị mòn hoặc cong.\n*   Chiều dài dây dẫn hướng không chính xác.\n*   Cuộn dây hàn bị rối.\n\n**Linh kiện cần kiểm tra/thay:**\nĐể khắc phục tình trạng này, anh/chị nên kiểm tra các linh kiện sau:\n*   Dây dẫn hướng (Liner)\n\n**Cảnh báo quan trọng:**\n*   **NGUY HIỂM: Điện giật từ các bộ phận mang điện:** Dây hàn, béc hàn và thân giữ béc mang điện khi súng hàn đang hoạt động. Tuyệt đối không chạm vào các bộ phận này khi súng hàn đang BẬT. Tiếp xúc trực tiếp có thể gây điện giật hoặc bỏng nặng. Luôn TẮT tất cả nguồn điện tại hộp phân phối trước khi kiểm tra hoặc bảo trì.\n*   **Béc hàn và béc nối rất nóng",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0527",
+    "intent": "REPAIR",
+    "query": "dây cuộn trong liner",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM TÌM ĐƯỢC CÁC LOẠI DÂY DẪN HƯỚNG (LINER) SAU Ạ:\n\n*   MÃ 016076 — LINER 308RR/309R1-N 1.3M (DÂY 1.0-1.2MM) — 250.000Đ/CÁI\n*   MÃ 016077 — LINER 308RR/309R1-N 1.6M (DÂY 1.0-1.2MM) — 250.000Đ/CÁI\n*   MÃ 016126 — LINER 308RR/309R1-N 1.3M (DÂY 1.4-1.6MM) — 288.000Đ/CÁI\n*   MÃ 016127 — LIN",
+    "full_resp": "Chào anh/chị, em tìm được các loại dây dẫn hướng (Liner) sau ạ:\n\n*   Mã 016076 — Liner 308RR/309R1-N 1.3m (dây 1.0-1.2mm) — 250.000đ/cái\n*   Mã 016077 — Liner 308RR/309R1-N 1.6m (dây 1.0-1.2mm) — 250.000đ/cái\n*   Mã 016126 — Liner 308RR/309R1-N 1.3m (dây 1.4-1.6mm) — 288.000đ/cái\n*   Mã 016127 — Liner 308RR/309R1-N 1.6m (dây 1.4-1.6mm) — 288.000đ/cái\n*   Mã 022101 — Liner P 0.9-1.2mm 3m — 250.000đ/cái\n*   Mã 022102 — Liner P 0.9-1.2mm 4.5m — 250.000đ/cái\n*   Mã 022103 — Liner P 0.9-1.2mm 3m High DC — 250.000đ/cái\n*   Mã 022104 — Liner P 0.9-1.2mm 4.5m High DC — 250.000đ/cái\n*   Mã 022105 — Liner P 0.9-1.2mm 6m — 250.000đ/cái\n*   Mã 022106 — Liner P 1.2-1.6mm 3m — 250.000đ/cái\n\nĐể em có thể tư vấn chính xác loại Liner phù hợp nhất, anh/chị vui lòng cho em biết model súng hàn (ví dụ: TK-308R",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0528",
+    "intent": "REPAIR",
+    "query": "súng YMSA-308R bị dây cuộn trong liner",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ KIỂM TRA THÔNG TIN VỀ SỰ CỐ DÂY CUỘN TRONG LINER CỦA SÚNG YMSA-308R. ĐÂY LÀ MỘT SỐ NGUYÊN NHÂN VÀ CÁCH KHẮC PHỤC:\n\n**NGUYÊN NHÂN CÓ THỂ:**\n*   LINER BỊ TẮC NGHẼN DO MẠT DÂY HÀN HOẶC RỈ SÉT.\n*   ỐNG DẪN BÊN TRONG (INNER TUBE) BỊ MÒN HOẶC CONG.\n\n**LINH KIỆN CẦN KIỂM TRA/THAY:**\n* ",
+    "full_resp": "Chào anh/chị,\n\nEm đã kiểm tra thông tin về sự cố dây cuộn trong liner của súng YMSA-308R. Đây là một số nguyên nhân và cách khắc phục:\n\n**Nguyên nhân có thể:**\n*   Liner bị tắc nghẽn do mạt dây hàn hoặc rỉ sét.\n*   Ống dẫn bên trong (inner tube) bị mòn hoặc cong.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 002001 — Dây dẫn hướng (Liner)\n\n**Lưu ý quan trọng:**\n*   **O-ring của Liner:** Vòng O-ring ở cuối dây dẫn hướng (liner) giúp ngăn rò rỉ khí gas. Anh/chị đừng quên lắp lại nó khi thay liner nhé.\n*   **Cắt Liner:** Sau khi cắt dây dẫn hướng (liner) theo chiều dài phù hợp, hãy loại bỏ các gờ sắc (burr) để tránh làm kẹt dây hàn.\n*   **Siết béc hàn:** Siết béc hàn quá chặt có thể làm hỏng cả béc và thân giữ béc. Anh/chị nên siết với lực tối đa 3 N·m và sử dụng dụng cụ có cài đặt mô-men xoắn.\n* ",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0529",
+    "intent": "REPAIR",
+    "query": "dây không chạy đều TK-308RR",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM NHẬN THẤY ANH/CHỊ ĐANG GẶP VẤN ĐỀ DÂY HÀN KHÔNG CHẠY ĐỀU VỚI SÚNG TK-308RR.\n\nTHEO THÔNG TIN EM TÌM ĐƯỢC, NGUYÊN NHÂN CÓ THỂ DO:\n*   **DÂY DẪN HƯỚNG (LINER) BỊ TẮC NGHẼN DO MẠT DÂY HOẶC GỈ SÉT.**\n*   **ỐNG DẪN BÊN TRONG (INNER TUBE) BỊ MÒN HOẶC CONG.**\n\n**LINH KIỆN CẦN KIỂM TRA/THAY:",
+    "full_resp": "Chào anh/chị, em nhận thấy anh/chị đang gặp vấn đề dây hàn không chạy đều với súng TK-308RR.\n\nTheo thông tin em tìm được, nguyên nhân có thể do:\n*   **Dây dẫn hướng (Liner) bị tắc nghẽn do mạt dây hoặc gỉ sét.**\n*   **Ống dẫn bên trong (Inner tube) bị mòn hoặc cong.**\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 002001 — Dây dẫn hướng (Liner)\n*   Mã 002002 — Ống dẫn bên trong (Inner tube)\n\n**Ngoài ra, anh/chị cần lưu ý một số cảnh báo quan trọng khi bảo trì súng hàn:**\n*   **Nguy cơ điện giật:** Dây hàn, béc hàn và thân giữ béc hàn mang điện khi súng đang hoạt động. TUYỆT ĐỐI không chạm vào các bộ phận này khi súng đang BẬT. Luôn TẮT tất cả nguồn điện cấp tại hộp phân phối trước khi kiểm tra hoặc bảo trì.\n*   **Bỏng nặng:** Béc hàn và béc tiếp xúc trở nên rất nóng sau khi sử dụng và có thể gây",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0530",
+    "intent": "REPAIR",
+    "query": "hồ quang hay tắt giữa chừng",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG HỒ QUANG KHÔNG ỔN ĐỊNH HOẶC HAY TẮT GIỮA CHỪNG CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   LỖ BÉC HÀN BỊ MÒN HOẶC QUÁ CỠ.\n*   LỖ SỨ CHIA KHÍ BỊ TẮC, LÀM GIẢM LƯU LƯỢNG KHÍ BẢO VỆ.\n*   CÁCH ĐIỆN BỊ HỎNG, GÂY RÒ RỈ ĐIỆN.\n*   TIẾP XÚC GIỮA BÉC HÀN VÀ DÂY HÀN KÉM.\n\n**LINH KIỆN CẦN K",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng hồ quang không ổn định hoặc hay tắt giữa chừng có thể do một số nguyên nhân sau:\n\n*   Lỗ béc hàn bị mòn hoặc quá cỡ.\n*   Lỗ sứ chia khí bị tắc, làm giảm lưu lượng khí bảo vệ.\n*   Cách điện bị hỏng, gây rò rỉ điện.\n*   Tiếp xúc giữa béc hàn và dây hàn kém.\n\n**Linh kiện cần kiểm tra/thay:**\n\n*   Mã 002001 — Béc hàn N 0.9mm\n*   Mã 003001 — Sứ chia khí\n*   Mã 004001 — Cách điện\n\nAnh/chị có thể kiểm tra các linh kiện trên để xác định nguyên nhân chính xác và thay thế nếu cần ạ. Anh/chị đang dùng súng hàn model nào để em tư vấn béc hàn và các linh kiện khác phù hợp hơn ạ?",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0532",
+    "intent": "REPAIR",
+    "query": "chụp khí bị nóng quá nhanh",
+    "exp": [
+      "001001",
+      "001002",
+      "001010"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KIỂM TRA THẤY TRIỆU CHỨNG \"CHỤP KHÍ BỊ NÓNG QUÁ NHANH\" CÓ THỂ LIÊN QUAN ĐẾN VẤN ĐỀ RÒ RỈ KHÍ HOẶC KHÍ KHÔNG RA ĐỦ.\n\n**CÁC NGUYÊN NHÂN VÀ LINH KIỆN CẦN KIỂM TRA/THAY:**\n*   **VÒNG ĐỆM O-RING CỦA DÂY DẪN HƯỚNG (LINER O-RING):** CÓ THỂ BỊ THIẾU HOẶC HỎNG.\n*   **SỨ CHIA KHÍ (ORIFICE):*",
+    "full_resp": "Chào anh/chị,\n\nEm kiểm tra thấy triệu chứng \"chụp khí bị nóng quá nhanh\" có thể liên quan đến vấn đề rò rỉ khí hoặc khí không ra đủ.\n\n**Các nguyên nhân và linh kiện cần kiểm tra/thay:**\n*   **Vòng đệm O-ring của dây dẫn hướng (Liner O-ring):** Có thể bị thiếu hoặc hỏng.\n*   **Sứ chia khí (Orifice):** Có thể bị nứt hoặc lắp đặt không đúng vị trí.\n*   **Cách điện (Insulator):** Có thể bị hỏng, làm khí gas bị rò rỉ.\n*   **Béc hàn (Nozzle):** Có thể lắp đặt không đúng cách.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 002001 — Béc hàn N 0.9mm\n*   Mã 002002 — Sứ chia khí\n*   Mã 002003 — Cách điện\n\nAnh/chị có thể kiểm tra các linh kiện này trên súng hàn của mình để xác định nguyên nhân chính xác ạ. Anh/chị có cần em tư vấn thêm về cách kiểm tra hoặc thay thế không ạ?",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0534",
+    "intent": "REPAIR",
+    "query": "liner bị kẹt dây ở đoạn giữa",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG DÂY HÀN BỊ KẸT Ở ĐOẠN GIỮA LINER CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   **LINER BỊ TẮC NGHẼN:** DO MẠT DÂY HÀN HOẶC RỈ SÉT BÁM VÀO BÊN TRONG.\n*   **ỐNG DẪN BÊN TRONG (INNER TUBE) BỊ MÒN HOẶC CONG:** ĐIỀU NÀY LÀM TĂNG MA SÁT VÀ CẢN TRỞ DÂY HÀN DI CHUYỂN.\n*   **CHIỀU DÀI LINE",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng dây hàn bị kẹt ở đoạn giữa liner có thể do một số nguyên nhân sau:\n\n*   **Liner bị tắc nghẽn:** Do mạt dây hàn hoặc rỉ sét bám vào bên trong.\n*   **Ống dẫn bên trong (inner tube) bị mòn hoặc cong:** Điều này làm tăng ma sát và cản trở dây hàn di chuyển.\n*   **Chiều dài liner không chính xác:** Liner quá dài hoặc quá ngắn so với súng hàn có thể gây ra vấn đề.\n*   **Cuộn dây hàn bị rối:** Dẫn đến việc cấp dây không đều và gây kẹt.\n\n**Linh kiện cần kiểm tra/thay:**\n\n*   **Dây dẫn hướng (Liner):** Anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng loại liner phù hợp ạ.\n\nAnh/chị có cần em tư vấn thêm về cách kiểm tra hoặc thay thế các linh kiện này không ạ?",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0536",
+    "intent": "REPAIR",
+    "query": "béc bị bám spatter nhiều bất thường",
+    "exp": [
+      "001002",
+      "001001",
+      "002003",
+      "003001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG BÉC HÀN BỊ BÁM SPATTER NHIỀU BẤT THƯỜNG CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   **BÉC HÀN (NOZZLE) BỊ NHIỄM BẨN DO TÍCH TỤ SPATTER:** BÉC BỊ BÁM BẨN SẼ LÀM THAY ĐỔI LUỒNG KHÍ BẢO VỆ, DẪN ĐẾN BẮN TÓE NHIỀU HƠN.\n*   **LỖ BÉC HÀN (CONTACT TIP) BỊ MÒN QUÁ MỨC:** LỖ BÉC BỊ MÒN SẼ",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng béc hàn bị bám spatter nhiều bất thường có thể do một số nguyên nhân sau:\n\n*   **Béc hàn (Nozzle) bị nhiễm bẩn do tích tụ spatter:** Béc bị bám bẩn sẽ làm thay đổi luồng khí bảo vệ, dẫn đến bắn tóe nhiều hơn.\n*   **Lỗ béc hàn (Contact Tip) bị mòn quá mức:** Lỗ béc bị mòn sẽ làm dây hàn ra không ổn định, gây ra hiện tượng bắn tóe.\n*   **Lỗ chia khí (Orifice) bị tắc nghẽn:** Khi lỗ chia khí bị tắc, lượng khí bảo vệ không đủ hoặc không đều, làm giảm hiệu quả bảo vệ mối hàn và tăng bắn tóe.\n*   **Thông số tốc độ cấp dây hoặc điện áp không chính xác:** Cài đặt thông số hàn không phù hợp cũng là nguyên nhân phổ biến gây bắn tóe.\n\n**Linh kiện cần kiểm tra/thay:**\n\n*   Béc hàn (Nozzle)\n*   Béc hàn (Contact Tip)\n*   Sứ chia khí (Orifice)\n\nAnh/chị có thể kiểm tra các linh k",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0537",
+    "intent": "REPAIR",
+    "query": "hàn bị lệch hồ quang sang một bên",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM KIỂM TRA THẤY TRIỆU CHỨNG \"HÀN BỊ LỆCH HỒ QUANG SANG MỘT BÊN\" KHÔNG CÓ TRONG CƠ SỞ DỮ LIỆU CỦA AUTOSS. TUY NHIÊN, EM TÌM THẤY MỘT SỐ VẤN ĐỀ LIÊN QUAN CÓ THỂ GIÚP ANH/CHỊ THAM KHẢO:\n\n**HỒ QUANG KHÔNG ỔN ĐỊNH / ARC UNSTABLE / HỒ QUANG NHẢY LOẠN:**\n*   LỖ BÉC HÀN BỊ MÒN HOẶC QUÁ CỠ.\n*",
+    "full_resp": "Chào anh/chị,\n\nEm kiểm tra thấy triệu chứng \"hàn bị lệch hồ quang sang một bên\" không có trong cơ sở dữ liệu của Autoss. Tuy nhiên, em tìm thấy một số vấn đề liên quan có thể giúp anh/chị tham khảo:\n\n**Hồ quang không ổn định / arc unstable / hồ quang nhảy loạn:**\n*   Lỗ béc hàn bị mòn hoặc quá cỡ.\n*   Lỗ sứ chia khí bị tắc làm giảm lượng khí bảo vệ.\n\n**Mối hàn xấu / poor weld quality / mối hàn rỗ khí:**\n*   Khí bảo vệ không đủ do lỗ sứ chia khí hoặc chụp khí bị tắc.\n*   Béc hàn bị mòn gây ra hồ quang không ổn định.\n\nAnh/chị có thể kiểm tra các linh kiện sau để xác định nguyên nhân:\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 002001 — Béc hàn N 0.9mm\n*   Mã 003001 — Sứ chia khí\n*   Mã 004001 — Chụp khí\n\nAnh/chị có thể mô tả chi tiết hơn về tình trạng lệch hồ quang hoặc cung cấp thêm thông tin ",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0538",
+    "intent": "REPAIR",
+    "query": "súng YMSA-500R bắn tóe rất nhiều",
+    "exp": [
+      "001002",
+      "001001",
+      "002003",
+      "003001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG SÚNG HÀN YMSA-500R BẮN TÓE NHIỀU CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   **BÉC HÀN (NOZZLE) BỊ BÁM BẨN:** BÉC HÀN BỊ DÍNH NHIỀU XỈ HÀN CÓ THỂ LÀM THAY ĐỔI HƯỚNG DÒNG KHÍ BẢO VỆ, DẪN ĐẾN BẮN TÓE.\n*   **LỖ BÉC HÀN (CONTACT TIP) BỊ MÒN:** LỖ BÉC HÀN BỊ MÒN QUÁ MỨC TIÊU CHUẨN SẼ",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng súng hàn YMSA-500R bắn tóe nhiều có thể do một số nguyên nhân sau:\n\n*   **Béc hàn (Nozzle) bị bám bẩn:** Béc hàn bị dính nhiều xỉ hàn có thể làm thay đổi hướng dòng khí bảo vệ, dẫn đến bắn tóe.\n*   **Lỗ béc hàn (Contact Tip) bị mòn:** Lỗ béc hàn bị mòn quá mức tiêu chuẩn sẽ ảnh hưởng đến sự tiếp xúc điện và hướng dây hàn, gây ra bắn tóe.\n*   **Lỗ chia khí (Orifice) bị tắc:** Lỗ chia khí bị tắc nghẽn sẽ làm giảm lượng khí bảo vệ, khiến mối hàn không được bảo vệ đầy đủ và dễ bắn tóe.\n*   **Thông số hàn không chính xác:** Tốc độ cấp dây hoặc điện áp hàn không phù hợp cũng là nguyên nhân gây bắn tóe.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Béc hàn (Nozzle)\n*   Béc hàn (Contact Tip)\n*   Sứ chia khí (Orifice)\n\n**Cảnh báo quan trọng khi bảo trì:**\n\n*   **Nguy cơ điện giật:",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0559",
+    "intent": "SEARCH_BY_DESC",
+    "query": "béc hàn 1 ly 6",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM TÌM THẤY MỘT SỐ LOẠI BÉC HÀN 1.6MM NHƯ SAU:\n\n*   MÃ 002004 — BÉC HÀN N 1.6MM X 45L — 24.000Đ/CÁI\n*   MÃ 002010 — BÉC HÀN N DÀI 1.6MM 69L — 22.000Đ/CÁI\n*   MÃ 002019 — BÉC HÀN N HÀN NHÔM 1.6MM — 31.000Đ/CÁI\n*   MÃ 002107 — BÉC HÀN TCC 1.6MM — 20.000Đ/CÁI\n*   MÃ 002501 — BÉC HÀN N MAG",
+    "full_resp": "Chào anh/chị, em tìm thấy một số loại béc hàn 1.6mm như sau:\n\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   Mã 002010 — Béc hàn N dài 1.6mm 69L — 22.000đ/cái\n*   Mã 002019 — Béc hàn N hàn nhôm 1.6mm — 31.000đ/cái\n*   Mã 002107 — Béc hàn TCC 1.6mm — 20.000đ/cái\n*   Mã 002501 — Béc hàn N MAG 1.6mm thân thẳng — 24.000đ/cái\n*   Mã 002506 — Béc hàn N MIG 1.6mm thân thẳng — 24.000đ/cái\n*   Mã 016032 — Béc hàn MAN 1.6mm ngắn — 22.000đ/cái\n*   Mã 023011 — Béc hàn D 1.6mm — 26.000đ/cái\n*   Mã 023027 — Béc hàn Unionmelt 1.6mm 40L (hàn ngập xỉ) — 20.000đ/cái\n*   Mã 023044 — Béc hàn D hàn nhôm 1.6mm — 24.000đ/cái\n\nAnh/chị đang dùng súng hàn thuộc hệ nào (ví dụ: hệ N, hệ D, hệ TCC) để em tư vấn loại béc phù hợp nhất ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0561",
+    "intent": "SEARCH_BY_DESC",
+    "query": "cho tôi mua 10 cái chụp khí 500A bên bạn có không",
+    "exp": [
+      "001002",
+      "001003",
+      "001008",
+      "001009",
+      "001014"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM CÓ CÁC LOẠI CHỤP KHÍ 500A NHƯ SAU Ạ:\n\n*   MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001005 — CHỤP KHÍ N 13MM 500A 88L — 85.000Đ/CÁI\n*   MÃ 001010 — CHỤP KHÍ N 16MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001012 — CHỤP KHÍ N 19MM 500A 84L — 90.000Đ/CÁI\n*   MÃ 001015 — CHỤP KHÍ",
+    "full_resp": "Chào anh/chị,\n\nEm có các loại chụp khí 500A như sau ạ:\n\n*   Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n*   Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n*   Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n*   Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n*   Mã 001015 — Chụp khí N 16mm 500A 84L — 90.000đ/cái\n*   Mã CN501671 — Chụp khí carbon 16mm 71L — 238.000đ/cái\n*   Mã CN501684 — Chụp khí carbon 16mm 84L — 225.000đ/cái\n*   Mã CN501688 — Chụp khí carbon 16mm 88L — 238.000đ/cái\n*   Mã CN501971 — Chụp khí carbon 19mm 71L — 238.000đ/cái\n*   Mã CN501984 — Chụp khí carbon 19mm 84L — 225.000đ/cái\n\nAnh/chị muốn lấy loại nào và số lượng bao nhiêu ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0565",
+    "intent": "REPAIR",
+    "query": "dây không chạy đều TK-308RR",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM NHẬN ĐƯỢC THÔNG TIN VỀ VIỆC DÂY HÀN KHÔNG CHẠY ĐỀU VỚI SÚNG TK-308RR.\n\nHIỆN TƯỢNG DÂY KHÔNG CHẠY ĐỀU THƯỜNG LIÊN QUAN ĐẾN CÁC NGUYÊN NHÂN SAU:\n*   **DÂY DẪN HƯỚNG (LINER) BỊ TẮC NGHẼN** DO MẠT DÂY HOẶC GỈ SÉT.\n*   **ỐNG DẪN BÊN TRONG (INNER TUBE) BỊ MÒN HOẶC CONG.**\n\n**LINH KIỆN CẦN",
+    "full_resp": "Chào anh/chị, em nhận được thông tin về việc dây hàn không chạy đều với súng TK-308RR.\n\nHiện tượng dây không chạy đều thường liên quan đến các nguyên nhân sau:\n*   **Dây dẫn hướng (Liner) bị tắc nghẽn** do mạt dây hoặc gỉ sét.\n*   **Ống dẫn bên trong (Inner tube) bị mòn hoặc cong.**\n\n**Linh kiện cần kiểm tra/thay:**\n*   Dây dẫn hướng (Liner)\n*   Ống dẫn bên trong (Inner tube)\n\n**Lưu ý quan trọng:**\n*   **Loại bỏ ba via** sau khi cắt dây dẫn hướng (Liner). Ba via có thể cản trở việc cấp dây.\n*   **Dây hàn, béc hàn (Contact tip) và thân giữ béc (Tip body) mang điện** khi súng hàn đang hoạt động. NGUY HIỂM: Không bao giờ chạm vào các bộ phận mang điện này khi súng hàn BẬT. Tiếp xúc trực tiếp có thể gây điện giật hoặc bỏng nặng. Hãy TẮT tất cả nguồn điện tại hộp phân phối trước khi kiểm tra ho",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0591",
+    "intent": "SEARCH_BY_DESC",
+    "query": "chụp cách điện cho TIG",
+    "exp": [
+      "DX-0211251",
+      "DX-0211291"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC LOẠI CHỤP KHÍ GỐM VÀ SỨ CÁCH ĐIỆN CHO SÚNG HÀN TIG NHƯ SAU:\n\n**CHỤP KHÍ GỐM:**\n*   MÃ 10N44 — CHỤP KHÍ GỐM NO.12 / 19MM — DÒNG TA-17/18/26 — 58.000Đ/CÁI\n*   MÃ 10N45 — CHỤP KHÍ GỐM NO.10 / 16MM — DÒNG TA-17/18/26 — 50.000Đ/CÁI\n*   MÃ 10N46 — CHỤP KHÍ GỐM NO.8 / 12.5MM ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các loại chụp khí gốm và sứ cách điện cho súng hàn TIG như sau:\n\n**Chụp khí gốm:**\n*   Mã 10N44 — Chụp khí gốm No.12 / 19mm — dòng TA-17/18/26 — 58.000đ/cái\n*   Mã 10N45 — Chụp khí gốm No.10 / 16mm — dòng TA-17/18/26 — 50.000đ/cái\n*   Mã 10N46 — Chụp khí gốm No.8 / 12.5mm — dòng TA-17/18/26 — 45.000đ/cái\n*   Mã 10N47 — Chụp khí gốm No.7 / 11mm — dòng TA-17/18/26 — 42.000đ/cái\n*   Mã 10N47L — Chụp khí gốm dài No.7L — dòng TA-17/18/26 — 42.000đ/cái\n*   Mã 10N48 — Chụp khí gốm No.6 / 10mm — dòng TA-17/18/26 — 40.000đ/cái\n*   Mã 10N48L — Chụp khí gốm dài No.6L — dòng TA-17/18/26 — 40.000đ/cái\n*   Mã 10N49 — Chụp khí gốm No.5 / 8mm — dòng TA-17/18/26 — 38.000đ/cái\n*   Mã 10N49L — Chụp khí gốm dài No.5L — dòng TA-17/18/26 — 38.000đ/cái\n*   Mã 10N50 — Chụp khí gốm No.4 ",
+    "tools": [
+      "search_parts",
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0592",
+    "intent": "SEARCH_BY_DESC",
+    "query": "collet 2.4mm TIG",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY COLLET 2.4MM TIG THEO YÊU CẦU CỦA ANH/CHỊ ĐÂY Ạ:\n\n*   MÃ 018901 — COLLET 2.4MM TA-200/301 — 0Đ/CÁI\n\nANH/CHỊ CÓ CẦN EM TƯ VẤN THÊM VỀ CÁC LINH KIỆN KHÁC CHO SÚNG HÀN TIG KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy Collet 2.4mm TIG theo yêu cầu của anh/chị đây ạ:\n\n*   Mã 018901 — Collet 2.4mm TA-200/301 — 0đ/cái\n\nAnh/chị có cần em tư vấn thêm về các linh kiện khác cho súng hàn TIG không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0593",
+    "intent": "SEARCH_BY_DESC",
+    "query": "ceramic nozzle TIG 3.2",
+    "exp": [
+      "DX-0211251",
+      "DX-0211291"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY CÁC LOẠI CHỤP KHÍ GỐM TIG 3.2MM MÀ ANH/CHỊ YÊU CẦU NHƯ SAU:\n\n*   MÃ 10N44 — CHỤP KHÍ GỐM NO.12 / 19MM — DÒNG TA-17/18/26 — 58.000Đ/CÁI\n*   MÃ 10N45 — CHỤP KHÍ GỐM NO.10 / 16MM — DÒNG TA-17/18/26 — 50.000Đ/CÁI\n*   MÃ 10N46 — CHỤP KHÍ GỐM NO.8 / 12.5MM — DÒNG TA-17/18/26 — 4",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy các loại chụp khí gốm TIG 3.2mm mà anh/chị yêu cầu như sau:\n\n*   Mã 10N44 — Chụp khí gốm No.12 / 19mm — dòng TA-17/18/26 — 58.000đ/cái\n*   Mã 10N45 — Chụp khí gốm No.10 / 16mm — dòng TA-17/18/26 — 50.000đ/cái\n*   Mã 10N46 — Chụp khí gốm No.8 / 12.5mm — dòng TA-17/18/26 — 45.000đ/cái\n*   Mã 10N47 — Chụp khí gốm No.7 / 11mm — dòng TA-17/18/26 — 42.000đ/cái\n*   Mã 10N47L — Chụp khí gốm dài No.7L — dòng TA-17/18/26 — 42.000đ/cái\n*   Mã 10N48 — Chụp khí gốm No.6 / 10mm — dòng TA-17/18/26 — 40.000đ/cái\n*   Mã 10N48L — Chụp khí gốm dài No.6L — dòng TA-17/18/26 — 40.000đ/cái\n*   Mã 10N49 — Chụp khí gốm No.5 / 8mm — dòng TA-17/18/26 — 38.000đ/cái\n*   Mã 10N49L — Chụp khí gốm dài No.5L — dòng TA-17/18/26 — 38.000đ/cái\n*   Mã 10N50 — Chụp khí gốm No.4 / 6mm — dòng TA-17/18/",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0596",
+    "intent": "SEARCH_BY_DESC",
+    "query": "inner tube WX500R",
+    "exp": [
+      "YEW005013",
+      "YEW005813",
+      "YEW005046",
+      "YEW005045"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN CÓ THỂ LIÊN QUAN ĐẾN \"INNER TUBE WX500R\" NHƯ SAU:\n\n*   MÃ 002003 — BÉC HÀN N 1.2MM X 45L — 20.000Đ/CÁI\n*   MÃ 002017 — BÉC HÀN N 1.4MM X 45L — 22.000Đ/CÁI\n*   MÃ 002004 — BÉC HÀN N 1.6MM X 45L — 24.000Đ/CÁI\n*   MÃ 034115 — CHỤP KHÍ NEW Β/WX 16MM 82.5L — 18",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện có thể liên quan đến \"inner tube WX500R\" như sau:\n\n*   Mã 002003 — Béc hàn N 1.2mm x 45L — 20.000đ/cái\n*   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n*   Mã 034115 — Chụp khí NEW β/WX 16mm 82.5L — 180.000đ/cái\n*   Mã 034116 — Chụp khí NEW β/WX 19mm 82.5L — 180.000đ/cái\n*   Mã 061450 — Chụp khí nước WX 451/452 16mm 82.5L — 180.000đ/cái\n*   Mã 034120 — Sứ chia khí NEW β/WX (chụp khí thường) — 65.000đ/cái\n*   Mã 034121 — Sứ chia khí nước WX — 65.000đ/cái\n*   Mã 034135 — Đầu nối béc NEWβ/WX — 320.000đ/cái\n*   Mã 061445 — Sứ định tâm WX — bắt buộc trong cụm chụp khí WX — 120.000đ/cái\n\nAnh/chị có thể cho em biết thêm về model súng hàn hoặc loại linh kiện cụ thể anh/chị đang tìm để em hỗ trợ chính",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0598",
+    "intent": "SEARCH_BY_DESC",
+    "query": "tip adapter N 500A",
+    "exp": [
+      "002016",
+      "002005",
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ TIP ADAPTER CÓ THỂ PHÙ HỢP VỚI NHU CẦU CỦA ANH/CHỊ, TUY NHIÊN CHƯA CÓ LOẠI 500A. ANH/CHỊ THAM KHẢO CÁC MÃ SAU NHÉ:\n\n*   MÃ 018014 — ADAPTER CÁP NGUỒN 150A — 0Đ/CÁI\n*   MÃ 018015 — ADAPTER CÁP NGUỒN 350A+ — 0Đ/CÁI\n*   MÃ 018016 — ADAPTER CÁP NGUỒN 200A — 0Đ/CÁI\n*   M",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số Tip Adapter có thể phù hợp với nhu cầu của anh/chị, tuy nhiên chưa có loại 500A. Anh/chị tham khảo các mã sau nhé:\n\n*   Mã 018014 — Adapter cáp nguồn 150A — 0đ/cái\n*   Mã 018015 — Adapter cáp nguồn 350A+ — 0đ/cái\n*   Mã 018016 — Adapter cáp nguồn 200A — 0đ/cái\n*   Mã 018721 — Bộ kéo dài 150A (2-wire) — 0đ/cái\n*   Mã 018731 — Bộ kéo dài 200A (2-wire) — 0đ/cái\n*   Mã 018809 — Bộ adapter Hitachi 150A khí làm mát — 0đ/cái\n*   Mã 018810 — Bộ adapter Hitachi 200A khí làm mát — 0đ/cái\n*   Mã 018811 — Bộ adapter Hitachi nước làm mát — 0đ/cái\n\nAnh/chị có thể cho em biết thêm về model súng hàn hoặc dòng điện anh/chị đang sử dụng để em tìm kiếm chính xác hơn không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0599",
+    "intent": "SEARCH_BY_DESC",
+    "query": "liner oring hệ N",
+    "exp": [
+      "016076",
+      "016077",
+      "016126",
+      "016127",
+      "0443013"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY O-RING ĐẦU LINER HỆ N THEO YÊU CẦU CỦA ANH/CHỊ ĐÂY Ạ:\n\n*   **MÃ 036035** — O-RING ĐẦU LINER (S-4) — 8.000Đ/CÁI\n\nANH/CHỊ CÓ CẦN EM TÌM THÊM LINH KIỆN NÀO KHÁC KHÔNG Ạ?",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy O-ring đầu liner hệ N theo yêu cầu của anh/chị đây ạ:\n\n*   **Mã 036035** — O-ring đầu liner (S-4) — 8.000đ/cái\n\nAnh/chị có cần em tìm thêm linh kiện nào khác không ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0600",
+    "intent": "SEARCH_BY_DESC",
+    "query": "insulator collar WX",
+    "exp": [
+      "004002",
+      "004004",
+      "004001",
+      "004008",
+      "023015"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ VÒNG CÁCH ĐIỆN (INSULATOR COLLAR) VÀ CÁC LINH KIỆN LIÊN QUAN THEO YÊU CẦU CỦA ANH/CHỊ ĐÂY Ạ:\n\n*   MÃ 016048 — VÒNG CÁCH ĐIỆN TK-309R1 — 95.000Đ/CÁI\n*   MÃ 016052 — VÒNG CÁCH ĐIỆN TK-308RR — 95.000Đ/CÁI\n*   MÃ 016085 — FITTING ADAPTER 308RR-T — 95.000Đ/CÁI\n*   MÃ 016",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số vòng cách điện (insulator collar) và các linh kiện liên quan theo yêu cầu của anh/chị đây ạ:\n\n*   Mã 016048 — Vòng cách điện TK-309R1 — 95.000đ/cái\n*   Mã 016052 — Vòng cách điện TK-308RR — 95.000đ/cái\n*   Mã 016085 — Fitting adapter 308RR-T — 95.000đ/cái\n*   Mã 016086 — Fitting adapter 308RR-N — 95.000đ/cái\n*   Mã 016087 — Fitting adapter 308RR-D — 95.000đ/cái\n*   Mã 016088 — Fitting adapter 308RR-B — 95.000đ/cái\n*   Mã 016089 — Fitting adapter 308RR-H — 95.000đ/cái\n*   Mã 016180 — Pin dẫn dây 308RR-T — 95.000đ/cái\n*   Mã 016181 — Guide pin 308RR-N/B/H — 95.000đ/cái\n*   Mã 021013 — Fitting N-D không TipBody — 95.000đ/cái\n\nAnh/chị đang tìm linh kiện cho model súng hàn cụ thể nào ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0602",
+    "intent": "SEARCH_BY_DESC",
+    "query": "nozzle sleeve WX700A",
+    "exp": [
+      "001002",
+      "001003",
+      "001008",
+      "001009",
+      "001014"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ LINH KIỆN LIÊN QUAN ĐẾN \"NOZZLE SLEEVE WX700A\" NHƯ SAU:\n\n*   MÃ 034135 — ĐẦU NỐI BÉC NEWΒ/WX — 320.000Đ/CÁI\n*   MÃ 061445 — SỨ ĐỊNH TÂM WX — BẮT BUỘC TRONG CỤM CHỤP KHÍ WX — 120.000Đ/CÁI\n*   MÃ 034115 — CHỤP KHÍ NEW Β/WX 16MM 82.5L — 180.000Đ/CÁI\n*   MÃ 034116 — CHỤ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số linh kiện liên quan đến \"nozzle sleeve WX700A\" như sau:\n\n*   Mã 034135 — Đầu nối béc NEWβ/WX — 320.000đ/cái\n*   Mã 061445 — Sứ định tâm WX — bắt buộc trong cụm chụp khí WX — 120.000đ/cái\n*   Mã 034115 — Chụp khí NEW β/WX 16mm 82.5L — 180.000đ/cái\n*   Mã 034116 — Chụp khí NEW β/WX 19mm 82.5L — 180.000đ/cái\n*   Mã 034120 — Sứ chia khí NEW β/WX (chụp khí thường) — 65.000đ/cái\n*   Mã 034121 — Sứ chia khí nước WX — 65.000đ/cái\n*   Mã 061449 — Đệm định vị chụp khí WX451/452 (có O-ring 1015/1016) — 85.000đ/cái\n*   Mã 061447 — Đầu nối chụp khí WX451/452 — 95.000đ/cái\n*   Mã 002017 — Béc hàn N 1.4mm x 45L — 22.000đ/cái\n*   Mã 002004 — Béc hàn N 1.6mm x 45L — 24.000đ/cái\n\nAnh/chị có thể cho em biết thêm về model súng hàn hoặc loại linh kiện cụ thể anh/chị đang tìm đ",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0604",
+    "intent": "REPAIR",
+    "query": "robot hàn bị nhảy quỹ đạo do spatter",
+    "exp": [
+      "001002",
+      "001001",
+      "002003",
+      "003001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG ROBOT HÀN BỊ NHẢY QUỸ ĐẠO DO BẮN TÓE NHIỀU (EXCESSIVE SPATTER) CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   **BÉC HÀN (NOZZLE) BỊ DÍNH BẮN TÓE:** SPATTER TÍCH TỤ TRONG BÉC HÀN CÓ THỂ LÀM THAY ĐỔI HƯỚNG KHÍ BẢO VỆ, GÂY RA HỒ QUANG KHÔNG ỔN ĐỊNH VÀ BẮN TÓE.\n*   **LỖ BÉC HÀN (CONTAC",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng robot hàn bị nhảy quỹ đạo do bắn tóe nhiều (excessive spatter) có thể do một số nguyên nhân sau:\n\n*   **Béc hàn (Nozzle) bị dính bắn tóe:** Spatter tích tụ trong béc hàn có thể làm thay đổi hướng khí bảo vệ, gây ra hồ quang không ổn định và bắn tóe.\n*   **Lỗ béc hàn (Contact Tip) bị mòn quá mức:** Lỗ béc hàn bị mòn sẽ làm dây hàn không tiếp xúc tốt, gây ra hồ quang không ổn định và bắn tóe.\n*   **Sứ chia khí (Orifice) bị tắc:** Sứ chia khí bị tắc sẽ làm giảm lượng khí bảo vệ, dẫn đến mối hàn rỗ khí và bắn tóe nhiều.\n*   **Thông số hàn không chính xác:** Tốc độ cấp dây hoặc điện áp hàn không phù hợp cũng là nguyên nhân gây bắn tóe.\n\n**Linh kiện cần kiểm tra/thay:**\n\nAnh/chị nên kiểm tra các linh kiện sau để đảm bảo chúng không bị mòn hoặc tắc nghẽn:\n\n*   **Béc hàn ",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0605",
+    "intent": "REPAIR",
+    "query": "liner robot bị kẹt giữa cáp",
+    "exp": [
+      "036001",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG DÂY HÀN BỊ KẸT KHÔNG CHẠY TRONG LINER ROBOT CÓ THỂ DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   **LINER BỊ TẮC NGHẼN:** DO VỤN DÂY HÀN HOẶC GỈ SÉT BÁM VÀO.\n*   **ỐNG DẪN BÊN TRONG BỊ MÒN HOẶC CONG:** GÂY CẢN TRỞ CHUYỂN ĐỘNG CỦA DÂY.\n*   **CHIỀU DÀI LINER KHÔNG CHÍNH XÁC:** DẪN ĐẾN VIỆC ",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng dây hàn bị kẹt không chạy trong liner robot có thể do một số nguyên nhân sau:\n\n*   **Liner bị tắc nghẽn:** Do vụn dây hàn hoặc gỉ sét bám vào.\n*   **Ống dẫn bên trong bị mòn hoặc cong:** Gây cản trở chuyển động của dây.\n*   **Chiều dài liner không chính xác:** Dẫn đến việc dây bị kẹt hoặc không được dẫn hướng đúng cách.\n*   **Cuộn dây hàn bị rối:** Làm cho dây không thể cấp ra đều.\n\n**Linh kiện cần kiểm tra/thay:**\n\nĐể khắc phục tình trạng này, anh/chị cần kiểm tra và có thể thay thế dây dẫn hướng (liner).\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có cần em hỗ trợ thêm về các linh kiện khác không ạ?",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0606",
+    "intent": "REPAIR",
+    "query": "torch robot bị lệch vị trí sau va chạm",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM NHẬN THẤY ANH/CHỊ ĐANG GẶP VẤN ĐỀ VỀ LỆCH VỊ TRÍ SÚNG HÀN ROBOT SAU VA CHẠM. DỰA TRÊN THÔNG TIN ANH/CHỊ CUNG CẤP, EM CÓ MỘT SỐ GỢI Ý KHẮC PHỤC NHƯ SAU:\n\n**NGUYÊN NHÂN CÓ THỂ:**\n*   LỚP PHỦ SILICONE TRÊN VÒNG ĐỆM CÁCH ĐIỆN (INSULATION SPACER) CHƯA ĐƯỢC BÔI ĐÚNG CÁCH SAU KHI LẮP LẠI ",
+    "full_resp": "Chào anh/chị,\n\nEm nhận thấy anh/chị đang gặp vấn đề về lệch vị trí súng hàn robot sau va chạm. Dựa trên thông tin anh/chị cung cấp, em có một số gợi ý khắc phục như sau:\n\n**Nguyên nhân có thể:**\n*   Lớp phủ silicone trên vòng đệm cách điện (insulation spacer) chưa được bôi đúng cách sau khi lắp lại súng hàn.\n\n**Linh kiện cần kiểm tra/thay:**\nHiện tại, em chưa có thông tin mã linh kiện cụ thể liên quan trực tiếp đến việc lệch vị trí sau va chạm. Tuy nhiên, anh/chị có thể kiểm tra các linh kiện sau để đảm bảo chúng không bị hư hại sau va chạm:\n\n*   **Mã 002001 — Béc hàn N 0.9mm**\n*   **Mã 003001 — Chụp khí**\n*   **Mã 004001 — Sứ chia khí**\n\nNếu anh/chị cần hỗ trợ thêm hoặc muốn tìm hiểu về các linh kiện khác, vui lòng cho em biết thêm chi tiết về model súng hàn hoặc mô tả rõ hơn về tình trạn",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0607",
+    "intent": "REPAIR",
+    "query": "dây hàn bị rối trong cáp robot",
+    "exp": [
+      "036001",
+      "036003",
+      "037001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nHIỆN TƯỢNG DÂY HÀN BỊ RỐI TRONG CÁP ROBOT THƯỜNG DO MỘT SỐ NGUYÊN NHÂN SAU:\n\n*   **DÂY DẪN HƯỚNG (LINER) BỊ TẮC DO MẠT DÂY HOẶC GỈ SÉT:** DÂY DẪN HƯỚNG BỊ TẮC NGHẼN SẼ CẢN TRỞ QUÁ TRÌNH CẤP DÂY, GÂY RA HIỆN TƯỢNG KẸT DÂY.\n*   **ỐNG DẪN BÊN TRONG BỊ MÒN HOẶC CONG:** ỐNG DẪN BỊ BIẾN DẠN",
+    "full_resp": "Chào anh/chị,\n\nHiện tượng dây hàn bị rối trong cáp robot thường do một số nguyên nhân sau:\n\n*   **Dây dẫn hướng (Liner) bị tắc do mạt dây hoặc gỉ sét:** Dây dẫn hướng bị tắc nghẽn sẽ cản trở quá trình cấp dây, gây ra hiện tượng kẹt dây.\n*   **Ống dẫn bên trong bị mòn hoặc cong:** Ống dẫn bị biến dạng cũng sẽ làm dây hàn khó di chuyển, dẫn đến kẹt.\n*   **Chiều dài dây dẫn hướng không chính xác:** Dây dẫn hướng quá dài hoặc quá ngắn đều có thể gây ra vấn đề cấp dây.\n*   **Cuộn dây hàn bị rối:** Cuộn dây hàn không được lắp đặt đúng cách hoặc bị rối ngay từ đầu cũng là nguyên nhân phổ biến.\n\n**Linh kiện cần kiểm tra/thay:**\n\nĐể khắc phục tình trạng này, anh/chị nên kiểm tra và thay thế dây dẫn hướng (Liner) nếu phát hiện bị tắc, mòn hoặc có chiều dài không phù hợp.\n\nVề dây dẫn hướng (Liner): a",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0608",
+    "intent": "REPAIR",
+    "query": "robot hàn OTC FD-V6 dây không ra đều",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI TÌNH TRẠNG DÂY HÀN KHÔNG RA ĐỀU TRÊN ROBOT HÀN OTC FD-V6, EM XIN ĐƯA RA MỘT SỐ NGUYÊN NHÂN VÀ LINH KIỆN CẦN KIỂM TRA/THAY THẾ NHƯ SAU:\n\n**NGUYÊN NHÂN CÓ THỂ:**\n*   DÂY DẪN HƯỚNG (LINER) BỊ TẮC DO MẠT DÂY HOẶC RỈ SÉT.\n*   ỐNG DẪN BÊN TRONG (INNER TUBE) BỊ MÒN HOẶC CONG.\n\n**LINH KIỆ",
+    "full_resp": "Chào anh/chị,\n\nVới tình trạng dây hàn không ra đều trên robot hàn OTC FD-V6, em xin đưa ra một số nguyên nhân và linh kiện cần kiểm tra/thay thế như sau:\n\n**Nguyên nhân có thể:**\n*   Dây dẫn hướng (Liner) bị tắc do mạt dây hoặc rỉ sét.\n*   Ống dẫn bên trong (Inner tube) bị mòn hoặc cong.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Dây dẫn hướng (Liner)\n*   Ống dẫn bên trong (Inner tube)\n\n**Lưu ý quan trọng:**\n*   **Cảnh báo:** Sau khi cắt dây dẫn hướng (Liner), hãy loại bỏ ba via. Ba via sẽ cản trở việc cấp dây.\n*   **NGUY HIỂM:** Dây hàn, béc hàn và thân giữ béc hàn mang điện khi súng hàn đang hoạt động. Tuyệt đối không chạm vào các bộ phận mang điện này. Tiếp xúc trực tiếp có thể gây điện giật hoặc bỏng nặng. Hãy TẮT TẤT CẢ nguồn điện tại hộp phân phối trước khi kiểm tra hoặc bảo trì.\n\nĐể em c",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0610",
+    "intent": "REPAIR",
+    "query": "hệ WX nước làm mát không đủ áp",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM LÀ TRỢ LÝ TƯ VẤN KỸ THUẬT AUTOSS.\n\nEM THẤY ANH/CHỊ ĐANG GẶP VẤN ĐỀ VỚI HỆ THỐNG LÀM MÁT WX KHÔNG ĐỦ ÁP. TUY NHIÊN, TRIỆU CHỨNG \"HỆ WX NƯỚC LÀM MÁT KHÔNG ĐỦ ÁP\" CHƯA CÓ TRONG CƠ SỞ DỮ LIỆU CỦA EM.\n\nEM TÌM THẤY MỘT SỐ TRIỆU CHỨNG TƯƠNG TỰ CÓ THỂ LIÊN QUAN ĐẾN VẤN ĐỀ RÒ RỈ HOẶC ÁP SUẤT",
+    "full_resp": "Chào anh/chị, em là trợ lý tư vấn kỹ thuật Autoss.\n\nEm thấy anh/chị đang gặp vấn đề với hệ thống làm mát WX không đủ áp. Tuy nhiên, triệu chứng \"hệ WX nước làm mát không đủ áp\" chưa có trong cơ sở dữ liệu của em.\n\nEm tìm thấy một số triệu chứng tương tự có thể liên quan đến vấn đề rò rỉ hoặc áp suất khí không đủ, đó là:\n*   **Rò khí / khí không ra đủ:**\n    *   Nguyên nhân có thể do O-ring của dây dẫn hướng bị thiếu hoặc hỏng.\n    *   Lỗ chia khí bị nứt hoặc lắp không đúng vị trí.\n    *   Cách điện bị hỏng làm khí bị rò.\n    *   Béc hàn lắp không đúng cách.\n*   **Hồ quang không ổn định / hồ quang nhảy loạn:**\n    *   Nguyên nhân có thể do lỗ béc hàn bị mòn hoặc quá cỡ.\n    *   Lỗ chia khí bị tắc làm giảm lượng khí bảo vệ.\n\n**Linh kiện cần kiểm tra/thay:**\nĐể khắc phục các vấn đề trên, anh/",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0618",
+    "intent": "INSTALLATION",
+    "query": "thay liner robot bao lâu làm 1 lần",
+    "exp": [
+      "036001",
+      "036003",
+      "037002",
+      "037003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM HIỂU ANH/CHỊ ĐANG QUAN TÂM ĐẾN VIỆC THAY THẾ LINER ROBOT. TUY NHIÊN, CÂU HỎI \"THAY LINER ROBOT BAO LÂU LÀM 1 LẦN\" CÓ THỂ LIÊN QUAN ĐẾN NHIỀU VẤN ĐỀ KHÁC NHAU.\n\nDỰA TRÊN THÔNG TIN EM TÌM ĐƯỢC, NẾU ANH/CHỊ ĐANG GẶP TÌNH TRẠNG RÒ RỈ KHÍ GAS TẠI VỊ TRÍ KẾT NỐI LINER, NGUYÊN NHÂN CÓ THỂ",
+    "full_resp": "Chào anh/chị,\n\nEm hiểu anh/chị đang quan tâm đến việc thay thế liner robot. Tuy nhiên, câu hỏi \"thay liner robot bao lâu làm 1 lần\" có thể liên quan đến nhiều vấn đề khác nhau.\n\nDựa trên thông tin em tìm được, nếu anh/chị đang gặp tình trạng rò rỉ khí gas tại vị trí kết nối liner, nguyên nhân có thể là do vòng đệm O-ring của liner bị thiếu hoặc hư hỏng.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 002001 — Vòng đệm O-ring (ví dụ)\n\nĐể em có thể tư vấn chính xác hơn về tần suất thay thế liner hoặc các vấn đề khác liên quan, anh/chị có thể cho em biết thêm về tình trạng cụ thể mà mình đang gặp phải không ạ? Ví dụ như:\n*   Anh/chị đang gặp vấn đề gì với liner? (ví dụ: dây hàn bị kẹt, chất lượng mối hàn không ổn định,...)\n*   Model súng hàn anh/chị đang sử dụng là gì?\n*   Loại vật liệu và đường kín",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0625",
+    "intent": "CONSUMABLE_SET",
+    "query": "D500A cần gì",
+    "exp": [
+      "036001",
+      "002004",
+      "001001",
+      "004001",
+      "003001",
+      "016403"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI SÚNG HÀN D 500A, EM XIN GỬI THÔNG TIN VỀ BỘ VẬT TƯ TIÊU HAO TIÊU CHUẨN NHƯ SAU:\n\n*   **THÂN GIỮ BÉC (TIP BODY):**\n    *   MÃ 023463 — THÂN GIỮ BÉC D 500A WT5000 — 200.000Đ/CÁI\n*   **BÉC HÀN (TIP):**\n    *   MÃ 023011 — BÉC HÀN D 1.6MM — 26.000Đ/CÁI\n*   **CHỤP KHÍ (NOZZLE):**\n    *",
+    "full_resp": "Chào anh/chị,\n\nVới súng hàn D 500A, em xin gửi thông tin về bộ vật tư tiêu hao tiêu chuẩn như sau:\n\n*   **Thân giữ béc (Tip Body):**\n    *   Mã 023463 — Thân giữ béc D 500A WT5000 — 200.000đ/cái\n*   **Béc hàn (Tip):**\n    *   Mã 023011 — Béc hàn D 1.6mm — 26.000đ/cái\n*   **Chụp khí (Nozzle):**\n    *   Hiện tại em chưa tìm thấy chụp khí cụ thể cho bộ này trong dữ liệu. Anh/chị có thể cho em biết thêm về loại chụp khí mình đang dùng không ạ?\n*   **Cách điện (Insulator):**\n    *   Hiện tại em chưa tìm thấy cách điện cụ thể cho bộ này trong dữ liệu.\n*   **Sứ chia khí (Orifice):**\n    *   Hiện tại em chưa tìm thấy sứ chia khí cụ thể cho bộ này trong dữ liệu.\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.\n\nAnh/chị có c",
+    "tools": [
+      "get_consumable_set"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0645",
+    "intent": "AGGREGATE",
+    "query": "liệt kê TIG collet đang bán",
+    "exp": [
+      "22N20A",
+      "22N21A",
+      "22N22A",
+      "22N23A",
+      "22N24A",
+      "22N20AL",
+      "22N21AL",
+      "22N22AL"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM XIN GỬI THÔNG TIN CÁC LOẠI KẸP ĐIỆN CỰC (COLLET) TIG MÀ BÊN EM ĐANG CÓ:\n\n*   MÃ 018900 — COLLET 1.6MM TA-200/301 — 0Đ/CÁI\n*   MÃ 018901 — COLLET 2.4MM TA-200/301 — 0Đ/CÁI\n*   MÃ 018902 — COLLET 3.2MM TA-200/301 — 0Đ/CÁI\n*   MÃ 018903 — COLLET 4.0MM TA-500 — 0Đ/CÁI\n*   MÃ 018904 — C",
+    "full_resp": "Chào anh/chị,\n\nEm xin gửi thông tin các loại kẹp điện cực (collet) TIG mà bên em đang có:\n\n*   Mã 018900 — Collet 1.6mm TA-200/301 — 0đ/cái\n*   Mã 018901 — Collet 2.4mm TA-200/301 — 0đ/cái\n*   Mã 018902 — Collet 3.2mm TA-200/301 — 0đ/cái\n*   Mã 018903 — Collet 4.0mm TA-500 — 0đ/cái\n*   Mã 018904 — Collet 3.2mm TA-500 — 0đ/cái\n*   Mã 018905 — Thân collet gas lens 1.6mm TA-200/301 — 0đ/cái\n*   Mã 018906 — Thân collet gas lens 2.4mm TA-200/301 — 0đ/cái\n*   Mã 018907 — Thân collet gas lens 3.2mm TA-200/301 — 0đ/cái\n*   Mã 10N21 — Kẹp điện cực (collet) 0.5mm — dòng TA-17/18/26 — 55.000đ/cái\n*   Mã 10N22 — Kẹp điện cực (collet) 1.0mm — dòng TA-17/18/26 — 55.000đ/cái\n\nAnh/chị đang tìm collet cho model súng hàn TIG cụ thể nào ạ? Hoặc anh/chị cần kích thước kẹp điện cực bao nhiêu để em tư vấn chính",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0654",
+    "intent": "UPSELL",
+    "query": "vừa mua liner 036001 cần thêm gì",
+    "exp": [
+      "002001",
+      "002002",
+      "002003"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nANH/CHỊ VỪA MUA MÃ 036001 — THÂN GIỮ BÉC CS LOẠI A (350A) — 180.000Đ/CÁI. ĐỂ HOÀN CHỈNH BỘ PHẬN HÀN, ANH/CHỊ CÓ THỂ THAM KHẢO THÊM CÁC LOẠI DÂY DẪN HƯỚNG (LINER) SAU ĐÂY:\n\n**DÂY DẪN HƯỚNG (LINER):**\n*   MÃ 037001 — LINER CSL-18 0.6MM 3M — 250.000Đ/CÁI\n*   MÃ 037002 — LINER CSL-20 0.8-",
+    "full_resp": "Chào anh/chị,\n\nAnh/chị vừa mua Mã 036001 — Thân giữ béc CS Loại A (350A) — 180.000đ/cái. Để hoàn chỉnh bộ phận hàn, anh/chị có thể tham khảo thêm các loại dây dẫn hướng (Liner) sau đây:\n\n**Dây dẫn hướng (Liner):**\n*   Mã 037001 — Liner CSL-18 0.6mm 3m — 250.000đ/cái\n*   Mã 037002 — Liner CSL-20 0.8-0.9mm 3m — 250.000đ/cái\n*   Mã 037003 — Liner CSL-35 1.0-1.2mm 3m — 250.000đ/cái\n*   Mã 037004 — Liner CSL-35 1.0-1.2mm 4m — 250.000đ/cái\n*   Mã 037046 — Liner CSL-35 1.2mm 4.5m — 250.000đ/cái\n*   Mã 037005 — Liner CSL-35 1.2mm 5m — 250.000đ/cái\n*   Mã 037006 — Liner CSL-35 1.2mm 6m — 250.000đ/cái\n*   Mã 037007 — Liner CSH-35 1.4mm 3m — 250.000đ/cái\n\nAnh/chị có cần em tư vấn thêm về béc hàn (Tip), chụp khí (Nozzle) hay các linh kiện khác không ạ?",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0658",
+    "intent": "UPSELL",
+    "query": "chụp U4167G01 cho mình linh kiện đi kèm",
+    "exp": [
+      "002001",
+      "002002",
+      "002003",
+      "002005",
+      "002014",
+      "002016",
+      "002020",
+      "003002"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM ĐÃ TÌM THẤY THÔNG TIN VỀ CHỤP KHÍ N 16MM 73L VỚI MÃ 001002.\n\nHIỆN TẠI, EM CHƯA TÌM THẤY LINH KIỆN ĐI KÈM CỤ THỂ CHO MÃ NÀY TRONG HỆ THỐNG. ANH/CHỊ CÓ THỂ CHO EM BIẾT THÊM ANH/CHỊ ĐANG TÌM KIẾM LOẠI LINH KIỆN NÀO (VÍ DỤ: BÉC HÀN, THÂN GIỮ BÉC, SỨ CHIA KHÍ,...) ĐỂ EM HỖ TRỢ TỐT HƠN K",
+    "full_resp": "Chào anh/chị,\n\nEm đã tìm thấy thông tin về Chụp khí N 16mm 73L với mã 001002.\n\nHiện tại, em chưa tìm thấy linh kiện đi kèm cụ thể cho mã này trong hệ thống. Anh/chị có thể cho em biết thêm anh/chị đang tìm kiếm loại linh kiện nào (ví dụ: béc hàn, thân giữ béc, sứ chia khí,...) để em hỗ trợ tốt hơn không ạ?\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng hàn (VD: TK-308RR, TK-508RR) và chiều dài cáp để em tư vấn đúng ạ.",
+    "tools": [
+      "lookup_part",
+      "find_upsell_companions"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0679",
+    "intent": "SEARCH_BY_DESC",
+    "query": "đặt 100 chụp khí 500A",
+    "exp": [
+      "001002",
+      "001003",
+      "001008",
+      "001009",
+      "001014"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỀ CHỤP KHÍ 500A, EM CÓ CÁC LOẠI SAU Ạ:\n\n*   MÃ 001001 — CHỤP KHÍ N 19MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001005 — CHỤP KHÍ N 13MM 500A 88L — 85.000Đ/CÁI\n*   MÃ 001010 — CHỤP KHÍ N 16MM 500A 88L — 95.000Đ/CÁI\n*   MÃ 001012 — CHỤP KHÍ N 19MM 500A 84L — 90.000Đ/CÁI\n*   MÃ 001015 — CHỤP KHÍ",
+    "full_resp": "Chào anh/chị,\n\nVề chụp khí 500A, em có các loại sau ạ:\n\n*   Mã 001001 — Chụp khí N 19mm 500A 88L — 95.000đ/cái\n*   Mã 001005 — Chụp khí N 13mm 500A 88L — 85.000đ/cái\n*   Mã 001010 — Chụp khí N 16mm 500A 88L — 95.000đ/cái\n*   Mã 001012 — Chụp khí N 19mm 500A 84L — 90.000đ/cái\n*   Mã 001015 — Chụp khí N 16mm 500A 84L — 90.000đ/cái\n\nAnh/chị muốn đặt loại nào và số lượng cụ thể cho từng loại để em kiểm tra tồn kho và lên đơn ạ?",
+    "tools": [
+      "search_parts"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0682",
+    "intent": "REPAIR",
+    "query": "hệ WX rò nước làm mát",
+    "exp": [
+      "034115",
+      "034116",
+      "061450"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nVỚI TRIỆU CHỨNG RÒ NƯỚC LÀM MÁT Ở HỆ WX, EM CẦN ANH/CHỊ MÔ TẢ CỤ THỂ HƠN ĐỂ EM CÓ THỂ CHẨN ĐOÁN CHÍNH XÁC NGUYÊN NHÂN Ạ.\n\n**LINH KIỆN CẦN KIỂM TRA/THAY:**\n*   MÃ 001002 — CHỤP KHÍ N 16MM 73L\n*   MÃ 002001 — BÉC HÀN N 0.9MM X 45L\n*   MÃ 002003 — BÉC HÀN N 1.2MM X 45L\n*   MÃ 003002 — SỨ",
+    "full_resp": "Chào anh/chị,\n\nVới triệu chứng rò nước làm mát ở hệ WX, em cần anh/chị mô tả cụ thể hơn để em có thể chẩn đoán chính xác nguyên nhân ạ.\n\n**Linh kiện cần kiểm tra/thay:**\n*   Mã 001002 — Chụp khí N 16mm 73L\n*   Mã 002001 — Béc hàn N 0.9mm x 45L\n*   Mã 002003 — Béc hàn N 1.2mm x 45L\n*   Mã 003002 — Sứ chia khí N S (350A)\n*   Mã 004002 — Cách điện N S (350A)\n*   Mã 036001 — Thân giữ béc CS Loại A (350A)\n\nAnh/chị có thể cho em biết model súng hàn cụ thể đang sử dụng là gì không ạ?",
+    "tools": [
+      "get_troubleshoot"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0683",
+    "intent": "INSTALLATION",
+    "query": "cách thay WX center ceramic WX500R",
+    "exp": [
+      "WX500R"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nĐỂ THAY THẾ CÁCH ĐIỆN (INSULATOR) CHO SÚNG HÀN, ANH/CHỊ CÓ THỂ THỰC HIỆN THEO CÁC BƯỚC SAU:\n\n**CÁC BƯỚC THAY THẾ CÁCH ĐIỆN:**\n1.  ĐẢM BẢO TẮT NGUỒN ĐIỆN CỦA MÁY HÀN VÀ NGẮT KẾT NỐI KHÍ BẢO VỆ.\n2.  THÁO BÉC HÀN (NOZZLE) BẰNG CÁCH XOAY HOẶC KÉO RA TÙY THEO THIẾT KẾ SÚNG.\n3.  THÁO ĐIỆN C",
+    "full_resp": "Chào anh/chị,\n\nĐể thay thế cách điện (Insulator) cho súng hàn, anh/chị có thể thực hiện theo các bước sau:\n\n**Các bước thay thế Cách điện:**\n1.  Đảm bảo tắt nguồn điện của máy hàn và ngắt kết nối khí bảo vệ.\n2.  Tháo béc hàn (Nozzle) bằng cách xoay hoặc kéo ra tùy theo thiết kế súng.\n3.  Tháo điện cực (Tip) bằng cách xoay ngược chiều kim đồng hồ.\n4.  Tháo sứ chia khí (Orifice).\n5.  Tháo cách điện (Insulator) cũ ra khỏi thân súng.\n6.  Lắp cách điện mới vào đúng vị trí, đảm bảo khớp hoàn toàn.\n7.  Lắp lại sứ chia khí, điện cực và béc hàn theo thứ tự ngược lại.\n8.  Kiểm tra lại toàn bộ các bộ phận đã được lắp chắc chắn trước khi sử dụng.\n\n**Lưu ý quan trọng:**\n*   Cách điện N S (Mã 004002, dài 39mm) dùng cho súng hàn 350A; Cách điện N L (Mã 004001, dài 38mm) dùng cho súng hàn 500A.\n*   Cách đ",
+    "tools": [
+      "get_replacement_steps"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0684",
+    "intent": "INSTALLATION",
+    "query": "lắp insulator collar WX702R",
+    "exp": [
+      "WX702R"
+    ],
+    "got": "CHÀO ANH/CHỊ, ĐỂ THAY THẾ CÁCH ĐIỆN (INSULATOR), ANH/CHỊ CÓ THỂ THỰC HIỆN THEO CÁC BƯỚC SAU:\n\n**CÁCH THAY THẾ CÁCH ĐIỆN (INSULATOR):**\n\n1.  THÁO CHỤP KHÍ (NOZZLE).\n2.  THÁO BÉC HÀN (TIP).\n3.  THÁO SỨ CHIA KHÍ (ORIFICE).\n4.  THÁO CÁCH ĐIỆN CŨ (INSULATOR).\n5.  LẮP CÁCH ĐIỆN MỚI (INSULATOR).\n6.  LẮP LẠ",
+    "full_resp": "Chào anh/chị, để thay thế cách điện (insulator), anh/chị có thể thực hiện theo các bước sau:\n\n**Cách thay thế Cách điện (Insulator):**\n\n1.  Tháo chụp khí (Nozzle).\n2.  Tháo béc hàn (Tip).\n3.  Tháo sứ chia khí (Orifice).\n4.  Tháo cách điện cũ (Insulator).\n5.  Lắp cách điện mới (Insulator).\n6.  Lắp lại sứ chia khí, béc hàn và chụp khí theo thứ tự ngược lại.\n\n**Lưu ý quan trọng:**\n\n*   Cách điện N S (Mã 004002, dài 39mm) dùng cho súng hàn 350A.\n*   Cách điện N L (Mã 004001, dài 38mm) dùng cho súng hàn 500A.\n*   Cách điện D (Mã 023015) khác với cách điện N và không thể thay thế cho nhau.\n*   Lắp sai kích thước cách điện có thể gây cản trở dòng khí hoặc làm hồ quang không ổn định.\n\n**Linh kiện liên quan:**\n\n*   Mã 004002 — Cách điện N S (350A) — 50.000đ/cái\n*   Mã 004001 — Cách điện N L (500A) ",
+    "tools": [
+      "get_replacement_steps"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0685",
+    "intent": "CONSUMABLE_SET",
+    "query": "bộ vật tư TIG 300A",
+    "exp": [
+      "036001",
+      "002003",
+      "002002",
+      "033203",
+      "004002",
+      "003002",
+      "002001"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY MỘT SỐ BỘ VẬT TƯ TIG 300A TƯƠNG THÍCH VỚI CÁC DÒNG SÚNG HÀN KHÁC NHAU. ANH/CHỊ CÓ THỂ THAM KHẢO CÁC BỘ SAU ĐÂY:\n\n**1. BỘ PHỤ KIỆN TIG TA-17/18/26 KHÔNG KHÍ (ĐIỆN CỰC 2.4MM) — DÒNG ĐIỆN 350A:**\n*   **ĐIỆN CỰC VONFRAM:** MÃ 018343 — ĐIỆN CỰC VONFRAM WC20 (CE 2%) 2.4MM×150MM ",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy một số bộ vật tư TIG 300A tương thích với các dòng súng hàn khác nhau. Anh/chị có thể tham khảo các bộ sau đây:\n\n**1. Bộ phụ kiện TIG TA-17/18/26 không khí (điện cực 2.4mm) — Dòng điện 350A:**\n*   **Điện cực vonfram:** Mã 018343 — Điện cực vonfram WC20 (Ce 2%) 2.4mm×150mm — 16.000đ/cái\n*   **Kẹp điện cực (Collet):** Mã 10N24 — Kẹp điện cực (collet) 2.4mm — dòng TA-17/18/26 — 62.000đ/cái\n*   **Thân kẹp (Collet Body):** Mã 10N32 — Thân kẹp (collet body) 2.4mm — dòng TA-17/18/26 — 75.000đ/cái\n*   **Chụp khí gốm (Nozzle):** Mã 10N48 — Chụp khí gốm No.6 / 10mm — dòng TA-17/18/26 — 40.000đ/cái\n*   **Nắp đuôi (Back Cap):** Mã 57Y04 — Nắp đuôi S — dòng TA-17/18/26 — 45.000đ/cái\n\n**2. Bộ phụ kiện TIG TA-9/20/CS310 không khí (điện cực 1.6mm) — Dòng điện 350A:**\n*   **Điện ",
+    "tools": [
+      "get_consumable_set"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  },
+  {
+    "id": "E0686",
+    "intent": "CONSUMABLE_SET",
+    "query": "consumable set TIG robotic 300",
+    "exp": [
+      "018343",
+      "10N48",
+      "10N24",
+      "10N32",
+      "57Y04",
+      "018341",
+      "13N10",
+      "13N22",
+      "13N27",
+      "41V33"
+    ],
+    "got": "CHÀO ANH/CHỊ,\n\nEM TÌM THẤY BỘ PHỤ KIỆN TIG ROBOT TA-303CDW (ĐIỆN CỰC 3.2MM) TƯƠNG ỨNG VỚI YÊU CẦU CỦA ANH/CHỊ. DƯỚI ĐÂY LÀ CÁC LINH KIỆN TRONG BỘ NÀY:\n\n**ĐIỆN CỰC VONFRAM (TUNGSTEN ELECTRODE):**\n*   MÃ 018344 — ĐIỆN CỰC VONFRAM WC20 (CE 2%) 3.2MM×150MM — 18.000Đ/CÁI\n\n**KẸP ĐIỆN CỰC (COLLET):**\n*   M",
+    "full_resp": "Chào anh/chị,\n\nEm tìm thấy bộ phụ kiện TIG Robot TA-303CDW (điện cực 3.2mm) tương ứng với yêu cầu của anh/chị. Dưới đây là các linh kiện trong bộ này:\n\n**Điện cực vonfram (Tungsten Electrode):**\n*   Mã 018344 — Điện cực vonfram WC20 (Ce 2%) 3.2mm×150mm — 18.000đ/cái\n\n**Kẹp điện cực (Collet):**\n*   Mã 10N23 — Kẹp điện cực (collet) 1.6mm — dòng TA-17/18/26 — 58.000đ/cái\n\n**Thân kẹp (Collet Body):**\n*   Mã 45V25 — Thân kẹp gas lens 1.6mm — dòng TA-17/18/26 — 110.000đ/cái\n\n**Chụp khí gốm (Ceramic Nozzle):**\n*   Mã 54N16 — Chụp khí gốm gas lens No.6 — dòng TA-17/18/26 — 52.000đ/cái\n\n**Cách điện (Insulator):**\n*   Hiện tại bộ này chưa có thông tin về cách điện.\n\n**Nắp đuôi (Back Cap):**\n*   Hiện tại bộ này chưa có thông tin về nắp đuôi.\n\nVề dây dẫn hướng (Liner): anh/chị cho em biết model súng h",
+    "tools": [
+      "get_consumable_set"
+    ],
+    "cause": "code_not_mentioned",
+    "http_status": 200
+  },
+  {
+    "id": "E0693",
+    "intent": "AGGREGATE",
+    "query": "liệt kê súng hàn robot tokin",
+    "exp": [
+      "ACC-308RR",
+      "ACC-308RX",
+      "TK-308RR",
+      "TK-308RS",
+      "TK-308RX",
+      "TK-308RW",
+      "TK-308ALW",
+      "SRCT-308R"
+    ],
+    "got": "CHÀO ANH/CHỊ, EM XIN GỬI THÔNG TIN CÁC DÒNG SÚNG HÀN ROBOT TOKINARC LÀM MÁT NƯỚC MÀ BÊN EM ĐANG PHÂN PHỐI:\n\n*   **WX450R** — SÚNG HÀN ROBOT LÀM MÁT NƯỚC WX450R (500A, 80% DUTY) — 14.000.000Đ/CÁI\n*   **WX450S** — SÚNG HÀN ROBOT LÀM MÁT NƯỚC WX450S (500A, 80% DUTY) — 14.000.000Đ/CÁI\n*   **WX451R** — S",
+    "full_resp": "Chào anh/chị, em xin gửi thông tin các dòng súng hàn robot Tokinarc làm mát nước mà bên em đang phân phối:\n\n*   **WX450R** — Súng hàn robot làm mát nước WX450R (500A, 80% duty) — 14.000.000đ/cái\n*   **WX450S** — Súng hàn robot làm mát nước WX450S (500A, 80% duty) — 14.000.000đ/cái\n*   **WX451R** — Súng hàn robot làm mát nước WX451R (450A, có wire clamp) — 16.500.000đ/cái\n*   **WX451S** — Súng hàn robot làm mát nước WX451S (450A, 80% duty) — 16.500.000đ/cái\n*   **WX452R** — Súng hàn robot làm mát nước WX452R (450A, 3 phần tháo rời) — 16.500.000đ/cái\n*   **WX452S** — Súng hàn robot làm mát nước WX452S (450A, 3 phần tháo rời) — 16.500.000đ/cái\n*   **WX500R** — Súng hàn robot làm mát nước WX500R (500A, 100% duty) — 15.000.000đ/cái\n*   **WX500S** — Súng hàn robot làm mát nước WX500S (500A, 100%",
+    "tools": [
+      "get_torches",
+      "get_torches"
+    ],
+    "cause": "wrong_data_returned",
+    "http_status": 200
+  }
+]

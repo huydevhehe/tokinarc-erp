@@ -1,0 +1,59 @@
+"""
+Tokinarc V6.C — apps/crm/urls.py
+
+Include vào tokinarc/urls.py:
+    path('api/v1/crm/', include('apps.crm.urls')),
+"""
+from django.urls import path
+from rest_framework.routers import DefaultRouter
+
+from .contacts import ContactViewSet
+from .contracts_activities import ActivityViewSet, ContractViewSet
+from .imports import (
+    CustomerImportTemplateView, CustomerImportView,
+    EntityImportTemplateView, EntityImportView,
+)
+from .activity_feed import MyActivityFeedView
+from .bot_conversations import BotConversationIngestView, BotConversationViewSet
+from .lead_intake import LeadIntakeView
+from .lead_report import LeadSourceReportView
+from .receivables import ReceivablesView
+from .views import CustomerViewSet, PartQuoteInfoView
+from .views_ext import (
+    LeadViewSet, OpportunityViewSet, QuoteViewSet, TicketViewSet, VisitViewSet,
+)
+
+router = DefaultRouter()
+router.register(r'customers', CustomerViewSet, basename='customer')
+router.register(r'contacts', ContactViewSet, basename='contact')
+router.register(r'leads', LeadViewSet, basename='lead')
+router.register(r'opportunities', OpportunityViewSet, basename='opportunity')
+router.register(r'quotes', QuoteViewSet, basename='quote')
+router.register(r'visits', VisitViewSet, basename='visit')
+router.register(r'tickets', TicketViewSet, basename='ticket')
+router.register(r'contracts', ContractViewSet, basename='contract')
+router.register(r'activities', ActivityViewSet, basename='activity')
+router.register(r'bot-conversations', BotConversationViewSet, basename='bot-conversation')
+
+# Đặt TRƯỚC router để 'customers/import/' không bị nuốt bởi 'customers/<pk>/'.
+urlpatterns = [
+    path('customers/import/', CustomerImportView.as_view(), name='customer-import'),
+    path('customers/import-template/', CustomerImportTemplateView.as_view(),
+         name='customer-import-template'),
+    # Phase 2: leads / contracts / orders
+    path('import/<slug:entity>/', EntityImportView.as_view(), name='entity-import'),
+    path('import/<slug:entity>/template/', EntityImportTemplateView.as_view(),
+         name='entity-import-template'),
+    # Bot khách đẩy lead về CRM (ghi-1-chiều, xác thực X-Intake-Key).
+    path('lead-intake/', LeadIntakeView.as_view(), name='lead-intake'),
+    # Bot khách đẩy từng lượt hội thoại về (đặt TRƯỚC router để không bị 'bot-conversations/<pk>' nuốt).
+    path('bot-conversations/ingest/', BotConversationIngestView.as_view(), name='bot-conversation-ingest'),
+    # Nhật ký hoạt động của sale (gộp nhiều bảng theo thời gian).
+    path('my-activity/', MyActivityFeedView.as_view(), name='my-activity'),
+    # Báo cáo lead theo nguồn / chiến dịch.
+    path('lead-sources/', LeadSourceReportView.as_view(), name='lead-sources'),
+    # Gợi giá theo phân khúc + tồn khả dụng cho form báo giá/đơn.
+    path('part-quote-info/', PartQuoteInfoView.as_view(), name='part-quote-info'),
+] + router.urls + [
+    path('receivables/', ReceivablesView.as_view(), name='receivables'),
+]
