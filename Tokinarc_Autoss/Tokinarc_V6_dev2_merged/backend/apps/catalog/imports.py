@@ -10,11 +10,20 @@ Quy tắc:
   - Trùng tokin_part_no (đã tồn tại) → CẬP NHẬT các field có giá trị trong dòng
     (không tạo trùng, không xoá field cũ nếu dòng để trống).
   - dry_run: chỉ kiểm tra + trả thống kê/lỗi, KHÔNG ghi DB.
+
+Nhận diện 2 kiểu file (2026-07-23, theo yêu cầu Huy — nhân viên kế toán không
+tự convert file được, hệ thống phải tự nhận diện):
+  1. File mẫu chuẩn (tải từ nút "Tải file mẫu") — cột `tokin_part_no` ở hàng 1.
+  2. File "Báo cáo tổng hợp Nhập Xuất Tồn" xuất thẳng từ phần mềm kế toán —
+     tự tách tên+mã từ cột "Tên vật tư, hàng hóa" (dạng "Tên - Mã"), lấy giá
+     vốn từ cột "Đơn giá" (tồn cuối kỳ), category mặc định "Chưa phân loại"
+     (nhân viên tự phân loại lại sau trên giao diện Danh mục sản phẩm).
 """
 from __future__ import annotations
 
 import csv
 import io
+import re
 
 from django.db import transaction
 from rest_framework.permissions import IsAuthenticated
@@ -27,20 +36,105 @@ from apps.accounts.roles import WMS_OP_ROLES, role_of
 from .models import Part
 
 COLUMNS = ['tokin_part_no', 'category', 'ecosystem', 'display_name_vi', 'display_name_en',
-           'price_vnd', 'tax_pct', 'price_unit', 'notes']
+           'price_vnd', 'cost_vnd', 'tax_pct', 'price_unit', 'notes']
+
+XNT_DEFAULT_CATEGORY = 'Chưa phân loại'
+_XNT_CODE_PREFIX_RE = re.compile(r'^\s*(m[aã]\s*h[aà]ng|m[aã]\s*:|m[aã]\s+)\s*', re.IGNORECASE)
+_XNT_TRAILING_CODE_RE = re.compile(r',?\s*m[aã]\s*h[aà]ng\s+(\S+)\s*$', re.IGNORECASE)
+_XNT_TRAILING_CODE_RE2 = re.compile(r',?\s*m[aã]\s*:?\s+(\S+)\s*$', re.IGNORECASE)
 
 
 def _norm(s: str) -> str:
     return (s or '').strip().lower().replace(' ', '_').replace('-', '_')
 
 
+def _split_xnt_name_code(raw: str):
+    """'Tên - Mã' → (tên, mã). Chỉ tách ở lần ' - ' ĐẦU TIÊN (mã hàng có thể tự
+    chứa dấu gạch ngang không cách, vd '01916A-10', không bị tách nhầm)."""
+    raw = (raw or '').strip()
+    if ' - ' in raw:
+        name, code = raw.split(' - ', 1)
+        code = _XNT_CODE_PREFIX_RE.sub('', code.strip()).strip()
+        return name.strip(), code
+    m = _XNT_TRAILING_CODE_RE.search(raw) or _XNT_TRAILING_CODE_RE2.search(raw)
+    if m:
+        return raw[:m.start()].strip().rstrip(',').strip(), m.group(1).strip()
+    return raw, ''
+
+
+def _parse_xnt_report(f) -> list[dict] | None:
+    """Nếu file là báo cáo 'Xuất Nhập Tồn' kế toán (không phải file mẫu chuẩn),
+    tự đọc và trả về list dict cùng cấu trúc với `_parse_file`. Trả None nếu
+    file không khớp layout này (để caller thử đọc kiểu file mẫu chuẩn)."""
+    from openpyxl import load_workbook
+    try:
+        # KHÔNG dùng read_only=True: cần đọc lại nhiều lượt (dò header rồi đọc
+        # dữ liệu) — worksheet read-only là stream 1 lượt, gọi iter_rows() lần
+        # 2 không đảm bảo quay lại đầu.
+        wb = load_workbook(f, data_only=True)
+    except Exception:
+        return None
+    ws = wb.active
+
+    header_row_idx = None
+    name_col = None
+    for i, row in enumerate(ws.iter_rows(values_only=True, max_row=20), start=1):
+        for j, cell in enumerate(row):
+            if cell and 'tên vật tư' in str(cell).strip().lower():
+                header_row_idx, name_col = i, j
+                break
+        if header_row_idx:
+            break
+    if header_row_idx is None:
+        return None   # không phải báo cáo XNT — để caller thử parser khác
+
+    sub_header = next(ws.iter_rows(min_row=header_row_idx + 1, max_row=header_row_idx + 1,
+                                    values_only=True), ())
+    cost_col = next((j for j, c in enumerate(sub_header)
+                     if c and str(c).strip().lower() == 'đơn giá'), None)
+    unit_col = name_col + 1
+    stt_col = name_col - 1 if name_col > 0 else None   # cột STT, đứng ngay trước cột Tên
+
+    out = []
+    for row in ws.iter_rows(min_row=header_row_idx + 3, values_only=True):
+        # Hết bảng dữ liệu khi cột STT không còn là số nguyên (dòng "Tổng cộng"
+        # hoặc phần chữ ký/footer phía dưới) — DỪNG hẳn, không chỉ bỏ qua,
+        # kẻo đọc nhầm mấy dòng chữ ký ("Người ghi sổ"...) thành sản phẩm.
+        stt_val = row[stt_col] if stt_col is not None and stt_col < len(row) else None
+        if not isinstance(stt_val, (int, float)):
+            break
+        name_raw = row[name_col] if name_col < len(row) else None
+        if not name_raw:
+            continue
+        name, code = _split_xnt_name_code(str(name_raw))
+        cost_val = row[cost_col] if cost_col is not None and cost_col < len(row) else None
+        unit_val = row[unit_col] if unit_col < len(row) else None
+        out.append({
+            'tokin_part_no': code,
+            'category': XNT_DEFAULT_CATEGORY,
+            'display_name_vi': name,
+            'cost_vnd': str(round(cost_val)) if isinstance(cost_val, (int, float)) else '',
+            'price_unit': str(unit_val).strip() if unit_val else '',
+            'notes': 'Nhập từ báo cáo Xuất Nhập Tồn',
+        })
+    return out
+
+
 def _parse_file(f) -> list[dict]:
-    """Đọc Excel (.xlsx) hoặc CSV → list dict {header: value}."""
+    """Đọc Excel (.xlsx) hoặc CSV → list dict {header: value}. Tự nhận diện
+    báo cáo Xuất Nhập Tồn kế toán trước; nếu không khớp thì đọc như file mẫu
+    chuẩn (header ở hàng 1)."""
     name = (getattr(f, 'name', '') or '').lower()
     if name.endswith('.csv'):
         text = f.read().decode('utf-8-sig', errors='replace')
         reader = csv.DictReader(io.StringIO(text))
         return [{_norm(k): (v or '').strip() for k, v in row.items()} for row in reader]
+
+    xnt_rows = _parse_xnt_report(f)
+    if xnt_rows is not None:
+        return xnt_rows
+
+    f.seek(0)
     from openpyxl import load_workbook
     wb = load_workbook(f, read_only=True, data_only=True)
     ws = wb.active
@@ -92,9 +186,12 @@ def validate_and_build(rows: list[dict]):
         seen.add(code)
 
         price_vnd = _parse_decimal(row.get('price_vnd'))
+        cost_vnd = _parse_decimal(row.get('cost_vnd'))
         tax_pct = _parse_decimal(row.get('tax_pct'))
         if price_vnd == '__invalid__':
             errors.append({'row': i, 'message': f'{code}: price_vnd không phải số.'}); continue
+        if cost_vnd == '__invalid__':
+            errors.append({'row': i, 'message': f'{code}: cost_vnd không phải số.'}); continue
         if tax_pct == '__invalid__':
             errors.append({'row': i, 'message': f'{code}: tax_pct không phải số.'}); continue
 
@@ -105,6 +202,8 @@ def validate_and_build(rows: list[dict]):
             defaults['display_name_en'] = row['display_name_en'].strip()
         if price_vnd is not None:
             defaults['price_vnd'] = price_vnd
+        if cost_vnd is not None:
+            defaults['cost_vnd'] = cost_vnd
         if tax_pct is not None:
             defaults['tax_pct'] = tax_pct
         if row.get('price_unit'):
@@ -168,7 +267,7 @@ class PartImportTemplateView(APIView):
         ws.title = 'PhuTung'
         ws.append(COLUMNS)
         ws.append(['P-99001', 'Tip hàn CO2', 'Panasonic', 'Đầu tip hàn CO2 1.2mm',
-                   'CO2 Welding Tip', '15000', '10', 'cái', 'Nhập từ dữ liệu cũ'])
+                   'CO2 Welding Tip', '15000', '12000', '10', 'cái', 'Nhập từ dữ liệu cũ'])
         buf = io.BytesIO()
         wb.save(buf)
         buf.seek(0)

@@ -106,7 +106,7 @@ export function ProductsPage() {
         templateUrl: '/catalog/parts/import-template/',
         templateFilename: 'mau_import_phu_tung.xlsx',
         invalidateKey: 'catalog-parts',
-        hint: 'Mỗi dòng = 1 phụ tùng. Trùng mã (tokin_part_no) sẽ CẬP NHẬT, không tạo trùng.',
+        hint: 'Mỗi dòng = 1 phụ tùng. Trùng mã (tokin_part_no) sẽ CẬP NHẬT, không tạo trùng. Có thể tải thẳng file "Báo cáo tổng hợp Nhập Xuất Tồn" từ phần mềm kế toán lên đây — hệ thống tự nhận diện, tự tách tên/mã và lấy giá vốn, không cần chỉnh sửa file trước.',
       }} />
     </div>
   )
