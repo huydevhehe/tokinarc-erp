@@ -381,6 +381,22 @@ def test_wh_manager_can_create_warehouse(auth_mgr):
 
 
 @pytest.mark.django_db
+def test_bin_create_rejects_full_code_over_30_chars(auth_mgr):
+    """full_code (warehouse-zone-rack-bin_code) giới hạn 30 ký tự ở DB — nếu
+    không chặn trước, ghép quá dài trả lỗi 500 (DataError) thay vì 400 rõ
+    ràng. Phát hiện qua Playwright E2E khi tạo kho/khu/ô có mã dài."""
+    # Mỗi mã đều hợp lệ RIÊNG LẺ (≤10 ký tự, đúng giới hạn field) nhưng GHÉP
+    # lại (warehouse-zone-rack-bin_code, 3 dấu gạch nối) thì vượt 30 ký tự.
+    wh = Warehouse.objects.create(code='WAREHSE01', name='K', is_active=True)   # 9 ký tự
+    z = Zone.objects.create(warehouse=wh, code='ZONECODE1', name='Z')           # 9 ký tự
+    r = auth_mgr.post('/api/v1/wms/bins/',
+                      {'zone': z.id, 'rack': 'RACKCODE1', 'bin_code': 'BINCODE01'}, format='json')
+    assert r.status_code == 400
+    assert 'bin_code' in r.data
+    assert not Bin.objects.filter(zone=z).exists()
+
+
+@pytest.mark.django_db
 def test_outbound_scan_pick_deducts(auth, part, wh_user):
     from apps.wms.models import (Bin, InventoryItem, OutboundLine, OutboundOrder,
                                  Warehouse, Zone)

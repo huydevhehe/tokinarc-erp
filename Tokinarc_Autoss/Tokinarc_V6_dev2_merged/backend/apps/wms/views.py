@@ -178,7 +178,14 @@ class BinViewSet(viewsets.ModelViewSet):
         z = serializer.validated_data['zone']
         rack = serializer.validated_data['rack']
         bin_code = serializer.validated_data['bin_code']
-        serializer.save(full_code=f"{z.warehouse.code}-{z.code}-{rack}-{bin_code}")
+        full_code = f"{z.warehouse.code}-{z.code}-{rack}-{bin_code}"
+        # Bin.full_code giới hạn 30 ký tự (DB) — nếu không kiểm tra trước, ghép
+        # quá dài sẽ để lộ lỗi 500 (DataError) thay vì thông báo rõ ràng.
+        max_len = Bin._meta.get_field('full_code').max_length
+        if len(full_code) > max_len:
+            raise ValidationError({'bin_code': f"Mã ô ghép lại quá dài ({len(full_code)}/{max_len} ký tự): "
+                                    f"\"{full_code}\". Rút ngắn mã kho/khu/kệ/ô lại."})
+        serializer.save(full_code=full_code)
 
     def destroy(self, request, *args, **kwargs):
         b = self.get_object()
