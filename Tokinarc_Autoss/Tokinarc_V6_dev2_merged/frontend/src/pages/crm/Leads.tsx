@@ -5,28 +5,37 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Radar, ArrowRight, Plus, Upload } from 'lucide-react'
+import { Radar, ArrowRight, Plus, Upload, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { LEAD_STATUS_LABEL, LEAD_STATUS_TONE, leadScoreTone, formatDate } from '@/lib/crm'
-import type { Lead } from '@/lib/types'
+import type { Lead, LeadStatus } from '@/lib/types'
 import {
   PageHeader, SearchInput, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { useDebounced } from '@/lib/useDebounced'
 import { useAuth, isManager } from '@/lib/auth/store'
+import { useCan } from '@/lib/auth/capabilities'
 import { LeadForm } from '@/pages/crm/forms/LeadForm'
 import { OpportunityForm } from '@/pages/crm/forms/OpportunityForm'
 import { ImportModal } from '@/pages/crm/ImportModal'
 
+const STATUSES: (LeadStatus | '')[] = ['', 'new', 'contacted', 'qualified', 'converted', 'lost']
+
 export function LeadsPage() {
   const qc = useQueryClient()
   const [search, setSearch] = useState('')
+  const [status, setStatus] = useState<LeadStatus | ''>('')
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
-  const canImport = isManager(useAuth((s) => s.user?.role))
+  // #3 biên bản (2026-07-22): mở thêm cho Sale — Lead là dữ liệu Sale sở hữu.
+  const importRole = useAuth((s) => s.user?.role)
+  const canImport = isManager(importRole) || importRole === 'sales'
+  const myId = useAuth((s) => s.user?.id)
+  // Giai đoạn 1 phân quyền function-based: mặc định chỉ admin, hoặc chủ lead.
+  const canDeleteAny = useCan('crm.lead.delete')
   const [editing, setEditing] = useState<Lead | null>(null)
   const [oppOpen, setOppOpen] = useState(false)
   const [oppPreset, setOppPreset] = useState<{
@@ -39,8 +48,10 @@ export function LeadsPage() {
   const openEdit = (l: Lead) => { setEditing(l); setFormOpen(true) }
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['leads', debounced, page],
-    queryFn: () => fetchPage<Lead>('/crm/leads/', { search: debounced || undefined, page }),
+    queryKey: ['leads', debounced, status, page],
+    queryFn: () => fetchPage<Lead>('/crm/leads/', {
+      search: debounced || undefined, status: status || undefined, page,
+    }),
     placeholderData: keepPreviousData,
   })
 
@@ -67,6 +78,14 @@ export function LeadsPage() {
     },
     onError: (e) => toast.error(apiError(e)),
   })
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/crm/leads/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá lead'); qc.invalidateQueries({ queryKey: ['leads'] }) },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const onDelete = (l: Lead) => {
+    if (window.confirm(`Xoá lead "${l.name}"? Có thể khôi phục qua quản trị nếu cần.`)) remove.mutate(l.id)
+  }
 
   const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
 
@@ -78,6 +97,10 @@ export function LeadsPage() {
         subtitle={data ? `${data.count} lead` : undefined}
         actions={
           <>
+            <select value={status} onChange={(e) => { setStatus(e.target.value as LeadStatus | ''); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+              {STATUSES.map((s) => <option key={s} value={s}>{s ? LEAD_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}
+            </select>
             <SearchInput value={search} onChange={setSearch} placeholder="Tìm tên, công ty…" />
             {canImport && (
               <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Import</Button>
@@ -119,26 +142,35 @@ export function LeadsPage() {
               </Td>
               <Td><Tag tone={LEAD_STATUS_TONE[l.status]}>{LEAD_STATUS_LABEL[l.status]}</Tag></Td>
               <Td className="text-right" onClick={(e) => e.stopPropagation()}>
-                {l.converted_customer ? (
-                  <span className="text-[11px] text-txt-2">Đã chuyển</span>
-                ) : (
-                  <div className="flex gap-1.5 justify-end">
-                    <Button
-                      size="sm" variant="ghost"
-                      disabled={convert.isPending && convert.variables?.id === l.id}
-                      onClick={() => convert.mutate({ id: l.id })}
-                    >
-                      Chuyển KH
+                <div className="flex gap-1.5 justify-end items-center">
+                  {l.converted_customer ? (
+                    <span className="text-[11px] text-txt-2">Đã chuyển</span>
+                  ) : (
+                    <>
+                      <Button
+                        size="sm" variant="ghost"
+                        disabled={convert.isPending && convert.variables?.id === l.id}
+                        onClick={() => convert.mutate({ id: l.id })}
+                      >
+                        Chuyển KH
+                      </Button>
+                      <Button
+                        size="sm"
+                        disabled={convert.isPending && convert.variables?.id === l.id}
+                        onClick={() => convert.mutate({ id: l.id, lead: l, withOpp: true })}
+                      >
+                        + Cơ hội <ArrowRight size={13} />
+                      </Button>
+                    </>
+                  )}
+                  {(canDeleteAny || l.owner === myId) && (
+                    <Button size="sm" variant="ghost"
+                      disabled={remove.isPending && remove.variables === l.id}
+                      onClick={() => onDelete(l)}>
+                      <Trash2 size={13} /> Xoá
                     </Button>
-                    <Button
-                      size="sm"
-                      disabled={convert.isPending && convert.variables?.id === l.id}
-                      onClick={() => convert.mutate({ id: l.id, lead: l, withOpp: true })}
-                    >
-                      + Cơ hội <ArrowRight size={13} />
-                    </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </Td>
             </tr>
           ))}

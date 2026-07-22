@@ -1,7 +1,6 @@
 /**
  * Tokinarc frontend — src/pages/crm/Opportunities.tsx
- * Danh sách cơ hội THẬT (GET /crm/opportunities/). Phân trang.
- * (Backend chưa bật search/filter cho opportunity nên không có ô tìm kiếm.)
+ * Danh sách cơ hội THẬT (GET /crm/opportunities/). Phân trang + lọc giai đoạn.
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -10,23 +9,26 @@ import { Target, Plus, List, KanbanSquare } from 'lucide-react'
 import { apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { compactVnd, formatDate, OPP_STAGE_LABEL, OPP_STAGE_TONE } from '@/lib/crm'
-import type { Opportunity } from '@/lib/types'
+import type { Opportunity, OppStage } from '@/lib/types'
 import {
   PageHeader, Button, Tag, Gauge, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { OpportunityForm } from '@/pages/crm/forms/OpportunityForm'
 import { PipelinePage } from '@/pages/crm/Pipeline'
 
+const STAGES: (OppStage | '')[] = ['', 'prospect', 'qualify', 'proposal', 'negotiate', 'won', 'lost']
+
 export function OpportunitiesPage() {
   const nav = useNavigate()
   const [page, setPage] = useState(1)
+  const [stage, setStage] = useState<OppStage | ''>('')
   const [view, setView] = useState<'list' | 'board'>('list')   // Bảng / Kanban (Pipeline)
   const [formOpen, setFormOpen] = useState(false)
   const openCreate = () => setFormOpen(true)
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['opportunities', page],
-    queryFn: () => fetchPage<Opportunity>('/crm/opportunities/', { page }),
+    queryKey: ['opportunities', stage, page],
+    queryFn: () => fetchPage<Opportunity>('/crm/opportunities/', { stage: stage || undefined, page }),
     placeholderData: keepPreviousData,
   })
 
@@ -38,7 +40,15 @@ export function OpportunitiesPage() {
         icon={<Target size={20} className="text-flame" />}
         title="Cơ hội"
         subtitle={data ? `${data.count} cơ hội` : undefined}
-        actions={<Button onClick={openCreate}><Plus size={14} /> Tạo cơ hội</Button>}
+        actions={
+          <>
+            <select value={stage} onChange={(e) => { setStage(e.target.value as OppStage | ''); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+              {STAGES.map((s) => <option key={s} value={s}>{s ? OPP_STAGE_LABEL[s] : 'Tất cả giai đoạn'}</option>)}
+            </select>
+            <Button onClick={openCreate}><Plus size={14} /> Tạo cơ hội</Button>
+          </>
+        }
       />
 
       {/* Chuyển xem: Bảng (danh sách) ↔ Kanban (Pipeline kéo-thả cho deal lớn) */}

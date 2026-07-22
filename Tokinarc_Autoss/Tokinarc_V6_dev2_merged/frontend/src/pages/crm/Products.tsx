@@ -5,7 +5,7 @@
  */
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Wrench, Flame, Coins } from 'lucide-react'
+import { Wrench, Flame, Coins, Upload } from 'lucide-react'
 import { api, apiError } from '@/lib/api'
 import { toast } from 'sonner'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
@@ -14,17 +14,34 @@ import { formatVnd } from '@/lib/crm'
 import { useAuth, isManager } from '@/lib/auth/store'
 import type { CatalogPart, CatalogTorch } from '@/lib/types'
 import { Modal } from '@/components/Modal'
+import { ImportModal } from '@/pages/crm/ImportModal'
 import {
   PageHeader, SearchInput, Tag, TableCard, Th, Td, RowMsg, Pagination, Button,
 } from '@/components/ui'
 
 type TabKey = 'parts' | 'torches'
 
+interface GroupNode { ecosystem: string; total: number; categories: { category: string; count: number }[] }
+
 export function ProductsPage() {
   const [tab, setTab] = useState<TabKey>('parts')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [importOpen, setImportOpen] = useState(false)
+  // #10 biên bản: duyệt phân cấp Nhóm sản phẩm (ecosystem) → Danh mục (category).
+  const [ecoFilter, setEcoFilter] = useState('')
+  const [catFilter, setCatFilter] = useState('')
+  // #3 biên bản (2026-07-22): mở thêm cho Kho (NV kho + QL kho) — danh mục phụ
+  // tùng là dữ liệu Kho trực tiếp quản lý.
+  const importRole = useAuth((s) => s.user?.role)
+  const canImport = isManager(importRole) || importRole === 'warehouse' || importRole === 'wh_manager'
   const debounced = useDebounced(search, 350, () => setPage(1))
+
+  const groups = useQuery({
+    queryKey: ['catalog-part-groups'],
+    queryFn: async () => (await api.get<{ groups: GroupNode[] }>('/catalog/parts/groups/')).data.groups,
+  })
+  const currentGroup = groups.data?.find((g) => g.ecosystem === ecoFilter)
 
   const switchTab = (t: TabKey) => { setTab(t); setSearch(''); setPage(1) }
 
@@ -33,7 +50,14 @@ export function ProductsPage() {
       <PageHeader
         icon={<Wrench size={20} className="text-flame" />}
         title="Sản phẩm"
-        actions={<SearchInput value={search} onChange={setSearch} placeholder="Tìm mã, tên sản phẩm…" />}
+        actions={
+          <>
+            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã, tên sản phẩm…" />
+            {tab === 'parts' && canImport && (
+              <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Import</Button>
+            )}
+          </>
+        }
       />
 
       <div className="flex gap-1 mb-4 border-b border-line">
@@ -41,9 +65,49 @@ export function ProductsPage() {
         <TabBtn active={tab === 'torches'} onClick={() => switchTab('torches')} icon={<Flame size={14} />}>Súng hàn</TabBtn>
       </div>
 
+      {tab === 'parts' && (
+        <div className="flex gap-2 mb-3">
+          <div>
+            <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">
+              Nhóm sản phẩm
+            </label>
+            <select value={ecoFilter}
+              onChange={(e) => { setEcoFilter(e.target.value); setCatFilter(''); setPage(1) }}
+              className="bg-ink-3 border border-line rounded-md px-3 py-2 text-sm min-w-[220px]">
+              <option value="">— Tất cả nhóm ({groups.data?.reduce((s, g) => s + g.total, 0) ?? 0} SP) —</option>
+              {groups.data?.map((g) => (
+                <option key={g.ecosystem} value={g.ecosystem}>{g.ecosystem} ({g.total} SP)</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">
+              Danh mục {ecoFilter && <span className="normal-case text-txt-2/70">(trong nhóm {ecoFilter})</span>}
+            </label>
+            <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value); setPage(1) }}
+              disabled={!ecoFilter}
+              className="bg-ink-3 border border-line rounded-md px-3 py-2 text-sm min-w-[220px] disabled:opacity-50">
+              <option value="">— Tất cả danh mục —</option>
+              {currentGroup?.categories.map((c) => (
+                <option key={c.category} value={c.category}>{c.category} ({c.count})</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
       {tab === 'parts'
-        ? <PartsTable search={debounced} page={page} setPage={setPage} />
+        ? <PartsTable search={debounced} page={page} setPage={setPage} ecosystem={ecoFilter} category={catFilter} />
         : <TorchesTable search={debounced} page={page} setPage={setPage} />}
+
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} spec={{
+        title: 'Import danh mục phụ tùng (Kho)',
+        importUrl: '/catalog/parts/import/',
+        templateUrl: '/catalog/parts/import-template/',
+        templateFilename: 'mau_import_phu_tung.xlsx',
+        invalidateKey: 'catalog-parts',
+        hint: 'Mỗi dòng = 1 phụ tùng. Trùng mã (tokin_part_no) sẽ CẬP NHẬT, không tạo trùng.',
+      }} />
     </div>
   )
 }
@@ -66,22 +130,29 @@ function PriceCell({ display, contact }: { display: string; contact: boolean }) 
   return <span className="tabular-nums">{display || '—'}</span>
 }
 
-function PartsTable({ search, page, setPage }: { search: string; page: number; setPage: (f: (p: number) => number) => void }) {
+function PartsTable({ search, page, setPage, ecosystem, category }: {
+  search: string; page: number; setPage: (f: (p: number) => number) => void
+  ecosystem?: string; category?: string
+}) {
   const canSeeCost = isManager(useAuth((s) => s.user?.role))
   const [costPart, setCostPart] = useState<string | null>(null)
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['catalog-parts', search, page],
-    queryFn: () => fetchPage<CatalogPart>('/catalog/parts/', { search: search || undefined, page }),
+    queryKey: ['catalog-parts', search, page, ecosystem, category],
+    queryFn: () => fetchPage<CatalogPart>('/catalog/parts/', {
+      search: search || undefined, page,
+      ecosystem: ecosystem || undefined, category: category || undefined,
+    }),
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
-  const cols = canSeeCost ? 6 : 5
+  const cols = canSeeCost ? 7 : 6
   return (
     <>
       {data && <p className="text-xs text-txt-2 mb-2">{data.count} phụ tùng</p>}
       <TableCard>
         <thead><tr className="border-b border-line">
-          <Th>Mã</Th><Th>Tên</Th><Th>Nhóm</Th><Th>Hệ</Th><Th className="text-right">Giá bán</Th>
+          <Th>Mã</Th><Th>Tên</Th><Th>Nhóm SP</Th><Th>Danh mục</Th><Th className="text-right">Giá bán</Th>
+          <Th className="text-right">Thuế</Th>
           {canSeeCost && <Th className="text-right">Giá vốn</Th>}
         </tr></thead>
         <tbody>
@@ -92,9 +163,10 @@ function PartsTable({ search, page, setPage }: { search: string; page: number; s
             <tr key={p.tokin_part_no} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{p.tokin_part_no}{p.is_priority_sell && <Tag tone="warn"> ưu tiên</Tag>}</Td>
               <Td className="font-medium">{p.display_name_vi || p.display_name_en || '—'}</Td>
-              <Td className="text-txt-2">{p.category || '—'}</Td>
               <Td className="text-txt-2">{p.ecosystem || '—'}</Td>
+              <Td className="text-txt-2">{p.category || '—'}</Td>
               <Td className="text-right"><PriceCell display={p.price_display} contact={p.is_contact_price} /></Td>
+              <Td className="text-right text-txt-2 tabular-nums">{p.tax_pct != null ? `${p.tax_pct}%` : '—'}</Td>
               {canSeeCost && (
                 <Td className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => setCostPart(p.tokin_part_no)}>

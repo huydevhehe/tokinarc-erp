@@ -11,7 +11,8 @@ from __future__ import annotations
 from rest_framework import permissions
 from rest_framework.permissions import SAFE_METHODS
 
-from apps.accounts.roles import INTERNAL_ROLES, WMS_OP_ROLES, Role, is_wms_control, role_of
+from apps.accounts.capabilities import has_capability
+from apps.accounts.roles import INTERNAL_ROLES, WMS_OP_ROLES, Role, role_of
 
 # Đọc: mọi nhân viên (trừ customer). Ghi nghiệp vụ: WMS_OP_ROLES.
 WMS_READ_ROLES  = INTERNAL_ROLES
@@ -51,4 +52,4 @@ class WmsControlAccess(permissions.BasePermission):
             return False
         if request.method in SAFE_METHODS:
             return r in WMS_READ_ROLES
-        return is_wms_control(u)
+        return has_capability(u, 'wms.control.write')

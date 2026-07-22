@@ -46,6 +46,11 @@ class SalesOrder(BaseModel, SoftDeleteMixin):
                                     default=OrderType.ONE_OFF, db_index=True)
     parent_order = models.ForeignKey('self', null=True, blank=True, on_delete=models.PROTECT,
                                      related_name='child_orders')
+    # Hợp đồng khung gốc (nếu đơn sinh từ Contract.to-order) — 1 hợp đồng có thể
+    # sinh NHIỀU đơn theo từng đợt giao hàng (không giống Quote.contract_order_code
+    # dùng chung 1 field cho cả 2 hướng, từng gây trùng mã — xem crm/views_ext.py).
+    contract     = models.ForeignKey('crm.Contract', null=True, blank=True,
+                                     on_delete=models.SET_NULL, related_name='orders')
     issued_date  = models.DateField()
     valid_from   = models.DateField(null=True, blank=True)
     valid_to     = models.DateField(null=True, blank=True)

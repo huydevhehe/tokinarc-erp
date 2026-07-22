@@ -10,6 +10,7 @@ from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from apps.accounts.capabilities import has_capability
 from apps.accounts.roles import Role, is_manager
 from apps.common.models import AuditLog, notify_roles
 
@@ -44,8 +45,9 @@ def _customer_contact_addr(cust):
 
 def _create_outbound_for_order(order, user) -> str | None:
     """Khi ship đơn → tự tạo WMS OutboundOrder (draft) gắn sales_order_code.
+    Copy CẢ dòng phụ tùng (part) lẫn súng hàn (torch); dòng không khớp catalog
+    → KHÔNG copy nhưng ghi rõ vào notes phiếu (kho biết thiếu gì, không im lặng).
     Trả mã phiếu xuất, hoặc None nếu không có kho mặc định / đã có phiếu."""
-    from apps.catalog.models import Part
     from apps.wms.models import OutboundLine, OutboundOrder, Warehouse
 
     if OutboundOrder.objects.filter(sales_order_code=order.code).exists():
@@ -63,14 +65,23 @@ def _create_outbound_for_order(order, user) -> str | None:
         code=code, warehouse=wh, sales_order_code=order.code, customer=order.customer,
         created_by=user, updated_by=user,
     )
+    skipped = []
     for idx, ol in enumerate(order.lines.all()):
-        if ol.part_id:
+        if ol.part_id or ol.torch_id:
             OutboundLine.objects.create(
-                outbound=ob, part=Part.objects.filter(pk=ol.part_id).first(),
-                qty_ordered=ol.qty, order_idx=idx)
+                outbound=ob, part=ol.part, torch=ol.torch,
+                qty_ordered=ol.qty, order_idx=idx,
+                unit_price=ol.unit_price, line_total=ol.line_total)
+        else:
+            skipped.append(f"{ol.description or '?'} ×{ol.qty}")
+    if skipped:
+        ob.notes = ('⚠ Dòng KHÔNG khớp catalog — kho không soạn tự động được: '
+                    + '; '.join(skipped))
+        ob.save(update_fields=['notes'])
     # Báo nhân viên kho: có phiếu xuất mới cần soạn/giao hàng.
+    tail = f" (⚠ {len(skipped)} dòng không khớp catalog)" if skipped else ""
     notify_roles(WAREHOUSE_STAFF, 'outbound_created',
-                 f"Phiếu xuất {code} cần soạn hàng cho KH {order.customer.name}.",
+                 f"Phiếu xuất {code} cần soạn hàng cho KH {order.customer.name}.{tail}",
                  link='/wms/outbound')
     return code
 
@@ -86,7 +97,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         qs = (SalesOrder.objects.select_related('customer', 'owner')
               .prefetch_related('lines')
               .annotate(debt_vnd=F('total_vnd') - F('paid_vnd')))
-        if not is_manager(self.request.user):
+        if not has_capability(self.request.user, 'sales.order.view_all'):
             qs = qs.filter(owner_id=self.request.user.id)
         return qs
 
@@ -146,7 +157,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
         Chỉ khi đơn CHƯA giao (draft/pending/active). Manager+ thực hiện."""
         from decimal import Decimal
 
-        if not is_manager(request.user):
+        if not has_capability(request.user, 'sales.order.amend'):
             return Response({'detail': 'Chỉ quản lý/CEO/admin sửa đơn.'}, status=403)
         order = self.get_object()
         if order.status not in ('draft', 'pending', 'active'):
@@ -184,7 +195,7 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'], url_path='create-invoice')
     def create_invoice(self, request, pk=None):
         """Xuất hóa đơn VAT từ đơn bán. Body tùy chọn {tax_pct} (mặc định 8%)."""
-        if not is_manager(request.user):
+        if not has_capability(request.user, 'sales.order.create_invoice'):
             return Response({'detail': 'Chỉ quản lý/CEO/admin xuất hóa đơn.'}, status=403)
         order = self.get_object()
         if order.status in ('draft', 'cancelled'):
@@ -290,7 +301,7 @@ class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         qs = Invoice.objects.select_related('order', 'customer')
-        if not is_manager(self.request.user):
+        if not has_capability(self.request.user, 'sales.invoice.view_all'):
             qs = qs.filter(order__owner_id=self.request.user.id)
         return qs
 
@@ -324,7 +335,7 @@ class InvoiceViewSet(viewsets.ReadOnlyModelViewSet):
     @action(detail=True, methods=['post'], url_path='mark-synced')
     def mark_synced(self, request, pk=None):
         """Đánh dấu đã đẩy/đối soát với MISA + lưu số hóa đơn MISA trả về."""
-        if not is_manager(request.user):
+        if not has_capability(request.user, 'sales.invoice.mark_synced'):
             return Response({'detail': 'Chỉ quản lý/CEO/admin.'}, status=403)
         inv = self.get_object()
         inv.misa_status = 'synced'
@@ -342,11 +353,10 @@ class ReturnOrderViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status', 'customer', 'order']
 
     def get_queryset(self):
-        from apps.accounts.roles import WMS_OP_ROLES, role_of
         from .models import ReturnOrder
         qs = ReturnOrder.objects.select_related('customer', 'warehouse', 'owner').prefetch_related('lines')
         # Vai trò kho cần thấy mọi phiếu để nhận lại; sale chỉ thấy của mình.
-        if not is_manager(self.request.user) and role_of(self.request.user) not in WMS_OP_ROLES:
+        if not has_capability(self.request.user, 'sales.return_order.view_all'):
             qs = qs.filter(owner_id=self.request.user.id)
         return qs
 

@@ -6,12 +6,13 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ShoppingCart, Plus, Check, PackageCheck, Wallet, Trash2, Eye, ShieldCheck, X, Download, Truck } from 'lucide-react'
+import { ShoppingCart, Plus, Check, PackageCheck, Wallet, Trash2, Eye, X, Download, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { compactVnd, formatVnd } from '@/lib/crm'
-import { isManager, isCeo, useAuth } from '@/lib/auth/store'
+import { isManager, useAuth } from '@/lib/auth/store'
+import { useCan } from '@/lib/auth/capabilities'
 import { Modal } from '@/components/Modal'
 import { PageHeader, Button, StatCard, Tag, TableCard, Th, Td, RowMsg } from '@/components/ui'
 import { PODetailModal, type PODetail } from '@/pages/purchasing/PODetailModal'
@@ -20,7 +21,7 @@ interface POLine { id?: string; part: string; part_name?: string; description?: 
 interface PO {
   id: string; code: string; supplier_name: string; warehouse_code: string
   status: string; status_display: string; total_vnd: string; paid_vnd: string; debt_vnd: number
-  requires_l2?: boolean; owner_username?: string; notes?: string; lines: POLine[]
+  owner_username?: string; notes?: string; lines: POLine[]
 }
 interface IncomingRow {
   id: string; code: string; supplier_name: string; status: string; status_display: string
@@ -29,7 +30,7 @@ interface IncomingRow {
 }
 interface IncomingResp { count: number; overdue: number; results: IncomingRow[] }
 const TONE: Record<string, 'gray' | 'blue' | 'warn' | 'ok' | 'danger' | 'purple'> = {
-  draft: 'gray', pending_ceo: 'warn', approved: 'blue', rejected: 'danger',
+  draft: 'gray', approved: 'blue', rejected: 'danger',
   ordered: 'purple', partial: 'warn', received: 'ok', cancelled: 'danger',
 }
 
@@ -38,9 +39,12 @@ export function PurchaseOrdersPage() {
   const nav = useNavigate()
   const role = useAuth((s) => s.user?.role)
   const canManage = isManager(role)
-  const canApproveL2 = isCeo(role)
   // QL kho lập đơn mua + trả NCC (Mua hàng nằm trong tab WMS); duyệt vẫn là manager/CEO.
   const canPurchase = canManage || role === 'wh_manager'
+  // Giai đoạn 1 phân quyền function-based: nút Tạo/Xoá PO đọc capability động
+  // thay vì hardcode role — CEO/admin tự đổi qua /admin/capabilities.
+  const canCreatePO = useCan('purchasing.po.create')
+  const canDeletePO = useCan('purchasing.po.delete')
   const [open, setOpen] = useState(false)
   const [detail, setDetail] = useState<PODetail | null>(null)
   const [payFor, setPayFor] = useState<PO | null>(null)
@@ -69,17 +73,12 @@ export function PurchaseOrdersPage() {
     onError: (e) => toast.error(apiError(e)),
   })
   const ACT_MSG: Record<string, string> = {
-    confirm: 'Đã đặt hàng', receive: 'Đã nhận → cộng tồn',
-    approve: 'Đã duyệt đơn mua', 'approve-l2': 'CEO đã duyệt cấp 2',
+    confirm: 'Đã đặt hàng', receive: 'Đã nhận → cộng tồn', approve: 'Đã duyệt đơn mua',
   }
   const act = useMutation({
-    mutationFn: (v: { id: string; what: 'confirm' | 'receive' | 'approve' | 'approve-l2' }) =>
+    mutationFn: (v: { id: string; what: 'confirm' | 'receive' | 'approve' }) =>
       api.post(`/purchasing/orders/${v.id}/${v.what}/`),
-    onSuccess: (r, v) => {
-      const msg = v.what === 'approve' && r.data?.status === 'pending_ceo'
-        ? 'Đã duyệt cấp 1 — chuyển CEO duyệt cấp 2' : (ACT_MSG[v.what] ?? 'Đã cập nhật')
-      toast.success(msg); invalidate()
-    },
+    onSuccess: (_r, v) => { toast.success(ACT_MSG[v.what] ?? 'Đã cập nhật'); invalidate() },
     onError: (e) => toast.error(apiError(e)),
   })
   const mkInbound = useMutation({
@@ -105,6 +104,14 @@ export function PurchaseOrdersPage() {
     onSuccess: () => { toast.success('Đã ghi thanh toán'); invalidate(); setPayFor(null); setPayAmt('') },
     onError: (e) => toast.error(apiError(e)),
   })
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/purchasing/orders/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá đơn mua'); invalidate() },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const onDelete = (o: PO) => {
+    if (window.confirm(`Xoá đơn mua ${o.code}? Không thể khôi phục qua giao diện.`)) remove.mutate(o.id)
+  }
 
   return (
     <div className="max-w-6xl">
@@ -122,7 +129,7 @@ export function PurchaseOrdersPage() {
                 } catch (e) { toast.error(apiError(e)) }
               }}><Wallet size={14} /> Xuất phiếu chi (MISA)</Button>
             )}
-            {canPurchase && <Button onClick={() => setOpen(true)}><Plus size={14} /> Tạo PO</Button>}
+            {canCreatePO && <Button onClick={() => setOpen(true)}><Plus size={14} /> Tạo PO</Button>}
           </>
         } />
 
@@ -169,23 +176,14 @@ export function PurchaseOrdersPage() {
                   onClick={() => downloadFile(`/purchasing/orders/${o.id}/export-xlsx/`, `don_mua_${o.code}.xlsx`)}>
                   <Download size={13} /> Excel
                 </Button>
-                {/* Duyệt cấp 1 (manager+) cho đơn nháp */}
+                {/* Duyệt (1 cấp — manager/CEO) cho đơn nháp */}
                 {o.status === 'draft' && canManage && (
                   <>
                     <Button size="sm" variant="success" className="mr-1" onClick={() => act.mutate({ id: o.id, what: 'approve' })}>
-                      <Check size={13} /> Duyệt{o.requires_l2 ? ' (cấp 1)' : ''}
+                      <Check size={13} /> Duyệt
                     </Button>
                     <Button size="sm" variant="ghost" className="mr-1" onClick={() => onReject(o.id)}><X size={13} /> Từ chối</Button>
                   </>
-                )}
-                {/* Duyệt cấp 2 (CEO) cho đơn vượt ngưỡng */}
-                {o.status === 'pending_ceo' && canApproveL2 && (
-                  <Button size="sm" variant="success" className="mr-1" onClick={() => act.mutate({ id: o.id, what: 'approve-l2' })}>
-                    <ShieldCheck size={13} /> Duyệt cấp 2 (CEO)
-                  </Button>
-                )}
-                {o.status === 'pending_ceo' && !canApproveL2 && (
-                  <span className="text-[11px] text-txt-2 mr-1">Chờ CEO duyệt</span>
                 )}
                 {/* Đặt hàng sau khi đã duyệt */}
                 {o.status === 'approved' && canPurchase && (
@@ -200,6 +198,12 @@ export function PurchaseOrdersPage() {
                 )}
                 {o.debt_vnd > 0 && canPurchase && (
                   <Button size="sm" variant="ghost" onClick={() => setPayFor(o)}><Wallet size={13} /> Trả</Button>
+                )}
+                {o.status === 'draft' && canDeletePO && (
+                  <Button size="sm" variant="ghost" disabled={remove.isPending && remove.variables === o.id}
+                    onClick={() => onDelete(o)}>
+                    <Trash2 size={13} /> Xoá
+                  </Button>
                 )}
               </Td>
             </tr>

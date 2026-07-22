@@ -6,8 +6,8 @@
  *   - Cấp 1 → POST /crm/quotes/{id}/approve/      (manager/CEO/admin)
  *   - Cấp 2 → POST /crm/quotes/{id}/approve-l2/   (chỉ CEO/admin)
  *   - Từ chối → POST /crm/quotes/{id}/reject/      (manager+)
- * Đơn mua duyệt 2 cấp song song:
- *   - GET /purchasing/orders/pending-approvals/ + approve / approve-l2 / reject
+ * Đơn mua — #16 biên bản (2026-07-21): RÚT VỀ 1 CẤP DUY NHẤT (manager/CEO):
+ *   - GET /purchasing/orders/pending-approvals/ + approve / reject
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
@@ -24,7 +24,7 @@ import { QuoteDetailModal } from '@/pages/crm/QuoteDetailModal'
 import { PODetailModal, type PODetail } from '@/pages/purchasing/PODetailModal'
 import { ContractDetailModal } from '@/pages/crm/ContractDetailModal'
 
-const PO_TONE: Record<string, 'gray' | 'warn'> = { draft: 'gray', pending_ceo: 'warn' }
+const PO_TONE: Record<string, 'gray' | 'warn'> = { draft: 'gray' }
 const HD_TONE: Record<string, 'gray' | 'warn'> = { draft: 'gray', pending_ceo: 'warn' }
 
 export function ApprovalsPage() {
@@ -89,16 +89,7 @@ export function ApprovalsPage() {
 
   const poApprove = useMutation({
     mutationFn: (id: string) => api.post(`/purchasing/orders/${id}/approve/`),
-    onSuccess: (res) => {
-      toast.success(res.data.status === 'pending_ceo'
-        ? 'Đã duyệt cấp 1 — chuyển CEO duyệt cấp 2' : 'Đã duyệt đơn mua')
-      invalidate()
-    },
-    onError: (e) => toast.error(apiError(e)),
-  })
-  const poApproveL2 = useMutation({
-    mutationFn: (id: string) => api.post(`/purchasing/orders/${id}/approve-l2/`),
-    onSuccess: () => { toast.success('CEO đã duyệt cấp 2'); invalidate() },
+    onSuccess: () => { toast.success('Đã duyệt đơn mua'); invalidate() },
     onError: (e) => toast.error(apiError(e)),
   })
   const poReject = useMutation({
@@ -138,8 +129,6 @@ export function ApprovalsPage() {
   const lvl2 = all.filter((q) => q.status === 'pending_ceo')
 
   const pos = poData.data?.results ?? []
-  const poLvl1 = pos.filter((p) => p.status === 'draft')
-  const poLvl2 = pos.filter((p) => p.status === 'pending_ceo')
   const hds = hdData.data?.results ?? []
   const hdLvl1 = hds.filter((h) => h.status === 'draft')
   const hdLvl2 = hds.filter((h) => h.status === 'pending_ceo')
@@ -220,33 +209,10 @@ export function ApprovalsPage() {
         </Section>
       )}
 
-      {/* ── Đơn mua chờ CEO duyệt cấp 2 ── */}
-      {poLvl2.length > 0 && (
-        <POSection title="Đơn mua — chờ CEO duyệt (cấp 2)" count={poLvl2.length}>
-          {poLvl2.map((p) => (
-            <PORow key={p.id} p={p}>
-              <Button variant="ghost" size="sm" onClick={() => setPoDetail(p)}><Eye size={13} /> Xem</Button>
-              {canApproveL2 ? (
-                <Button variant="success" size="sm"
-                  disabled={poApproveL2.isPending && poApproveL2.variables === p.id}
-                  onClick={() => poApproveL2.mutate(p.id)}>
-                  <ShieldCheck size={13} /> Duyệt cấp 2 (CEO)
-                </Button>
-              ) : <span className="text-[11px] text-txt-2">Chờ CEO duyệt</span>}
-              {canApprove && (
-                <Button variant="ghost" size="sm"
-                  disabled={poReject.isPending && poReject.variables?.id === p.id}
-                  onClick={() => onPoReject(p.id)}><X size={13} /> Từ chối</Button>
-              )}
-            </PORow>
-          ))}
-        </POSection>
-      )}
-
-      {/* ── Đơn mua chờ duyệt cấp 1 ── */}
-      {poLvl1.length > 0 && (
-        <POSection title="Đơn mua — chờ duyệt cấp 1" count={poLvl1.length}>
-          {poLvl1.map((p) => (
+      {/* ── Đơn mua chờ duyệt (#16: 1 cấp duy nhất) ── */}
+      {pos.length > 0 && (
+        <POSection title="Đơn mua — chờ duyệt" count={pos.length}>
+          {pos.map((p) => (
             <PORow key={p.id} p={p}>
               <Button variant="ghost" size="sm" onClick={() => setPoDetail(p)}><Eye size={13} /> Xem</Button>
               {canApprove ? (

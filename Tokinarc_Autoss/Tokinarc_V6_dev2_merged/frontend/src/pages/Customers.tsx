@@ -32,7 +32,9 @@ export function CustomersPage() {
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
-  const canImport = isManager(useAuth((s) => s.user?.role))
+  // #3 biên bản (2026-07-22): mở thêm cho Sale — KH là dữ liệu Sale sở hữu.
+  const importRole = useAuth((s) => s.user?.role)
+  const canImport = isManager(importRole) || importRole === 'sales'
 
   // debounce search 350ms
   useDebounce(search, 350, (v) => { setDebounced(v); setPage(1) })

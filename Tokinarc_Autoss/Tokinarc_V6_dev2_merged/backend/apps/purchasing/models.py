@@ -30,8 +30,10 @@ class Supplier(BaseModel, SoftDeleteMixin):
 
 
 class PurchaseStatus(models.TextChoices):
-    DRAFT       = 'draft',       'Nháp'            # đề xuất — chờ duyệt cấp 1
-    PENDING_CEO = 'pending_ceo', 'Chờ CEO duyệt'   # qua cấp 1, vượt ngưỡng
+    DRAFT       = 'draft',       'Nháp'            # đề xuất — chờ duyệt
+    # #16 biên bản (2026-07-21): rút duyệt PO về 1 cấp — PENDING_CEO không còn
+    # được gán mới nữa (giữ lại enum cho dữ liệu lịch sử/tương thích ngược).
+    PENDING_CEO = 'pending_ceo', 'Chờ CEO duyệt'
     APPROVED    = 'approved',    'Đã duyệt'        # duyệt xong — chờ đặt hàng
     REJECTED    = 'rejected',    'Từ chối'
     ORDERED     = 'ordered',     'Đã đặt'
@@ -61,7 +63,9 @@ class PurchaseOrder(BaseModel, SoftDeleteMixin):
                                     related_name='purchase_orders')
     notes       = models.TextField(blank=True)
     received_at = models.DateTimeField(null=True, blank=True)
-    # Duyệt 2 cấp (giống Báo giá): cấp 1 = manager, cấp 2 = CEO (vượt ngưỡng).
+    # #16 biên bản (2026-07-21): rút về DUYỆT 1 CẤP (manager/CEO) — action
+    # `approve_l2` đã bị xoá, các field l2_* giữ lại CHỈ để đọc dữ liệu lịch sử
+    # (PO nào đã duyệt cấp 2 trước khi đổi chính sách), không còn ghi mới.
     l1_approved_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
                                        null=True, blank=True, related_name='l1_approved_pos')
     l1_approved_at = models.DateTimeField(null=True, blank=True)
@@ -86,12 +90,6 @@ class PurchaseOrder(BaseModel, SoftDeleteMixin):
     def recompute_total(self):
         agg = self.lines.aggregate(s=models.Sum('line_total'))
         self.total_vnd = agg['s'] or 0
-
-    def requires_l2(self) -> bool:
-        """Đơn mua ≥ ngưỡng PO_L2_THRESHOLD_VND cần duyệt cấp 2 (CEO)."""
-        from django.conf import settings as dj_settings
-        threshold = getattr(dj_settings, 'PO_L2_THRESHOLD_VND', 100_000_000)
-        return (self.total_vnd or 0) >= threshold
 
 
 class PurchaseOrderLine(models.Model):

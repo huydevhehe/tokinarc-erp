@@ -7,6 +7,7 @@ Include vào tokinarc/urls.py:
 from django.urls import path
 from rest_framework.routers import DefaultRouter
 
+from .imports import PartImportTemplateView, PartImportView
 from .stock_availability import StockAvailabilityView
 from .views import PartViewSet, TorchViewSet, ProcedureViewSet
 
@@ -18,4 +19,7 @@ router.register(r'procedures', ProcedureViewSet, basename='procedure')
 urlpatterns = [
     # Bot khách: tình trạng còn hàng (thô, có key) — đặt trước router.
     path('stock-availability/', StockAvailabilityView.as_view(), name='stock-availability'),
+    # Import Excel danh mục Part — đặt TRƯỚC router để không bị route <pk> nuốt mất.
+    path('parts/import/', PartImportView.as_view(), name='part-import'),
+    path('parts/import-template/', PartImportTemplateView.as_view(), name='part-import-template'),
 ] + router.urls

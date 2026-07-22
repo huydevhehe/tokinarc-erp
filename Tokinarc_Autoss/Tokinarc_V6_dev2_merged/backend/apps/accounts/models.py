@@ -37,3 +37,42 @@ class User(AbstractUser):
     def is_manager(self) -> bool:
         from .roles import is_manager as _im
         return _im(self)
+
+
+class Capability(models.Model):
+    """1 hành động cụ thể cần gán quyền (VD 'purchasing.po.create').
+
+    Danh sách hàng do dev thêm qua `capabilities.py` (mỗi hàng khớp 1 điểm
+    check quyền thật trong code) — admin/CEO KHÔNG tự tạo hàng mới qua UI,
+    chỉ tick/bỏ tick RoleCapabilityGrant cho hàng đã có.
+    """
+    key   = models.CharField(max_length=80, unique=True)
+    label = models.CharField(max_length=200)
+    group = models.CharField(max_length=40)
+
+    class Meta:
+        db_table = 'accounts_capability'
+        ordering = ['group', 'key']
+
+    def __str__(self) -> str:
+        return self.key
+
+
+class RoleCapabilityGrant(models.Model):
+    """Role X có được làm Capability Y không — nguồn động thay cho set cứng
+    trong `roles.py`. Insert đủ mọi role (cả is_granted=False) để UI hiển thị
+    đầy đủ ma trận."""
+    role       = models.CharField(max_length=20, choices=RoleChoices.choices)
+    capability = models.ForeignKey(Capability, on_delete=models.CASCADE, related_name='grants')
+    is_granted = models.BooleanField(default=False)
+    updated_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = 'accounts_role_capability_grant'
+        constraints = [
+            models.UniqueConstraint(fields=['role', 'capability'], name='uniq_role_capability'),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.role} -> {self.capability_id} = {self.is_granted}"

@@ -18,7 +18,7 @@ export interface PODetail {
 }
 
 const TONE: Record<string, 'gray' | 'blue' | 'warn' | 'ok' | 'danger' | 'purple'> = {
-  draft: 'gray', pending_ceo: 'warn', approved: 'blue', rejected: 'danger',
+  draft: 'gray', approved: 'blue', rejected: 'danger',
   ordered: 'purple', partial: 'warn', received: 'ok', cancelled: 'danger',
 }
 

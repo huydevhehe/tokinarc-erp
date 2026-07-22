@@ -5,13 +5,16 @@
  */
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, Target, Pencil, Phone, MapPin } from 'lucide-react'
+import { useQuery, useMutation } from '@tanstack/react-query'
+import { ArrowLeft, Target, Pencil, Phone, MapPin, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import {
   compactVnd, formatDate, OPP_STAGE_LABEL, OPP_STAGE_TONE,
   ACTIVITY_TYPE_TONE,
 } from '@/lib/crm'
+import { useAuth } from '@/lib/auth/store'
+import { useCan } from '@/lib/auth/capabilities'
 import type { Opportunity, Activity, Visit } from '@/lib/types'
 import { Card, SectionTitle, StatCard, Tag } from '@/components/ui'
 import { OpportunityForm } from '@/pages/crm/forms/OpportunityForm'
@@ -21,7 +24,18 @@ interface TimelineItem { date: string; kind: 'activity' | 'visit'; label: string
 export function OpportunityDetailPage() {
   const { id = '' } = useParams()
   const nav = useNavigate()
+  const myId = useAuth((s) => s.user?.id)
+  const canDeleteAny = useCan('crm.opportunity.delete')
   const [editOpen, setEditOpen] = useState(false)
+
+  const remove = useMutation({
+    mutationFn: () => api.delete(`/crm/opportunities/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá cơ hội'); nav('/opportunities') },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const onDelete = () => {
+    if (window.confirm('Xoá cơ hội này? Có thể khôi phục qua quản trị nếu cần.')) remove.mutate()
+  }
 
   const opp = useQuery({
     queryKey: ['opportunity', id],
@@ -76,6 +90,12 @@ export function OpportunityDetailPage() {
           className="flex items-center gap-1.5 text-sm text-txt-2 hover:text-txt border border-line rounded-md px-3 py-1.5 transition-colors">
           <Pencil size={14} /> Sửa
         </button>
+        {(canDeleteAny || o.owner === myId) && (
+          <button onClick={onDelete} disabled={remove.isPending}
+            className="flex items-center gap-1.5 text-sm text-txt-2 hover:text-danger border border-line rounded-md px-3 py-1.5 transition-colors disabled:opacity-50">
+            <Trash2 size={14} /> Xoá
+          </button>
+        )}
       </div>
 
       <OpportunityForm open={editOpen} onClose={() => setEditOpen(false)} editing={o} />

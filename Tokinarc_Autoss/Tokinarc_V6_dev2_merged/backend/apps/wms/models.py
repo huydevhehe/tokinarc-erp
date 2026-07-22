@@ -64,6 +64,11 @@ class OutboundStatus(models.TextChoices):
     CANCELLED = 'cancelled', 'Hủy'
 
 
+class OutboundPurpose(models.TextChoices):
+    SALE    = 'sale',    'Hàng bán'
+    PROJECT = 'project', 'Hàng xuất dự án'
+
+
 # ─── Cấu trúc kho ────────────────────────────────────────────────────────────
 class Warehouse(BaseModel):
     """Kho vật lý. HCM là kho mặc định; thêm kho mới không cần đổi schema."""
@@ -228,6 +233,13 @@ class ASN(BaseModel):
         ordering = ['-created_at']
 
 
+class InboundFlowType(models.TextChoices):
+    """#11 biên bản (2026-07-21): 2 luồng nhập — nội bộ (điều chuyển/không có
+    NCC ngoài) và NCC (nhà cung cấp thật, cần giá + thuế để lên biên bản/kế toán)."""
+    INTERNAL = 'internal', 'Nội bộ'
+    SUPPLIER = 'supplier', 'Nhà cung cấp'
+
+
 class InboundOrder(BaseModel):
     code      = models.CharField(max_length=20, unique=True)     # 'IN-2026-077'
     warehouse = models.ForeignKey(Warehouse, on_delete=models.PROTECT, related_name='inbounds')
@@ -243,6 +255,18 @@ class InboundOrder(BaseModel):
     shortage_note = models.TextField(blank=True)   # lý do nhận thiếu (NCC giao thiếu/hàng lỗi…)
     received_at = models.DateTimeField(null=True, blank=True)
     notes     = models.TextField(blank=True)
+    # #11 biên bản: nội bộ vs NCC — luồng NCC bắt buộc giá + thuế trước khi confirm.
+    # Default = nội bộ (an toàn, không bắt buộc gì thêm); luồng từ PO (create_inbound)
+    # và ASN.arrive() tự set 'supplier' rõ ràng trong code — tạo tay qua API/UI phải
+    # tự chọn (FE bắt buộc chọn, không để trống theo default).
+    flow_type   = models.CharField(max_length=20, choices=InboundFlowType.choices,
+                                   default=InboundFlowType.INTERNAL, db_index=True)
+    tax_pct     = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # % thuế, áp cho CẢ phiếu
+    # Người giao: nhân viên NCC/bên ngoài, không có tài khoản hệ thống → text tự do.
+    delivered_by_name = models.CharField(max_length=100, blank=True)
+    # Người nhận: tự động điền = người bấm xác nhận (confirm), là user thật trong hệ thống.
+    received_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                                    on_delete=models.SET_NULL, related_name='inbounds_received')
 
     class Meta:
         db_table = 'wms_inbound_order'
@@ -289,6 +313,8 @@ class OutboundOrder(BaseModel):
                                   default=OutboundRule.FIFO)
     status     = models.CharField(max_length=20, choices=OutboundStatus.choices,
                                   default=OutboundStatus.DRAFT, db_index=True)
+    purpose    = models.CharField(max_length=10, choices=OutboundPurpose.choices,
+                                  default=OutboundPurpose.SALE, db_index=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
     notes      = models.TextField(blank=True)
 
@@ -306,6 +332,9 @@ class OutboundLine(models.Model):
     qty_ordered = models.IntegerField()
     qty_picked  = models.IntegerField(default=0)
     order_idx   = models.IntegerField(default=0)
+    # Đơn giá/tổng dòng — copy từ SalesOrderLine lúc tạo phiếu (đồng bộ giá báo giá/đơn bán).
+    unit_price  = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True)
+    line_total  = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True)
 
     class Meta:
         db_table = 'wms_outbound_line'

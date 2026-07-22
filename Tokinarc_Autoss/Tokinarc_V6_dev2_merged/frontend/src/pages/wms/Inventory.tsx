@@ -5,10 +5,12 @@
  */
 import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { Package, AlertTriangle, SlidersHorizontal, ArrowLeftRight } from 'lucide-react'
-import { apiError } from '@/lib/api'
+import { Package, AlertTriangle, SlidersHorizontal, ArrowLeftRight, Layers, Download } from 'lucide-react'
+import { apiError, api } from '@/lib/api'
+import { downloadFile } from '@/lib/download'
 import { fetchPage, fetchAll, fetchCount, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
+import { formatVnd } from '@/lib/crm'
 import type { InventoryItem } from '@/lib/types'
 import type { Option } from '@/components/form'
 import {
@@ -18,14 +20,23 @@ import { AdjustForm } from '@/pages/wms/forms/AdjustForm'
 import { TransferForm } from '@/pages/wms/forms/TransferForm'
 
 interface BinLite { id: string; full_code: string }
+interface CategoryRow { kind: 'part' | 'torch'; group: string; qty: number; value: number }
+const KIND_LABEL: Record<CategoryRow['kind'], string> = { part: 'Phụ tùng', torch: 'Súng hàn' }
 
 export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boolean }) {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [lowStock, setLowStock] = useState(initialLow)
+  const [groupView, setGroupView] = useState(false)
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null)
   const [transferItem, setTransferItem] = useState<InventoryItem | null>(null)
   const debounced = useDebounced(search, 350, () => setPage(1))
+
+  const grouped = useQuery({
+    queryKey: ['wms-inventory-by-category'],
+    queryFn: async () => (await api.get<CategoryRow[]>('/wms/inventory/by-category/')).data,
+    enabled: groupView,
+  })
 
   const bins = useQuery({ queryKey: ['wms-bins-opt'], queryFn: () => fetchAll<BinLite>('/wms/bins/') })
   const binOptions: Option[] = (bins.data?.items ?? []).map((b) => ({ value: b.id, label: b.full_code }))
@@ -50,19 +61,62 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
       <PageHeader
         icon={<Package size={20} className="text-flame" />}
         title="Tồn kho"
-        subtitle={data ? `${data.count} dòng tồn${lowStock ? ' · đang lọc sắp hết' : ''}` : undefined}
+        subtitle={
+          groupView
+            ? (grouped.data ? `${grouped.data.length} nhóm hàng` : undefined)
+            : (data ? `${data.count} dòng tồn${lowStock ? ' · đang lọc sắp hết' : ''}` : undefined)
+        }
         actions={
           <>
-            <button onClick={() => { setLowStock((v) => !v); setPage(1) }}
+            <button onClick={() => setGroupView((v) => !v)}
               className={`flex items-center gap-1.5 text-xs rounded-md px-2.5 py-2 border transition-colors ${
-                lowStock ? 'border-danger text-danger bg-danger/10' : 'border-line text-txt-2 hover:text-txt'}`}>
-              <AlertTriangle size={14} /> Chỉ sắp hết{lowCount.data ? ` (${lowCount.data})` : ''}
+                groupView ? 'border-flame text-flame bg-flame/10' : 'border-line text-txt-2 hover:text-txt'}`}>
+              <Layers size={14} /> Xem theo nhóm hàng
             </button>
-            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mặt hàng, vị trí…" />
+            {groupView ? (
+              <Button variant="ghost"
+                onClick={() => downloadFile('/wms/inventory/export-by-category/', 'ton_kho_theo_nhom.xlsx')}>
+                <Download size={14} /> Xuất Excel
+              </Button>
+            ) : (
+              <>
+                <button onClick={() => { setLowStock((v) => !v); setPage(1) }}
+                  className={`flex items-center gap-1.5 text-xs rounded-md px-2.5 py-2 border transition-colors ${
+                    lowStock ? 'border-danger text-danger bg-danger/10' : 'border-line text-txt-2 hover:text-txt'}`}>
+                  <AlertTriangle size={14} /> Chỉ sắp hết{lowCount.data ? ` (${lowCount.data})` : ''}
+                </button>
+                <SearchInput value={search} onChange={setSearch} placeholder="Tìm mặt hàng, vị trí…" />
+              </>
+            )}
           </>
         }
       />
 
+      {groupView && (
+        <TableCard>
+          <thead>
+            <tr className="border-b border-line">
+              <Th>Loại</Th><Th>Nhóm hàng</Th>
+              <Th className="text-right">Tồn (SL)</Th><Th className="text-right">Giá trị</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {grouped.isLoading && <RowMsg colSpan={4}>Đang tải…</RowMsg>}
+            {grouped.isError && <RowMsg colSpan={4} danger>Lỗi: {apiError(grouped.error)}</RowMsg>}
+            {grouped.data?.length === 0 && <RowMsg colSpan={4}>Chưa có tồn kho.</RowMsg>}
+            {grouped.data?.map((r, i) => (
+              <tr key={`${r.kind}-${r.group}-${i}`} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
+                <Td className="text-txt-2">{KIND_LABEL[r.kind]}</Td>
+                <Td className="font-medium">{r.group}</Td>
+                <Td className="text-right tabular-nums">{r.qty}</Td>
+                <Td className="text-right tabular-nums text-flame">{formatVnd(r.value)}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </TableCard>
+      )}
+
+      {!groupView && (
       <TableCard>
         <thead>
           <tr className="border-b border-line">
@@ -102,8 +156,9 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
           })}
         </tbody>
       </TableCard>
+      )}
 
-      {data && data.count > PAGE_SIZE && (
+      {!groupView && data && data.count > PAGE_SIZE && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}

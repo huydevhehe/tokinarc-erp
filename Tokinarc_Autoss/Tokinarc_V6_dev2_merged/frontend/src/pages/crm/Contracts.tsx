@@ -6,18 +6,19 @@
  *   - Từ chối → POST /crm/contracts/{id}/reject/
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ScrollText, Plus, Upload, Download, Eye, Pencil, Check, ShieldCheck, X } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { ScrollText, Plus, Upload, Download, Eye, Pencil, Check, ShieldCheck, X, ShoppingCart, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
-import { fetchAll } from '@/lib/list'
+import { fetchAll, fetchPage, PAGE_SIZE } from '@/lib/list'
 import { compactVnd, formatDate, CONTRACT_STATUS_LABEL, CONTRACT_STATUS_TONE } from '@/lib/crm'
 import type { Contract } from '@/lib/types'
 import {
-  PageHeader, StatCard, Button, Tag, TableCard, Th, Td, RowMsg,
+  PageHeader, StatCard, Button, Tag, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { useAuth, isManager, isCeo } from '@/lib/auth/store'
+import { useCan } from '@/lib/auth/capabilities'
 import { ContractForm } from '@/pages/crm/forms/ContractForm'
 import { ContractDetailModal } from '@/pages/crm/ContractDetailModal'
 import { ImportModal } from '@/pages/crm/ImportModal'
@@ -25,21 +26,37 @@ import { ImportModal } from '@/pages/crm/ImportModal'
 export function ContractsPage() {
   const qc = useQueryClient()
   const role = useAuth((s) => s.user?.role)
+  const myId = useAuth((s) => s.user?.id)
   const canManage = isManager(role)
   const canApproveL2 = isCeo(role)
+  // Giai đoạn 1 phân quyền function-based: mặc định chỉ admin, hoặc chủ hợp đồng.
+  const canDeleteAny = useCan('crm.contract.delete')
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [editing, setEditing] = useState<Contract | null>(null)
   const [detail, setDetail] = useState<Contract | null>(null)
+  const [page, setPage] = useState(1)
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['contracts'],
+  // KPI (đếm/tổng giá trị) cần TOÀN BỘ dữ liệu, tách khỏi bảng có phân trang riêng.
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['contracts-all'],
     queryFn: () => fetchAll<Contract>('/crm/contracts/'),
   })
-  const items = data?.items ?? []
-  const count = (s: string) => items.filter((c) => c.status === s).length
-  const totalValue = items.reduce((s, c) => s + Number(c.value_vnd || 0), 0)
-  const invalidate = () => qc.invalidateQueries({ queryKey: ['contracts'] })
+  const statItems = stats?.items ?? []
+  const count = (s: string) => statItems.filter((c) => c.status === s).length
+  const totalValue = statItems.reduce((s, c) => s + Number(c.value_vnd || 0), 0)
+
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ['contracts', page],
+    queryFn: () => fetchPage<Contract>('/crm/contracts/', { page }),
+    placeholderData: keepPreviousData,
+  })
+  const items = data?.results ?? []
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['contracts'] })
+    qc.invalidateQueries({ queryKey: ['contracts-all'] })
+  }
 
   const approve = useMutation({
     mutationFn: (id: string) => api.post(`/crm/contracts/${id}/approve/`),
@@ -66,6 +83,21 @@ export function ContractsPage() {
     if (reason !== null) reject.mutate({ id, reason })
   }
 
+  // HĐ đã ký → tạo đơn giao hàng đợt này (1 HĐ có thể tạo nhiều đơn theo từng đợt).
+  const toOrder = useMutation({
+    mutationFn: (id: string) => api.post(`/crm/contracts/${id}/to-order/`),
+    onSuccess: (res) => { toast.success(`Đã tạo đơn ${res.data.order_code}`); invalidate() },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/crm/contracts/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá hợp đồng'); invalidate() },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const onDelete = (c: Contract) => {
+    if (window.confirm(`Xoá hợp đồng ${c.code}? Có thể khôi phục qua quản trị nếu cần.`)) remove.mutate(c.id)
+  }
+
   return (
     <div className="max-w-6xl">
       <PageHeader icon={<ScrollText size={20} className="text-flame" />} title="Hợp đồng"
@@ -80,10 +112,10 @@ export function ContractsPage() {
         } />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatCard label="Hiệu lực" tone="ok" value={isLoading ? '…' : count('active')} />
-        <StatCard label="Chờ ký" tone="warn" value={isLoading ? '…' : count('pending_sign')} />
-        <StatCard label="Hết hạn" tone="danger" value={isLoading ? '…' : count('expired')} />
-        <StatCard label="Tổng giá trị" tone="flame" value={isLoading ? '…' : compactVnd(totalValue)} />
+        <StatCard label="Hiệu lực" tone="ok" value={statsLoading ? '…' : count('active')} />
+        <StatCard label="Chờ ký" tone="warn" value={statsLoading ? '…' : count('pending_sign')} />
+        <StatCard label="Hết hạn" tone="danger" value={statsLoading ? '…' : count('expired')} />
+        <StatCard label="Tổng giá trị" tone="flame" value={statsLoading ? '…' : compactVnd(totalValue)} />
       </div>
 
       <TableCard>
@@ -134,15 +166,35 @@ export function ContractsPage() {
                 {c.status === 'pending_ceo' && !canApproveL2 && (
                   <span className="text-[11px] text-txt-2 mr-1">Chờ CEO duyệt</span>
                 )}
-                <Button variant="ghost" size="sm"
+                {/* Đã ký (Hiệu lực) → tạo đơn giao hàng đợt này, từ dòng hàng báo giá gốc. */}
+                {c.status === 'active' && canManage && (
+                  <Button variant="ghost" size="sm" className="mr-1"
+                    disabled={!c.quote || (toOrder.isPending && toOrder.variables === c.id)}
+                    title={c.quote ? 'Tạo đơn giao hàng cho đợt này' : 'Hợp đồng không có báo giá gốc — không tự lấy được dòng hàng'}
+                    onClick={() => toOrder.mutate(c.id)}>
+                    <ShoppingCart size={13} /> Tạo đơn
+                  </Button>
+                )}
+                <Button variant="ghost" size="sm" className="mr-1"
                   onClick={() => downloadFile(`/crm/contracts/${c.id}/export-docx/`, `hop_dong_${c.code}.docx`)}>
                   <Download size={13} /> Word
                 </Button>
+                {(canDeleteAny || c.owner === myId) && (
+                  <Button variant="ghost" size="sm" disabled={remove.isPending && remove.variables === c.id}
+                    onClick={() => onDelete(c)}>
+                    <Trash2 size={13} /> Xoá
+                  </Button>
+                )}
               </Td>
             </tr>
           ))}
         </tbody>
       </TableCard>
+
+      {data && data.count > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      )}
 
       <ContractForm open={formOpen} onClose={() => setFormOpen(false)} editing={editing} />
       <ContractDetailModal contract={detail} open={!!detail} onClose={() => setDetail(null)} />

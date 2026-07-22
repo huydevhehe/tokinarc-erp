@@ -20,7 +20,7 @@ Triết lý:
 """
 from __future__ import annotations
 
-from django.db.models import Q
+from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, mixins, filters
 from rest_framework.decorators import action
@@ -141,6 +141,24 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
         results = [{'to_part': e.to_part, 'name': names.get(e.to_part, ''),
                     'is_mandatory': e.is_mandatory} for e in edges]
         return Response({'part': pn, 'results': results})
+
+    @action(detail=False, methods=['get'])
+    def groups(self, request):
+        """#10 biên bản: cây phân cấp Nhóm sản phẩm (ecosystem) → Danh mục
+        (category) → số lượng sản phẩm — dùng cho UI duyệt phân cấp thay vì
+        2 field rời rạc. Hướng A: ecosystem = Nhóm, category = Danh mục —
+        khớp đúng dữ liệu đang có, không cần model/migration mới."""
+        rows = (Part.objects.exclude(ecosystem='').exclude(category='')
+                .values('ecosystem', 'category')
+                .annotate(count=Count('tokin_part_no'))
+                .order_by('ecosystem', 'category'))
+        tree: dict[str, list[dict]] = {}
+        for r in rows:
+            tree.setdefault(r['ecosystem'], []).append(
+                {'category': r['category'], 'count': r['count']})
+        groups = [{'ecosystem': eco, 'total': sum(c['count'] for c in cats), 'categories': cats}
+                  for eco, cats in sorted(tree.items())]
+        return Response({'groups': groups})
 
     @action(detail=False, methods=['get'])
     def search(self, request):

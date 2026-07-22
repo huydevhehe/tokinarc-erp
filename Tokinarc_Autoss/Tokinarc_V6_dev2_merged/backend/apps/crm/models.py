@@ -448,6 +448,30 @@ class Ticket(BaseModel, SoftDeleteMixin):
         return f"{self.code} — {self.title}"
 
 
+class TicketResolutionLog(models.Model):
+    """Lịch sử từng lần xử lý (#9 biên bản) — mỗi lần bấm "Giải quyết" ghi 1 dòng
+    riêng thay vì ghi đè `Ticket.resolution`. Khách báo lại cùng máy (cùng
+    serial_no + customer) sau khi đã Đã giải quyết/Đóng → ticket cũ MỞ LẠI
+    (xem TicketViewSet.create), không tạo mã mới — lần xử lý tiếp theo cộng dồn
+    vào đây (attempt_no tăng dần)."""
+    ticket      = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='resolution_logs')
+    attempt_no  = models.PositiveIntegerField()
+    content     = models.TextField()
+    resolved_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                                    on_delete=models.SET_NULL)
+    resolved_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'crm_ticket_resolution_log'
+        ordering = ['attempt_no']
+        constraints = [
+            models.UniqueConstraint(fields=['ticket', 'attempt_no'], name='uniq_ticket_attempt_no'),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.ticket.code} — lần {self.attempt_no}"
+
+
 # ════════════════════════════════════════════════════════════════════════
 # Hợp đồng (Contract) + Hoạt động (Activity)
 # ════════════════════════════════════════════════════════════════════════

@@ -8,7 +8,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Ticket as TicketIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
-import { TICKET_STATUS_LABEL, TICKET_PRIORITY_LABEL } from '@/lib/crm'
+import { TICKET_STATUS_LABEL, TICKET_PRIORITY_LABEL, formatDate } from '@/lib/crm'
 import { useCustomerOptions, optionsFromLabels } from '@/lib/useCustomerOptions'
 import type { Ticket } from '@/lib/types'
 import { Modal } from '@/components/Modal'
@@ -53,8 +53,14 @@ export function TicketForm({ open, onClose, editing }: {
         ? api.patch(`/crm/tickets/${editing.id}/`, payload)
         : api.post('/crm/tickets/', payload)
     },
-    onSuccess: () => {
-      toast.success(editing ? 'Đã cập nhật ticket' : 'Đã tạo ticket')
+    onSuccess: (res) => {
+      // Khách báo lại cùng máy (cùng serial_no + KH) → BE tự mở lại ticket cũ
+      // thay vì tạo mã mới (#9 biên bản) — báo rõ để không tưởng nhầm là tạo mới.
+      if (!editing && res.data?.merged_into_existing) {
+        toast.success(`Đã gộp vào ticket cũ ${res.data.code} (khách báo lại cùng máy) — không tạo mã mới`)
+      } else {
+        toast.success(editing ? 'Đã cập nhật ticket' : 'Đã tạo ticket')
+      }
       qc.invalidateQueries({ queryKey: ['tickets'] })
       qc.invalidateQueries({ queryKey: ['dash'] })
       onClose()
@@ -97,6 +103,25 @@ export function TicketForm({ open, onClose, editing }: {
         </FieldRow>
         <TextArea label="Mô tả" {...register('description')} />
       </form>
+
+      {editing && !!editing.resolution_logs?.length && (
+        <div className="mt-4 pt-3 border-t border-line">
+          <div className="text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-2">
+            Lịch sử xử lý ({editing.resolution_logs.length} lần)
+          </div>
+          <ul className="space-y-2">
+            {editing.resolution_logs.map((log) => (
+              <li key={log.id} className="text-sm bg-ink-3 rounded-md px-3 py-2">
+                <div className="flex items-center justify-between text-[11px] text-txt-2 mb-0.5">
+                  <span>Lần {log.attempt_no} — {log.resolved_by_username || 'không rõ'}</span>
+                  <span>{formatDate(log.resolved_at)}</span>
+                </div>
+                <div className="whitespace-pre-wrap">{log.content}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </Modal>
   )
 }

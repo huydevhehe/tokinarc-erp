@@ -44,6 +44,12 @@ const CRM_NAV: NavGroup[] = [
     { to: '/invoices', icon: <FileText size={16} />, label: 'Hóa đơn (MISA)', mgr: true },
     { to: '/receivables', icon: <Wallet size={16} />, label: 'Công nợ', mgr: true },
   ]},
+  // #16 biên bản: tạo PO giờ CHỈ Quản lý/CEO — nhưng menu Mua hàng trước đây chỉ
+  // nằm trong khu WMS (QL kho) → Quản lý không có đường vào. Thêm ở đây (mgr-only).
+  { group: 'Mua hàng', items: [
+    { to: '/purchasing/orders', icon: <ShoppingCart size={16} />, label: 'Đơn mua (PO)', mgr: true },
+    { to: '/purchasing/suppliers', icon: <Building size={16} />, label: 'Nhà cung cấp', mgr: true },
+  ]},
   { group: 'Hoạt động', items: [
     { to: '/my-activity', icon: <CalendarDays size={16} />, label: 'Nhật ký của tôi' },
     { to: '/visits', icon: <MapPin size={16} />, label: 'Visit Report' },
@@ -84,19 +90,22 @@ const WMS_NAV: NavGroup[] = [
     { to: '/wms/cycle-count', icon: <ClipboardCheck size={16} />, label: 'Kiểm kê & Tra cứu' },
     { to: '/wms/warehouses', icon: <Warehouse size={16} />, label: 'Kho & vị trí' },
     { to: '/wms/map', icon: <MapIcon size={16} />, label: 'Bản đồ kho' },
+    // #3 biên bản (2026-07-22): trước đây khu Kho không có đường vào trang Sản
+    // phẩm/Danh mục phụ tùng — NV kho/QL kho không tìm thấy chức năng Import.
+    { to: '/products', icon: <Wrench size={16} />, label: 'Danh mục sản phẩm' },
   ]},
 ]
 
 const CEO_NAV: NavGroup[] = [
   { group: 'Phê duyệt', items: [
     { to: '/ceo/approvals', icon: <ClipboardCheck size={16} />, label: 'Cần duyệt' },
+    { to: '/admin/capabilities', icon: <ShieldCheck size={16} />, label: 'Phân quyền theo chức năng' },
   ]},
   { group: 'Tổng quan', items: [
     { to: '/ceo/overview', icon: <Crown size={16} />, label: 'Bảng điều hành' },
     { to: '/ceo/ai-summary', icon: <Bot size={16} />, label: 'AI Summary' },
   ]},
   { group: 'Tài chính', items: [
-    { to: '/ceo/revenue', icon: <TrendingUp size={16} />, label: 'Doanh thu' },
     { to: '/ceo/debt', icon: <Wallet size={16} />, label: 'Công nợ' },
   ]},
   { group: 'Kinh doanh', items: [
@@ -105,6 +114,9 @@ const CEO_NAV: NavGroup[] = [
   { group: 'Vận hành', items: [
     { to: '/ceo/inventory', icon: <Package size={16} />, label: 'Tồn kho' },
     { to: '/ceo/aging', icon: <History size={16} />, label: 'Tuổi tồn & Hàng chậm' },
+    // #16: CEO cũng có quyền tạo/duyệt PO → cần đường vào trang Mua hàng.
+    { to: '/purchasing/orders', icon: <ShoppingCart size={16} />, label: 'Đơn mua (PO)' },
+    { to: '/purchasing/suppliers', icon: <Building size={16} />, label: 'Nhà cung cấp' },
   ]},
 ]
 
@@ -124,6 +136,7 @@ const SERVICE_NAV: NavGroup[] = [
 const ADMIN_NAV: NavGroup[] = [
   { group: 'Hệ thống', items: [
     { to: '/admin/users', icon: <UserCog size={16} />, label: 'Người dùng & quyền' },
+    { to: '/admin/capabilities', icon: <ShieldCheck size={16} />, label: 'Phân quyền theo chức năng' },
   ]},
 ]
 

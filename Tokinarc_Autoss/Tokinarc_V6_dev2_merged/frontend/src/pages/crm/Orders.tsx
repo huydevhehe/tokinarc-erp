@@ -4,14 +4,16 @@
  * /sales/orders/ + actions sign/ship/create-invoice; /sales/payments/.
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ShoppingBag, PenLine, Truck, FileText, Wallet, Pencil } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { ShoppingBag, PenLine, Truck, FileText, Wallet, Pencil, Eye } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
+import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { compactVnd, formatVnd, formatDate } from '@/lib/crm'
 import { isManager, useAuth } from '@/lib/auth/store'
 import { Modal } from '@/components/Modal'
-import { PageHeader, Button, Tag, TableCard, Th, Td, RowMsg } from '@/components/ui'
+import { PageHeader, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
+import { OrderDetailModal } from '@/pages/crm/OrderDetailModal'
 
 interface Order {
   id: string; code: string; customer_name: string; issued_date: string
@@ -33,11 +35,15 @@ export function OrdersPage() {
   const [amt, setAmt] = useState('')
   const [amendFor, setAmendFor] = useState<Order | null>(null)
   const [addr, setAddr] = useState(''); const [amNotes, setAmNotes] = useState('')
+  const [page, setPage] = useState(1)
+  const [detail, setDetail] = useState<Order | null>(null)
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['orders'],
-    queryFn: async () => (await api.get<{ results: Order[] }>('/sales/orders/')).data.results ?? [],
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ['orders', page],
+    queryFn: () => fetchPage<Order>('/sales/orders/', { page }),
+    placeholderData: keepPreviousData,
   })
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
   const inval = () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['invoices'] }) }
 
   const act = useMutation({
@@ -63,7 +69,7 @@ export function OrdersPage() {
   return (
     <div className="max-w-6xl">
       <PageHeader icon={<ShoppingBag size={20} className="text-flame" />} title="Đơn bán"
-        subtitle={data ? `${data.length} đơn` : undefined} />
+        subtitle={data ? `${data.count} đơn` : undefined} />
       <TableCard>
         <thead><tr className="border-b border-line">
           <Th>Mã đơn</Th><Th>Khách hàng</Th><Th>Ngày</Th><Th className="text-right">Tổng</Th>
@@ -72,8 +78,8 @@ export function OrdersPage() {
         <tbody>
           {isLoading && <RowMsg colSpan={7}>Đang tải…</RowMsg>}
           {isError && <RowMsg colSpan={7} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {data?.length === 0 && <RowMsg colSpan={7}>Chưa có đơn bán. Tạo từ Báo giá đã duyệt (“Tạo đơn”).</RowMsg>}
-          {data?.map((o) => (
+          {data?.results.length === 0 && <RowMsg colSpan={7}>Chưa có đơn bán. Tạo từ Báo giá đã duyệt (“Tạo đơn”).</RowMsg>}
+          {data?.results.map((o) => (
             <tr key={o.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{o.code}</Td>
               <Td className="font-medium">{o.customer_name}</Td>
@@ -82,6 +88,9 @@ export function OrdersPage() {
               <Td className="text-right tabular-nums">{Number(o.debt_vnd) > 0 ? <span className="text-warn">{formatVnd(o.debt_vnd)}</span> : <span className="text-ok">Đã thu</span>}</Td>
               <Td><Tag tone={TONE[o.status] ?? 'gray'}>{LABEL[o.status] ?? o.status}</Tag></Td>
               <Td className="text-right whitespace-nowrap">
+                <Button size="sm" variant="ghost" className="mr-1" onClick={() => setDetail(o)}>
+                  <Eye size={13} /> Xem
+                </Button>
                 {(o.status === 'draft' || o.status === 'pending') && canMng && (
                   <Button size="sm" className="mr-1" onClick={() => act.mutate({ id: o.id, what: 'sign' })}><PenLine size={13} /> Ký</Button>
                 )}
@@ -106,6 +115,11 @@ export function OrdersPage() {
         </tbody>
       </TableCard>
 
+      {data && data.count > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      )}
+
       <Modal open={!!payFor} onClose={() => setPayFor(null)} title={`Thu tiền ${payFor?.code ?? ''}`}
         icon={<Wallet size={18} className="text-flame" />}
         footer={<><Button variant="ghost" onClick={() => setPayFor(null)}>Hủy</Button>
@@ -127,6 +141,9 @@ export function OrdersPage() {
         <textarea value={amNotes} onChange={(e) => setAmNotes(e.target.value)} rows={3}
           className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm" />
       </Modal>
+
+      <OrderDetailModal orderId={detail?.id ?? null} orderCode={detail?.code} customerName={detail?.customer_name}
+        open={!!detail} onClose={() => setDetail(null)} />
     </div>
   )
 }

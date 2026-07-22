@@ -172,6 +172,68 @@ class IsSystemAdmin(BasePermission):
         return bool(u and u.is_authenticated and (u.is_superuser or role_of(u) == Role.ADMIN))
 
 
+class IsAdminOrCeo(BasePermission):
+    """Sửa ma trận phân quyền: admin hoặc CEO."""
+    message = 'Chỉ admin/CEO được sửa ma trận phân quyền.'
+
+    def has_permission(self, request, view):
+        u = request.user
+        return bool(u and u.is_authenticated and
+                    (u.is_superuser or role_of(u) in {Role.ADMIN, Role.CEO}))
+
+
+class CapabilityMatrixView(APIView):
+    """GET: xem toàn bộ ma trận role x capability. PATCH: tick/bỏ tick 1 ô.
+    Chỉ admin/CEO — đây chính là màn hình "function-based permission"."""
+    permission_classes = [IsAdminOrCeo]
+
+    def get(self, request):
+        from .models import RoleCapabilityGrant
+        grants = RoleCapabilityGrant.objects.select_related('capability').order_by(
+            'capability__group', 'capability__key', 'role')
+        return Response([{
+            'role': g.role, 'capability_key': g.capability.key,
+            'label': g.capability.label, 'group': g.capability.group,
+            'is_granted': g.is_granted,
+        } for g in grants])
+
+    def patch(self, request):
+        from .models import RoleCapabilityGrant
+
+        role = request.data.get('role')
+        key = request.data.get('capability_key')
+        is_granted = bool(request.data.get('is_granted'))
+        if not role or not key:
+            return Response({'detail': 'Thiếu role hoặc capability_key.'}, status=400)
+        try:
+            grant = RoleCapabilityGrant.objects.select_related('capability').get(
+                role=role, capability__key=key)
+        except RoleCapabilityGrant.DoesNotExist:
+            return Response({'detail': 'Không tìm thấy quyền này.'}, status=404)
+        before = grant.is_granted
+        grant.is_granted = is_granted
+        grant.updated_by = request.user
+        grant.save(update_fields=['is_granted', 'updated_by', 'updated_at'])
+        AuditLog.record(user=request.user, action='update_capability',
+                        entity='accounts.RoleCapabilityGrant', entity_id=grant.id,
+                        diff={'role': role, 'capability': key, 'before': before, 'after': is_granted},
+                        ip=_ip(request))
+        return Response({'role': role, 'capability_key': key, 'is_granted': is_granted})
+
+
+class MyCapabilitiesView(APIView):
+    """Danh sách capability key mà role của user hiện tại được cấp — FE dùng
+    để ẩn/hiện nút thay cho hardcode role."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from .models import RoleCapabilityGrant
+        keys = list(RoleCapabilityGrant.objects.filter(
+            role=role_of(request.user), is_granted=True
+        ).values_list('capability__key', flat=True))
+        return Response({'capabilities': keys})
+
+
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all().order_by('username')
     permission_classes = [IsSystemAdmin]

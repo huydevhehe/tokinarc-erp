@@ -33,7 +33,7 @@ class PartLiteSerializer(serializers.ModelSerializer):
             'tokin_part_no', 'category', 'ecosystem', 'current_class',
             'display_name_vi', 'display_name_en',
             'effective_price_vnd', 'price_display', 'is_contact_price',
-            'is_priority_sell',
+            'is_priority_sell', 'tax_pct',
         ]
 
     def get_effective_price_vnd(self, obj: Part):

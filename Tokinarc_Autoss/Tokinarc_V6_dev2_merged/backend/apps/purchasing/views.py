@@ -5,12 +5,14 @@ from django.db.models import F, Sum
 from django.utils import timezone
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
 from rest_framework.response import Response
 
+from apps.accounts.capabilities import has_capability
 from apps.accounts.roles import (
-    CEO_ROLES, INTERNAL_ROLES, MANAGER_ROLES, WMS_OP_ROLES, Role,
-    is_ceo, is_manager, role_of,
+    INTERNAL_ROLES, MANAGER_ROLES, WMS_OP_ROLES, Role,
+    role_of,
 )
 from apps.common.models import AuditLog, notify, notify_roles
 from apps.wms import services as wms_services
@@ -28,8 +30,9 @@ PO_WRITE_ROLES = MANAGER_ROLES | {Role.WAREHOUSE_MANAGER}   # QL kho lập đơn
 
 
 class PurchasingPermission(permissions.BasePermission):
-    """Đọc: nhân viên nội bộ. Tạo/sửa PO+NCC: QL kho + manager/CEO/admin.
-    Duyệt: kiểm tra is_manager/is_ceo trong từng action (CEO duyệt đơn mua)."""
+    """Đọc: nhân viên nội bộ. Sửa PO+NCC: QL kho + manager/CEO/admin.
+    Tạo/xoá PO: qua capability engine (xem action create/destroy bên dưới).
+    Duyệt: kiểm tra is_manager trong action approve — #16: 1 cấp duy nhất."""
     message = "Bạn không có quyền với phân hệ Mua hàng."
 
     def has_permission(self, request, view):
@@ -47,12 +50,33 @@ class PurchasingPermission(permissions.BasePermission):
         # Nhận hàng theo PO: cho phép vai trò kho (kiểm tra kỹ trong action).
         if action == 'receive':
             return r in WMS_OP_ROLES
+        # Tạo/xoá PO: chuyển sang engine capability (function-based) — xem
+        # apps/accounts/capabilities.py CAPABILITY_SEED. Admin không nằm trong
+        # PO_WRITE_ROLES (không làm nghiệp vụ mua hàng) nhưng VẪN được xoá nếu
+        # capability cấp — nên 2 action này bỏ qua PO_WRITE_ROLES, để
+        # perform_destroy tự check has_capability (fine-grained).
+        if action == 'create':
+            return has_capability(request.user, 'purchasing.po.create')
+        if action == 'destroy':
+            return has_capability(request.user, 'purchasing.po.delete')
         return r in PO_WRITE_ROLES
+
+
+class SupplierPermission(PurchasingPermission):
+    """NCC: mở ĐỌC cho cả NV kho — phiếu nhập kho (#10/#11 biên bản) phải sổ
+    (dropdown) tên NCC có sẵn thay vì gõ tay, nên vai trò kho cần đọc danh
+    sách. Ghi (tạo/sửa NCC) vẫn theo PurchasingPermission (QL kho trở lên)."""
+
+    def has_permission(self, request, view):
+        r = role_of(request.user) if request.user.is_authenticated else None
+        if r in WMS_OP_ROLES and request.method in SAFE_METHODS:
+            return True
+        return super().has_permission(request, view)
 
 
 class SupplierViewSet(viewsets.ModelViewSet):
     serializer_class = SupplierSerializer
-    permission_classes = [PurchasingPermission]
+    permission_classes = [SupplierPermission]
     queryset = Supplier.objects.all()
 
     def perform_create(self, serializer):
@@ -78,6 +102,18 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
                      f"Đơn mua {po.code} ({po.supplier.name}) cần duyệt.",
                      link='/ceo/approvals', exclude_user=self.request.user)
 
+    def perform_destroy(self, instance):
+        """Xoá PO — mục 'Xóa an toàn' (#4 biên bản): engine capability
+        (mặc định chỉ admin) + chỉ xoá được đơn còn ở trạng thái nháp.
+        Soft-delete (khôi phục được) — đúng pattern Customer đã dùng."""
+        u = self.request.user
+        if not has_capability(u, 'purchasing.po.delete'):
+            raise PermissionDenied('Không có quyền xoá đơn mua hàng.')
+        if instance.status != PurchaseStatus.DRAFT:
+            raise PermissionDenied('Chỉ xoá được đơn mua ở trạng thái nháp.')
+        instance.soft_delete(user=u)
+        AuditLog.record(user=u, action='delete', entity='pur.PurchaseOrder', entity_id=instance.id)
+
     def _finalize_approved(self, po, request):
         """Hoàn tất duyệt → APPROVED; báo người tạo + nhân viên kho (hàng sắp về)."""
         po.approved_by = request.user
@@ -91,56 +127,28 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
-        """Duyệt cấp 1 (manager/CEO/admin). Vượt ngưỡng → chờ CEO duyệt cấp 2."""
-        if not is_manager(request.user):
-            return Response({'detail': 'Chỉ quản lý/CEO/admin được duyệt đơn mua.'}, status=403)
+        """Duyệt PO — #16 biên bản: RÚT VỀ 1 CẤP DUY NHẤT (Quản lý/CEO), không
+        còn phân biệt theo giá trị đơn (đã bỏ ngưỡng + duyệt cấp 2 CEO)."""
+        if not has_capability(request.user, 'purchasing.po.approve'):
+            return Response({'detail': 'Chỉ quản lý/CEO được duyệt đơn mua.'}, status=403)
         po = self.get_object()
         if po.status != PurchaseStatus.DRAFT:
             return Response({'detail': 'Chỉ duyệt được đơn ở trạng thái nháp.', 'code': 'CONFLICT'}, status=409)
-        now = timezone.now()
         po.l1_approved_by = request.user
-        po.l1_approved_at = now
-        if po.requires_l2():
-            po.status = PurchaseStatus.PENDING_CEO
-            po.save(update_fields=['status', 'l1_approved_by', 'l1_approved_at', 'updated_at'])
-            notify_roles(CEO_ROLES, 'po_approval',
-                         f"Đơn mua {po.code} ({po.supplier.name}) chờ CEO duyệt cấp 2.",
-                         link='/ceo/approvals')
-            AuditLog.record(user=request.user, action='approve_l1', entity='pur.PurchaseOrder',
-                            entity_id=po.id, diff={'next': 'pending_ceo'})
-        else:
-            po.save(update_fields=['l1_approved_by', 'l1_approved_at', 'updated_at'])
-            self._finalize_approved(po, request)
-            AuditLog.record(user=request.user, action='approve', entity='pur.PurchaseOrder',
-                            entity_id=po.id, diff={'level': 1})
-        return Response(PurchaseOrderSerializer(po).data)
-
-    @action(detail=True, methods=['post'], url_path='approve-l2')
-    def approve_l2(self, request, pk=None):
-        """Duyệt cấp 2 (CEO/admin) cho đơn mua vượt ngưỡng đang chờ."""
-        po = self.get_object()
-        if not is_ceo(request.user):
-            return Response({'detail': 'Chỉ CEO/admin được duyệt cấp 2.'}, status=403)
-        if po.status != PurchaseStatus.PENDING_CEO:
-            return Response({'detail': f'Đơn mua ở trạng thái {po.status}, không chờ CEO duyệt.',
-                             'code': 'CONFLICT'}, status=409)
-        if role_of(request.user) != 'admin' and request.user.id in (po.owner_id, po.l1_approved_by_id):
-            return Response({'detail': 'Không thể tự duyệt cấp 2 đơn mình tạo/đã duyệt cấp 1.'}, status=403)
-        po.l2_approved_by = request.user
-        po.l2_approved_at = timezone.now()
-        po.save(update_fields=['l2_approved_by', 'l2_approved_at', 'updated_at'])
+        po.l1_approved_at = timezone.now()
+        po.save(update_fields=['l1_approved_by', 'l1_approved_at', 'updated_at'])
         self._finalize_approved(po, request)
         AuditLog.record(user=request.user, action='approve', entity='pur.PurchaseOrder',
-                        entity_id=po.id, diff={'level': 2})
+                        entity_id=po.id, diff={})
         return Response(PurchaseOrderSerializer(po).data)
 
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """Từ chối đơn mua (manager+) kèm lý do; báo người tạo."""
-        if not is_manager(request.user):
+        if not has_capability(request.user, 'purchasing.po.reject'):
             return Response({'detail': 'Chỉ quản lý/CEO/admin được từ chối.'}, status=403)
         po = self.get_object()
-        if po.status not in (PurchaseStatus.DRAFT, PurchaseStatus.PENDING_CEO):
+        if po.status != PurchaseStatus.DRAFT:
             return Response({'detail': 'Chỉ từ chối được đơn đang chờ duyệt.', 'code': 'CONFLICT'}, status=409)
         reason = str(request.data.get('reason', '')).strip()
         po.status = PurchaseStatus.REJECTED
@@ -157,7 +165,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     def pending_approvals(self, request):
         """Đơn mua đang chờ duyệt cho trang Duyệt tập trung (manager+ thấy tất cả)."""
         qs = (self.get_queryset()
-              .filter(status__in=[PurchaseStatus.DRAFT, PurchaseStatus.PENDING_CEO])
+              .filter(status=PurchaseStatus.DRAFT)
               .order_by('-created_at'))
         return Response({'results': PurchaseOrderSerializer(qs, many=True).data, 'count': qs.count()})
 
@@ -180,7 +188,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
                      ('Đơn giá', 16, 'money'), ('Thành tiền', 18, 'money')],
             rows=rows, total_label='TỔNG CỘNG', total_value=int(po.total_vnd or 0),
             amount_words=vnd_to_words(po.total_vnd),
-            signatures=['NGƯỜI ĐỀ XUẤT', 'DUYỆT CẤP 1 (QL)', 'DUYỆT CẤP 2 (CEO)'])
+            signatures=['NGƯỜI ĐỀ XUẤT', 'NGƯỜI DUYỆT'])
         return xlsx_response(data, f'don_mua_{po.code}.xlsx')
 
     @action(detail=True, methods=['post'])
@@ -273,7 +281,7 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
         with transaction.atomic():
             io = InboundOrder.objects.create(
                 code=f'{pre}{seq:03d}', warehouse=po.warehouse, purchase_order=po,
-                supplier=po.supplier.name, status='draft',
+                supplier=po.supplier.name, status='draft', flow_type='supplier',
                 created_by=request.user, updated_by=request.user,
                 notes=f'Từ đơn mua {po.code}')
             idx = 0

@@ -10,13 +10,15 @@ Nguyên tắc:
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.db import transaction
 from rest_framework import serializers
 
 from apps.accounts.roles import is_manager
 
 from .models import (
-    Lead, Opportunity, Quote, QuoteLine, Ticket, Visit,
+    Lead, Opportunity, Quote, QuoteLine, Ticket, TicketResolutionLog, Visit,
 )
 
 
@@ -74,6 +76,10 @@ class MoveStageSerializer(serializers.Serializer):
 # ── Quote + QuoteLine ─────────────────────────────────────────────────────
 class QuoteLineSerializer(serializers.ModelSerializer):
     line_total_vnd = serializers.SerializerMethodField()
+    # Chặn số âm ở đầu vào — báo giá không có ràng buộc CHECK nên nếu lọt sẽ
+    # lưu thành báo giá có tổng tiền ÂM (dữ liệu rác, không báo lỗi).
+    qty            = serializers.IntegerField(min_value=1)
+    unit_price_vnd = serializers.DecimalField(max_digits=13, decimal_places=0, min_value=Decimal(0))
 
     class Meta:
         model = QuoteLine
@@ -86,6 +92,8 @@ class QuoteLineSerializer(serializers.ModelSerializer):
 
 class QuoteSerializer(serializers.ModelSerializer):
     lines          = QuoteLineSerializer(many=True)
+    discount_pct   = serializers.DecimalField(max_digits=5, decimal_places=2,
+                                              min_value=Decimal(0), max_value=Decimal(100), required=False)
     owner_username = serializers.CharField(source='owner.username', read_only=True)
     customer_name  = serializers.CharField(source='customer.name', read_only=True)
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -198,12 +206,22 @@ class VisitSerializer(serializers.ModelSerializer):
 
 
 # ── Ticket ────────────────────────────────────────────────────────────────
+class TicketResolutionLogSerializer(serializers.ModelSerializer):
+    resolved_by_username = serializers.CharField(source='resolved_by.username', read_only=True)
+
+    class Meta:
+        model = TicketResolutionLog
+        fields = ['id', 'attempt_no', 'content', 'resolved_by', 'resolved_by_username', 'resolved_at']
+        read_only_fields = fields
+
+
 class TicketSerializer(serializers.ModelSerializer):
     customer_name     = serializers.CharField(source='customer.name', read_only=True)
     status_display    = serializers.CharField(source='get_status_display', read_only=True)
     priority_display  = serializers.CharField(source='get_priority_display', read_only=True)
     assignee_name     = serializers.CharField(source='assignee.display_name', read_only=True)
     assignee_username = serializers.CharField(source='assignee.username', read_only=True)
+    resolution_logs   = TicketResolutionLogSerializer(many=True, read_only=True)
 
     class Meta:
         model = Ticket
@@ -211,7 +229,7 @@ class TicketSerializer(serializers.ModelSerializer):
             'id', 'code', 'customer', 'customer_name', 'title', 'description',
             'status', 'status_display', 'priority', 'priority_display',
             'serial_no', 'assignee', 'assignee_name', 'assignee_username',
-            'resolution', 'created_owner', 'resolved_at',
+            'resolution', 'resolution_logs', 'created_owner', 'resolved_at',
             'created_at', 'updated_at',
         ]
         read_only_fields = [

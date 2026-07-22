@@ -9,9 +9,10 @@ from __future__ import annotations
 from rest_framework import permissions
 from rest_framework.permissions import SAFE_METHODS
 
+from apps.accounts.capabilities import has_capability
 from apps.accounts.roles import (
     ALL_ROLES, Role,
-    is_manager, role_of,
+    is_manager, role_of,   # noqa: F401 (is_manager re-export — dùng ở views.py cho owner-override, ngoài phạm vi Đợt B)
 )
 
 WRITE_ROLES = frozenset({Role.SALES, Role.MANAGER, Role.CEO})   # admin = quản trị hệ thống, không làm nghiệp vụ
@@ -41,13 +42,15 @@ class CustomerPermission(permissions.BasePermission):
         return role_of(request.user) in WRITE_ROLES
 
     def has_object_permission(self, request, view, obj) -> bool:
-        if request.method in SAFE_METHODS:
-            return is_manager(request.user) or obj.owner_id == request.user.id
-        return is_manager(request.user) or obj.owner_id == request.user.id
+        # CustomerPermission được TÁI DÙNG cho cả Contract (owner-or-manager) —
+        # chọn đúng capability theo model của obj để 2 loại cấu hình độc lập.
+        from .models import Contract
+        key = 'crm.contract.view_all' if isinstance(obj, Contract) else 'crm.customer.view_all'
+        return has_capability(request.user, key) or obj.owner_id == request.user.id
 
 
 def filter_customers_for_user(qs, user):
     """Manager+ xem hết; sale/service/warehouse chỉ KH của mình."""
-    if is_manager(user):
+    if has_capability(user, 'crm.customer.view_all'):
         return qs
     return qs.filter(owner_id=user.id)

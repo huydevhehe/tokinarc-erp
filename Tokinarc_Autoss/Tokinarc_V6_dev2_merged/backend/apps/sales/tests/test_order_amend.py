@@ -53,3 +53,14 @@ def test_amend_qty_below_shipped_rejected():
     r = c.post(f'/api/v1/sales/orders/{o.id}/amend/',
                {'lines': [{'id': str(ln.id), 'qty': 5}]}, format='json')
     assert r.status_code == 409
+
+
+@pytest.mark.django_db
+def test_amend_blocked_for_sales_role():
+    """Đợt A (mục #1 biên bản): sale không có capability `sales.order.amend`
+    (mặc định chỉ manager/CEO) — chuyển sang engine capability không đổi hành vi."""
+    sale = User.objects.create(username='am_sale', role=Role.SALES)
+    o, ln = _order(sale, status='active')
+    c = APIClient(); c.force_authenticate(sale)
+    r = c.post(f'/api/v1/sales/orders/{o.id}/amend/', {'ship_address': 'X'}, format='json')
+    assert r.status_code == 403

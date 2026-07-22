@@ -10,7 +10,10 @@ import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { fetchAll } from '@/lib/list'
-import { OUTBOUND_STATUS_LABEL, OUTBOUND_STATUS_TONE, RULE_LABEL } from '@/lib/wms'
+import {
+  OUTBOUND_STATUS_LABEL, OUTBOUND_STATUS_TONE, RULE_LABEL,
+  OUTBOUND_PURPOSE_LABEL, OUTBOUND_PURPOSE_TONE,
+} from '@/lib/wms'
 import type { OutboundOrder } from '@/lib/types'
 import {
   PageHeader, Tag, Button, TableCard, Th, Td, RowMsg,
@@ -75,19 +78,20 @@ export function OutboundPage() {
       <TableCard>
         <thead>
           <tr className="border-b border-line">
-            <Th>Mã đơn</Th><Th>Đơn bán</Th><Th>Rule</Th><Th className="text-right">Số dòng</Th>
+            <Th>Mã đơn</Th><Th>Đơn bán</Th><Th>Rule</Th><Th>Mục đích</Th><Th className="text-right">Số dòng</Th>
             <Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={6} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {data && items.length === 0 && <RowMsg colSpan={6}>Chưa có đơn xuất.</RowMsg>}
+          {isLoading && <RowMsg colSpan={7}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={7} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {data && items.length === 0 && <RowMsg colSpan={7}>Chưa có đơn xuất.</RowMsg>}
           {items.map((o) => (
             <tr key={o.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{o.code}</Td>
               <Td className="text-txt-2 font-mono text-[11px]">{o.sales_order_code || '—'}</Td>
               <Td className="text-txt-2">{o.rule}</Td>
+              <Td><Tag tone={OUTBOUND_PURPOSE_TONE[o.purpose]}>{OUTBOUND_PURPOSE_LABEL[o.purpose]}</Tag></Td>
               <Td className="text-right tabular-nums">{o.lines?.length ?? 0}</Td>
               <Td><Tag tone={OUTBOUND_STATUS_TONE[o.status]}>{OUTBOUND_STATUS_LABEL[o.status]}</Tag></Td>
               <Td className="text-right whitespace-nowrap">
@@ -137,10 +141,11 @@ export function OutboundPage() {
             {viewOrder.sales_order_code && <span>Đơn bán: <span className="font-mono">{viewOrder.sales_order_code}</span></span>}
           </div>
         )}
-        q1Label="SL đặt" q2Label="Đã soạn"
+        q1Label="SL đặt" q2Label="Đã soạn" showPrice
         lines={(viewOrder?.lines ?? []).map((l, i) => ({
           key: l.id ?? String(i), name: l.part_name ?? '', code: l.part ?? l.torch ?? '—',
           q1: l.qty_ordered, q2: l.qty_picked,
+          unitPrice: l.unit_price, lineTotal: l.line_total,
         }))}
       />
 

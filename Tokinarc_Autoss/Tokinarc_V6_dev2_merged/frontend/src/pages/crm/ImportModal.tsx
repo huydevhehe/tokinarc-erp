@@ -15,6 +15,7 @@ interface Preview {
   total_rows: number
   will_create: number
   skipped_existing: number
+  will_update?: number   // vd import Part: trùng mã → cập nhật thay vì bỏ qua
   errors: { row: number; message: string }[]
 }
 
@@ -58,7 +59,10 @@ export function ImportModal({ open, onClose, spec }: { open: boolean; onClose: (
       if (dry) {
         setPreview(res.data)
       } else {
-        toast.success(`Đã import ${res.data.created} bản ghi (bỏ qua ${res.data.skipped_existing} trùng).`)
+        const tail = res.data.updated
+          ? `, cập nhật ${res.data.updated} bản ghi trùng mã`
+          : ` (bỏ qua ${res.data.skipped_existing} trùng)`
+        toast.success(`Đã import ${res.data.created} bản ghi${tail}.`)
         qc.invalidateQueries({ queryKey: [spec.invalidateKey] })
         close()
       }
@@ -74,7 +78,8 @@ export function ImportModal({ open, onClose, spec }: { open: boolean; onClose: (
           <Button variant="ghost" onClick={() => submit(true)} disabled={!file || busy !== null}>
             {busy === 'dry' ? <Loader2 size={14} className="animate-spin" /> : null} Xem trước
           </Button>
-          <Button onClick={() => submit(false)} disabled={!file || busy !== null || preview?.will_create === 0}>
+          <Button onClick={() => submit(false)}
+            disabled={!file || busy !== null || (!!preview && !preview.will_create && !preview.will_update)}>
             {busy === 'run' ? <Loader2 size={14} className="animate-spin" /> : null} Import
           </Button>
         </>
@@ -108,7 +113,11 @@ export function ImportModal({ open, onClose, spec }: { open: boolean; onClose: (
               <span className="flex items-center gap-1 text-green-400">
                 <CheckCircle2 size={14} /> Sẽ tạo: <b>{preview.will_create}</b>
               </span>
-              <span className="text-txt-2">Bỏ qua (trùng): {preview.skipped_existing}</span>
+              {preview.will_update ? (
+                <span className="text-txt-2">Sẽ cập nhật (trùng mã): {preview.will_update}</span>
+              ) : (
+                <span className="text-txt-2">Bỏ qua (trùng): {preview.skipped_existing}</span>
+              )}
               <span className="text-txt-2">Tổng dòng: {preview.total_rows}</span>
             </div>
             {preview.errors.length > 0 && (

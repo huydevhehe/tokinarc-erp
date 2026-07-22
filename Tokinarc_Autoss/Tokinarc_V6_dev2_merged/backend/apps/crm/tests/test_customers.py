@@ -247,9 +247,16 @@ class TestCustomerAPI:
                         {'file': self._csv(csv)}, format='multipart')
         assert r.data['created'] == 1 and r.data['skipped_existing'] == 1
 
-    def test_import_blocked_for_sale(self, api):
+    def test_import_allowed_for_sale(self, api):
+        """#3 biên bản (2026-07-22): Sale được import KH (dữ liệu Sale sở hữu)."""
         r = api.post('/api/v1/crm/customers/import/',
-                     {'file': self._csv('code,name\nKH-7301,X\n')}, format='multipart')
+                     {'file': self._csv('code,name\nKH-7301,X\n'), 'dry_run': '1'}, format='multipart')
+        assert r.status_code == 200
+
+    def test_import_blocked_for_customer_role(self, customer_user):
+        client = APIClient(); client.force_authenticate(customer_user)
+        r = client.post('/api/v1/crm/customers/import/',
+                        {'file': self._csv('code,name\nKH-7302,X\n')}, format='multipart')
         assert r.status_code == 403
 
     def test_import_template_download(self, manager):
@@ -291,9 +298,16 @@ class TestCustomerAPI:
         assert r.data['created'] == 1 and len(r.data['errors']) == 1
         assert SalesOrder.objects.filter(code='DH-9001').exists()
 
-    def test_import_entity_blocked_for_sale(self, api):
+    def test_import_entity_leads_allowed_for_sale(self, api):
+        """#3 biên bản (2026-07-22): Sale được import Lead (dữ liệu Sale sở hữu)."""
         r = api.post('/api/v1/crm/import/leads/',
                      {'file': self._csv('name\nAnh A\n')}, format='multipart')
+        assert r.status_code == 200
+
+    def test_import_entity_contracts_still_blocked_for_sale(self, api):
+        """Hợp đồng/Đơn hàng vẫn CHỈ quản lý/CEO — nghiệp vụ tài chính nhạy cảm."""
+        r = api.post('/api/v1/crm/import/contracts/',
+                     {'file': self._csv('code\nHD-X\n')}, format='multipart')
         assert r.status_code == 403
 
     def test_import_entity_unknown_404(self, manager):
@@ -360,4 +374,62 @@ class TestCustomerAPI:
             ],
         }, format='json')
         assert r.status_code == 400
-        assert 'contacts' in r.data
+
+
+@pytest.mark.django_db
+class TestCustomerDuplicateCheck:
+    """#7 biên bản PMQL — check trùng KH theo SĐT/MST khi tạo tay + Import Excel."""
+
+    def test_create_blocked_by_duplicate_tax_code(self, api, sale_user):
+        CustomerFactory(owner=sale_user, code='KH-9001', tax_code='0312345678')
+        r = api.post('/api/v1/crm/customers/', {
+            'code': 'KH-9002', 'name': 'Cty khac', 'segment': 'other',
+            'tax_code': '0312345678',
+        }, format='json')
+        assert r.status_code == 409
+        assert r.data['code'] == 'POSSIBLE_DUPLICATE'
+        assert r.data['matches'][0]['code'] == 'KH-9001'
+        assert not Customer.objects.filter(code='KH-9002').exists()
+
+    def test_create_blocked_by_duplicate_phone(self, api, sale_user):
+        c = CustomerFactory(owner=sale_user, code='KH-9003')
+        ContactFactory(customer=c, phone='0909999999')
+        r = api.post('/api/v1/crm/customers/', {
+            'code': 'KH-9004', 'name': 'Cty khac 2', 'segment': 'other',
+            'contacts': [{'full_name': 'Ai do', 'phone': '0909999999'}],
+        }, format='json')
+        assert r.status_code == 409
+        assert r.data['matches'][0]['code'] == 'KH-9003'
+
+    def test_create_allowed_with_allow_duplicate_flag(self, api, sale_user):
+        CustomerFactory(owner=sale_user, code='KH-9005', tax_code='0399999999')
+        r = api.post('/api/v1/crm/customers/', {
+            'code': 'KH-9006', 'name': 'Cty that su khac', 'segment': 'other',
+            'tax_code': '0399999999', 'allow_duplicate': True,
+        }, format='json')
+        assert r.status_code == 201
+
+    def test_update_excludes_self_tax_code(self, api, sale_user):
+        c = CustomerFactory(owner=sale_user, code='KH-9007', tax_code='0388888888')
+        r = api.patch(f'/api/v1/crm/customers/{c.id}/', {
+            'tax_code': '0388888888', 'name': 'Doi ten khong doi MST',
+        }, format='json')
+        assert r.status_code == 200   # không tự báo trùng với chính mình
+
+    def test_import_skips_row_with_duplicate_tax_code(self, manager, sale_user):
+        import io
+
+        CustomerFactory(owner=sale_user, code='KH-9010', tax_code='0377777777')
+        client = APIClient(); client.force_authenticate(manager)
+        csv_content = (
+            "code,name,segment,region,tax_code,status,notes,owner_username,"
+            "contact_name,contact_phone,contact_email,contact_title\n"
+            "KH-9011,Cty trung MST,factory,HCM,0377777777,new,,,,,,\n"
+        )
+        f = io.BytesIO(csv_content.encode('utf-8'))
+        f.name = 'test.csv'
+        r = client.post('/api/v1/crm/customers/import/?dry_run=1',
+                        {'file': f}, format='multipart')
+        assert r.status_code == 200
+        assert r.data['will_create'] == 0
+        assert any('trùng' in e['message'] for e in r.data['errors'])

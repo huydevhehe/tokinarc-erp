@@ -43,7 +43,6 @@ import { WarehousesPage } from '@/pages/wms/Warehouses'
 import { InboundPage } from '@/pages/wms/Inbound'
 import { OutboundPage } from '@/pages/wms/Outbound'
 import { CeoOverviewPage } from '@/pages/ceo/Overview'
-import { CeoRevenuePage } from '@/pages/ceo/Revenue'
 import { CeoForecastPage } from '@/pages/ceo/Forecast'
 import { CeoDebtPage } from '@/pages/ceo/Debt'
 import { CeoInventoryPage } from '@/pages/ceo/Inventory'
@@ -51,6 +50,7 @@ import { CeoAgingPage } from '@/pages/ceo/Aging'
 import { CeoAISummaryPage } from '@/pages/ceo/AISummary'
 import { ApprovalsPage } from '@/pages/ceo/Approvals'
 import { AdminUsersPage } from '@/pages/admin/Users'
+import { CapabilityMatrixPage } from '@/pages/admin/CapabilityMatrix'
 import { RequireRole } from '@/components/RequireRole'
 
 const MGR = ['manager', 'ceo', 'admin'] as const
@@ -143,7 +143,7 @@ export function App() {
           <Route path="ceo" element={<Navigate to="/ceo/overview" replace />} />
           <Route path="ceo/approvals" element={<RequireRole roles={[...MGR]}><ApprovalsPage /></RequireRole>} />
           <Route path="ceo/overview" element={<RequireRole roles={[...MGR]}><CeoOverviewPage /></RequireRole>} />
-          <Route path="ceo/revenue" element={<RequireRole roles={[...MGR]}><CeoRevenuePage /></RequireRole>} />
+          <Route path="ceo/revenue" element={<Navigate to="/ceo/overview" replace />} />
           <Route path="ceo/forecast" element={<RequireRole roles={[...MGR]}><CeoForecastPage /></RequireRole>} />
           <Route path="ceo/debt" element={<RequireRole roles={[...MGR]}><CeoDebtPage /></RequireRole>} />
           <Route path="ceo/inventory" element={<RequireRole roles={[...MGR]}><CeoInventoryPage /></RequireRole>} />
@@ -153,6 +153,7 @@ export function App() {
           {/* ── Quản trị (admin/superuser) ── */}
           <Route path="admin" element={<Navigate to="/admin/users" replace />} />
           <Route path="admin/users" element={<RequireRole roles={['admin']}><AdminUsersPage /></RequireRole>} />
+          <Route path="admin/capabilities" element={<RequireRole roles={['admin', 'ceo']}><CapabilityMatrixPage /></RequireRole>} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

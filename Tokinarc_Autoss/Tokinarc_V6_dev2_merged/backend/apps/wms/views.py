@@ -11,6 +11,8 @@ publish() placeholder — nối vào tokinarc.eventbus.publisher khi có.
 """
 from __future__ import annotations
 
+import io
+
 from django.db import transaction
 from django.db.models import F, ProtectedError
 from django.utils import timezone
@@ -37,7 +39,7 @@ WAREHOUSE_STAFF = frozenset({Role.WAREHOUSE, Role.WAREHOUSE_MANAGER})
 
 from . import services
 from .models import (
-    ASN, Bin, CycleCount, CycleCountLine, InboundOrder, InventoryItem, Lot,
+    ASN, Bin, CycleCount, CycleCountLine, InboundFlowType, InboundOrder, InventoryItem, Lot,
     OutboundOrder, PickListItem, SerialNumber, StockMovement, Warehouse, Zone,
 )
 from .permissions import WMSPermission, WmsControlAccess
@@ -217,6 +219,47 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
         if self.request.query_params.get('low_stock') == 'true':
             qs = qs.filter(qty_on_hand__lte=F('min_level'))
         return qs
+
+    def _category_rows(self):
+        """Tồn kho gộp theo nhóm hàng — Part gộp theo `category`, Torch gộp theo `family`."""
+        base = self.get_queryset()
+        part_rows = (base.filter(part__isnull=False)
+                     .values(group=F('part__category'))
+                     .annotate(qty=Sum('qty_on_hand'),
+                               value=Sum(F('qty_on_hand') * F('part__cost_vnd')))
+                     .order_by('group'))
+        torch_rows = (base.filter(torch__isnull=False)
+                      .values(group=F('torch__family'))
+                      .annotate(qty=Sum('qty_on_hand'),
+                                value=Sum(F('qty_on_hand') * F('torch__cost_vnd')))
+                      .order_by('group'))
+        rows = [{'kind': 'part', 'group': r['group'] or '(chưa phân loại)',
+                 'qty': r['qty'] or 0, 'value': r['value'] or 0} for r in part_rows]
+        rows += [{'kind': 'torch', 'group': r['group'] or '(chưa phân loại)',
+                  'qty': r['qty'] or 0, 'value': r['value'] or 0} for r in torch_rows]
+        return rows
+
+    @action(detail=False, methods=['get'], url_path='by-category')
+    def by_category(self, request):
+        """Tồn kho gộp theo nhóm hàng (không theo mã lẻ) — phục vụ lên đơn đặt NCC."""
+        return Response(self._category_rows())
+
+    @action(detail=False, methods=['get'], url_path='export-by-category')
+    def export_by_category(self, request):
+        """Xuất Excel tồn kho theo nhóm sản phẩm."""
+        from apps.common.excel import xlsx_response
+        from openpyxl import Workbook
+        rows = self._category_rows()
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'TonKhoTheoNhom'
+        ws.append(['Loại', 'Nhóm hàng', 'Tồn (SL)', 'Giá trị (VNĐ)'])
+        kind_label = {'part': 'Phụ tùng', 'torch': 'Súng hàn'}
+        for r in rows:
+            ws.append([kind_label.get(r['kind'], r['kind']), r['group'], r['qty'], r['value']])
+        buf = io.BytesIO()
+        wb.save(buf)
+        return xlsx_response(buf.getvalue(), 'ton_kho_theo_nhom.xlsx')
 
     @action(detail=False, methods=['post'], url_path='adjust')
     def adjust(self, request):
@@ -408,6 +451,7 @@ class ASNViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_409_CONFLICT)
         inbound = InboundOrder.objects.create(
             code=f"IN-{asn.code.split('-', 1)[-1]}", warehouse=asn.warehouse, asn=asn,
+            flow_type=InboundFlowType.SUPPLIER,
             created_by=request.user, updated_by=request.user)
         asn.is_arrived = True
         asn.save(update_fields=['is_arrived'])
@@ -468,6 +512,18 @@ class InboundViewSet(viewsets.ModelViewSet):
         if inbound.status not in ('draft', 'confirmed', 'partial'):
             return Response({'detail': 'Trạng thái không cho xác nhận.', 'code': 'CONFLICT'},
                             status=status.HTTP_409_CONFLICT)
+        # #11 biên bản (2026-07-21): luồng NCC bắt buộc giá (từng dòng) + thuế
+        # (cả phiếu) trước khi xác nhận — chặn cứng, không chỉ cảnh báo.
+        if inbound.flow_type == InboundFlowType.SUPPLIER:
+            missing = []
+            if inbound.tax_pct is None:
+                missing.append('thuế (%)')
+            if any(not l.unit_cost for l in inbound.lines.all()):
+                missing.append('đơn giá')
+            if missing:
+                return Response({'detail': f"Phiếu nhập NCC còn thiếu {', '.join(missing)} — "
+                                           f"phải điền đủ trước khi xác nhận.",
+                                 'code': 'MISSING_PRICE_OR_TAX'}, status=400)
         partial_flag = bool(request.data.get('partial'))
         shortage_note = str(request.data.get('shortage_note', '')).strip()
         fully = True
@@ -504,7 +560,8 @@ class InboundViewSet(viewsets.ModelViewSet):
             inbound.received_at = timezone.now()
         if shortage_note:
             inbound.shortage_note = shortage_note
-        inbound.save(update_fields=['status', 'received_at', 'shortage_note'])
+        inbound.received_by = request.user
+        inbound.save(update_fields=['status', 'received_at', 'shortage_note', 'received_by'])
         # Sync ngược về Đơn mua (nếu phiếu tạo từ PO): cập nhật SL đã nhận + trạng thái PO.
         if inbound.purchase_order_id:
             self._sync_purchase_order(inbound)
@@ -672,6 +729,8 @@ class OutboundViewSet(viewsets.ModelViewSet):
     serializer_class = OutboundOrderSerializer
     permission_classes = [WMSPermission]
     queryset = OutboundOrder.objects.prefetch_related('lines')
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status', 'purpose', 'warehouse']
 
     def perform_create(self, serializer):
         code = serializer.validated_data.get('code') or _next_doc_code(OutboundOrder, 'OUT')
@@ -687,16 +746,17 @@ class OutboundViewSet(viewsets.ModelViewSet):
             item = l.part or l.torch
             rows.append((str(item.pk) if item else '—',
                          getattr(item, 'display_name_vi', '') if item else '',
-                         l.qty_ordered, l.qty_picked))
+                         l.qty_ordered, l.qty_picked, l.unit_price, l.line_total))
         party = customer_party(o.customer) if o.customer_id else None
         data = make_document_xlsx(
             sheet_title='PhieuXuat', doc_title='PHIẾU XUẤT KHO', doc_code=o.code,
             doc_date=o.created_at.strftime('%d/%m/%Y'),
             party_label='NGƯỜI NHẬN / KHÁCH HÀNG:', party=party,
             meta=[('Kho xuất:', o.warehouse.code), ('Đơn bán:', o.sales_order_code or '—'),
-                  ('Trạng thái:', o.get_status_display())],
+                  ('Trạng thái:', o.get_status_display()), ('Mục đích:', o.get_purpose_display())],
             columns=[('Mã', 16, 'text'), ('Tên hàng', 40, 'text'),
-                     ('SL đặt', 12, 'int'), ('Thực soạn', 12, 'int')],
+                     ('SL đặt', 12, 'int'), ('Thực soạn', 12, 'int'),
+                     ('Đơn giá', 14, 'money'), ('Thành tiền', 16, 'money')],
             rows=rows,
             signatures=['THỦ KHO', 'NGƯỜI VẬN CHUYỂN', 'NGƯỜI NHẬN'])
         return xlsx_response(data, f'phieu_xuat_{o.code}.xlsx')

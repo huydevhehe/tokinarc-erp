@@ -9,25 +9,32 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { FileText, Check, ArrowRight, Plus, ShieldCheck, X, Eye, Download, Pencil } from 'lucide-react'
+import { FileText, Check, ArrowRight, Plus, ShieldCheck, X, Eye, Download, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { compactVnd, formatDate, QUOTE_STATUS_LABEL, QUOTE_STATUS_TONE } from '@/lib/crm'
 import { useAuth, isManager, isCeo } from '@/lib/auth/store'
-import type { Quote } from '@/lib/types'
+import { useCan } from '@/lib/auth/capabilities'
+import type { Quote, QuoteStatus } from '@/lib/types'
 import {
   PageHeader, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { QuoteForm } from '@/pages/crm/forms/QuoteForm'
 import { QuoteDetailModal } from '@/pages/crm/QuoteDetailModal'
 
+const STATUSES: (QuoteStatus | '')[] = ['', 'draft', 'sent', 'pending_ceo', 'approved', 'rejected', 'converted', 'expired']
+
 export function QuotesPage() {
   const qc = useQueryClient()
   const role = useAuth((s) => s.user?.role)
+  const myId = useAuth((s) => s.user?.id)
   const canApprove = isManager(role)   // cấp 1
   const canApproveL2 = isCeo(role)     // cấp 2
+  // Giai đoạn 1 phân quyền function-based: mặc định chỉ admin, hoặc chủ báo giá.
+  const canDeleteAny = useCan('crm.quote.delete')
+  const [status, setStatus] = useState<QuoteStatus | ''>('')
   const [page, setPage] = useState(1)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Quote | null>(null)
@@ -38,8 +45,8 @@ export function QuotesPage() {
   const openEdit = (q: Quote) => { if (EDITABLE.includes(q.status)) { setEditing(q); setFormOpen(true) } }
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['quotes', page],
-    queryFn: () => fetchPage<Quote>('/crm/quotes/', { page }),
+    queryKey: ['quotes', status, page],
+    queryFn: () => fetchPage<Quote>('/crm/quotes/', { status: status || undefined, page }),
     placeholderData: keepPreviousData,
   })
 
@@ -78,6 +85,14 @@ export function QuotesPage() {
     onSuccess: (res) => { toast.success(`Đã tạo HĐ ${res.data.contract_order_code ?? ''}`); invalidate() },
     onError: (e) => toast.error(apiError(e)),
   })
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/crm/quotes/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá báo giá'); invalidate() },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const onDelete = (q: Quote) => {
+    if (window.confirm(`Xoá báo giá ${q.code}? Có thể khôi phục qua quản trị nếu cần.`)) remove.mutate(q.id)
+  }
 
   const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
 
@@ -87,7 +102,15 @@ export function QuotesPage() {
         icon={<FileText size={20} className="text-flame" />}
         title="Báo giá"
         subtitle={data ? `${data.count} báo giá` : undefined}
-        actions={<Button onClick={openCreate}><Plus size={14} /> Tạo BG</Button>}
+        actions={
+          <>
+            <select value={status} onChange={(e) => { setStatus(e.target.value as QuoteStatus | ''); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+              {STATUSES.map((s) => <option key={s} value={s}>{s ? QUOTE_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}
+            </select>
+            <Button onClick={openCreate}><Plus size={14} /> Tạo BG</Button>
+          </>
+        }
       />
 
       <TableCard>
@@ -180,6 +203,12 @@ export function QuotesPage() {
                 )}
                 {q.status === 'converted' && (
                   <span className="text-[11px] text-txt-2 font-mono">{q.contract_order_code || 'Đã chuyển'}</span>
+                )}
+                {(canDeleteAny || q.owner === myId) && (
+                  <Button variant="ghost" size="sm" disabled={remove.isPending && remove.variables === q.id}
+                    onClick={() => onDelete(q)}>
+                    <Trash2 size={13} /> Xoá
+                  </Button>
                 )}
               </Td>
             </tr>

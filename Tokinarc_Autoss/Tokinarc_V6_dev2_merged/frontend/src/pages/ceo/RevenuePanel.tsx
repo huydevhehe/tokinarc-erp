@@ -1,16 +1,17 @@
 /**
- * Tokinarc frontend — src/pages/ceo/Revenue.tsx
- * Doanh thu: biểu đồ theo tháng + bảng theo phân khúc (THẬT từ /analytics).
+ * Tokinarc frontend — src/pages/ceo/RevenuePanel.tsx
+ * Nội dung doanh thu (biểu đồ theo tháng + bảng theo phân khúc, THẬT từ /analytics) —
+ * tách khỏi trang /ceo/revenue (đã gộp vào Bảng điều hành) để CRM Dashboard nhúng
+ * lại đúng phần này cho quản lý, không phải render nguyên 1 trang CEO lồng bên trong.
  */
 import { useQuery } from '@tanstack/react-query'
-import { TrendingUp } from 'lucide-react'
 import { getRevenueMonthly, getRevenueBySegment } from '@/lib/analytics'
 import { apiError } from '@/lib/api'
 import { compactVnd, formatVnd, SEGMENT_LABEL } from '@/lib/crm'
-import { Card, SectionTitle, PageHeader, TableCard, Th, Td, RowMsg } from '@/components/ui'
+import { Card, SectionTitle, TableCard, Th, Td, RowMsg } from '@/components/ui'
 import { MoneyBarChart } from '@/components/charts'
 
-export function CeoRevenuePage() {
+export function RevenuePanel() {
   const rev = useQuery({ queryKey: ['ceo', 'rev'], queryFn: getRevenueMonthly })
   const seg = useQuery({ queryKey: ['ceo', 'seg'], queryFn: getRevenueBySegment })
 
@@ -18,9 +19,7 @@ export function CeoRevenuePage() {
   const totalRev = (seg.data ?? []).reduce((s, r) => s + r.revenue_vnd, 0)
 
   return (
-    <div className="max-w-5xl">
-      <PageHeader icon={<TrendingUp size={20} className="text-flame" />} title="Doanh thu" />
-
+    <>
       <Card className="mb-4">
         <SectionTitle>Doanh thu theo tháng <span className="text-xs text-txt-2 font-normal">(đơn active/shipping/completed)</span></SectionTitle>
         {rev.isLoading ? <p className="text-txt-2 text-sm text-center py-10">Đang tải…</p>
@@ -51,6 +50,6 @@ export function CeoRevenuePage() {
           <div className="text-right text-sm mt-3 text-txt-2">Tổng: <span className="text-flame font-semibold">{compactVnd(totalRev)}</span></div>
         )}
       </Card>
-    </div>
+    </>
   )
 }

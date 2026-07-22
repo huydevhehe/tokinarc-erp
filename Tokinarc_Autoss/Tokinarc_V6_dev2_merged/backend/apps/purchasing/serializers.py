@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.db import transaction
 from rest_framework import serializers
 
@@ -16,6 +18,10 @@ class SupplierSerializer(serializers.ModelSerializer):
 
 class POLineSerializer(serializers.ModelSerializer):
     part_name = serializers.CharField(source='part.display_name_vi', read_only=True)
+    # Chặn số âm ở đầu vào — nếu không, qty âm sẽ đụng ràng buộc CHECK
+    # po_received_le_qty và sập lỗi 500.
+    qty       = serializers.IntegerField(min_value=1)
+    unit_cost = serializers.DecimalField(max_digits=14, decimal_places=0, min_value=Decimal(0))
 
     class Meta:
         model = PurchaseOrderLine
@@ -31,7 +37,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     status_display = serializers.CharField(source='get_status_display', read_only=True)
     owner_username = serializers.CharField(source='owner.username', read_only=True)
     debt_vnd = serializers.IntegerField(read_only=True)
-    requires_l2 = serializers.SerializerMethodField()
 
     class Meta:
         model = PurchaseOrder
@@ -39,14 +44,11 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
                   'status', 'status_display', 'order_date', 'expected_date',
                   'carrier', 'tracking_no', 'payment_terms_note',
                   'total_vnd', 'paid_vnd', 'debt_vnd', 'owner', 'owner_username', 'notes',
-                  'received_at', 'requires_l2', 'l1_approved_by', 'l2_approved_by', 'approved_by',
+                  'received_at', 'l1_approved_by', 'l2_approved_by', 'approved_by',
                   'lines', 'created_at']
         read_only_fields = ['id', 'code', 'status', 'total_vnd', 'paid_vnd', 'owner',
                             'received_at', 'l1_approved_by', 'l2_approved_by', 'approved_by',
                             'created_at']
-
-    def get_requires_l2(self, obj) -> bool:
-        return obj.requires_l2()
 
     @transaction.atomic
     def create(self, validated):

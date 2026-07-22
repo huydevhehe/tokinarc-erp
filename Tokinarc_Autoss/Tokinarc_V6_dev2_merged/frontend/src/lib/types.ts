@@ -198,6 +198,8 @@ export interface InboundLine {
   order_idx: number
 }
 
+export type InboundFlowType = 'internal' | 'supplier'
+
 export interface InboundOrder {
   id: string
   code: string
@@ -211,12 +213,18 @@ export interface InboundOrder {
   received_at: string | null
   lines: InboundLine[]
   notes: string
+  flow_type: InboundFlowType
+  tax_pct: string | number | null
+  delivered_by_name?: string
+  received_by?: string | null
+  received_by_username?: string
   created_at: string
   updated_at: string
 }
 
 export type OutboundStatus = 'draft' | 'picking' | 'picked' | 'partial' | 'shipped' | 'cancelled'
 export type OutboundRule = 'FIFO' | 'FEFO' | 'NEAREST'
+export type OutboundPurpose = 'sale' | 'project'
 
 export interface OutboundLine {
   id?: string
@@ -226,6 +234,8 @@ export interface OutboundLine {
   qty_ordered: number
   qty_picked: number
   order_idx: number
+  unit_price: string | null
+  line_total: string | null
 }
 
 export interface OutboundOrder {
@@ -236,6 +246,7 @@ export interface OutboundOrder {
   customer: string | null
   rule: OutboundRule
   status: OutboundStatus
+  purpose: OutboundPurpose
   shipped_at: string | null
   lines: OutboundLine[]
   notes: string
@@ -288,6 +299,7 @@ export interface CatalogPart {
   price_display: string
   is_contact_price: boolean
   is_priority_sell: boolean
+  tax_pct: string | null
 }
 
 export interface CatalogTorch {
@@ -489,8 +501,18 @@ export interface Ticket {
   assignee_name?: string
   assignee_username?: string
   resolution?: string
+  resolution_logs?: TicketResolutionLog[]
   created_owner: string
   resolved_at: string | null
   created_at: string
   updated_at: string
+}
+
+export interface TicketResolutionLog {
+  id: string
+  attempt_no: number
+  content: string
+  resolved_by: string | null
+  resolved_by_username?: string
+  resolved_at: string
 }

@@ -10,10 +10,12 @@ from __future__ import annotations
 from django.utils import timezone
 from rest_framework import filters, serializers, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
-from apps.accounts.roles import CEO_ROLES, MANAGER_ROLES, is_ceo, is_manager, role_of
+from apps.accounts.capabilities import has_capability
+from apps.accounts.roles import CEO_ROLES, MANAGER_ROLES, Role, role_of
 from apps.common.models import AuditLog, notify, notify_roles
 
 from .models import Activity, Contract, ContractStatus
@@ -69,7 +71,26 @@ class ContractViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = Contract.objects.select_related('customer', 'owner')
         u = self.request.user
-        return qs if is_manager(u) else qs.filter(customer__owner_id=u.id)
+        if self.action == 'destroy' and has_capability(u, 'crm.contract.delete'):
+            return qs
+        return qs if has_capability(u, 'crm.contract.view_all') else qs.filter(customer__owner_id=u.id)
+
+    def _destroy_bypass(self, request) -> bool:
+        # Xem ghi chú ở LeadViewSet._destroy_bypass (apps/crm/views_ext.py) —
+        # cùng lý do: is_manager()/CustomerPermission không tính admin, nhưng
+        # capability xoá vừa cấp cho admin cần có tác dụng thật.
+        return (self.action == 'destroy' and request.user.is_authenticated
+                and has_capability(request.user, 'crm.contract.delete'))
+
+    def check_permissions(self, request):
+        if self._destroy_bypass(request):
+            return
+        super().check_permissions(request)
+
+    def check_object_permissions(self, request, obj):
+        if self._destroy_bypass(request):
+            return
+        super().check_object_permissions(request, obj)
 
     def perform_create(self, serializer):
         obj = serializer.save(owner=self.request.user, code=_next_contract_code())
@@ -87,6 +108,13 @@ class ContractViewSet(viewsets.ModelViewSet):
             notify_roles(MANAGER_ROLES, 'contract_approval',
                          f"Hợp đồng {obj.code} ({obj.customer.name}) — chiết khấu {obj.discount_pct}% cần duyệt.",
                          link='/ceo/approvals', exclude_user=self.request.user)
+
+    def perform_destroy(self, instance):
+        u = self.request.user
+        if not (has_capability(u, 'crm.contract.delete') or instance.owner_id == u.id):
+            raise PermissionDenied('Không có quyền xoá hợp đồng.')
+        instance.soft_delete(user=u)
+        AuditLog.record(user=u, action='delete', entity='crm.Contract', entity_id=instance.id)
 
     def perform_update(self, serializer):
         """Báo người tạo khi HĐ chuyển sang HIỆU LỰC (đã ký xong)."""
@@ -108,7 +136,7 @@ class ContractViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
         """Duyệt cấp 1 (manager+). Vượt ngưỡng → chờ CEO duyệt cấp 2."""
-        if not is_manager(request.user):
+        if not has_capability(request.user, 'crm.contract.approve'):
             return Response({'detail': 'Chỉ quản lý/CEO/admin được duyệt hợp đồng.'}, status=403)
         c = self.get_object()
         if c.status != ContractStatus.DRAFT:
@@ -135,12 +163,12 @@ class ContractViewSet(viewsets.ModelViewSet):
     def approve_l2(self, request, pk=None):
         """Duyệt cấp 2 (CEO/admin) cho hợp đồng vượt ngưỡng đang chờ."""
         c = self.get_object()
-        if not is_ceo(request.user):
+        if not has_capability(request.user, 'crm.contract.approve_l2'):
             return Response({'detail': 'Chỉ CEO/admin được duyệt cấp 2.'}, status=403)
         if c.status != ContractStatus.PENDING_CEO:
             return Response({'detail': f'Hợp đồng ở trạng thái {c.status}, không chờ CEO duyệt.',
                              'code': 'CONFLICT'}, status=409)
-        if role_of(request.user) != 'admin' and request.user.id in (c.owner_id, c.l1_approved_by_id):
+        if role_of(request.user) != Role.ADMIN and request.user.id in (c.owner_id, c.l1_approved_by_id):
             return Response({'detail': 'Không thể tự duyệt cấp 2 hợp đồng mình tạo/đã duyệt cấp 1.'}, status=403)
         c.l2_approved_by = request.user
         c.l2_approved_at = timezone.now()
@@ -153,7 +181,7 @@ class ContractViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def reject(self, request, pk=None):
         """Từ chối hợp đồng (manager+) kèm lý do; báo người tạo."""
-        if not is_manager(request.user):
+        if not has_capability(request.user, 'crm.contract.reject'):
             return Response({'detail': 'Chỉ quản lý/CEO/admin được từ chối.'}, status=403)
         c = self.get_object()
         if c.status not in (ContractStatus.DRAFT, ContractStatus.PENDING_CEO):
@@ -176,6 +204,56 @@ class ContractViewSet(viewsets.ModelViewSet):
               .filter(status__in=[ContractStatus.DRAFT, ContractStatus.PENDING_CEO])
               .order_by('-created_at'))
         return Response({'results': ContractSerializer(qs, many=True).data, 'count': qs.count()})
+
+    @action(detail=True, methods=['post'], url_path='to-order')
+    def to_order(self, request, pk=None):
+        """Hợp đồng ĐÃ KÝ (Hiệu lực) → tạo SalesOrder thật để giao hàng/thu tiền đợt
+        này (mỗi lần gọi = 1 đợt giao — hợp đồng khung có thể sinh nhiều đơn theo
+        thời gian, KHÔNG khoá 1-1 như Quote.to-order). Dòng hàng lấy từ báo giá gốc
+        gắn với hợp đồng (contract.quote) — hợp đồng tạo tay không qua báo giá thì
+        chưa có nguồn dòng hàng để tự soạn, phải báo rõ thay vì tạo đơn rỗng."""
+        from django.db import transaction
+        from django.utils import timezone
+
+        from apps.catalog.models import Part, Torch
+        from apps.sales import services as sales_services
+        from apps.sales.models import SalesOrder, SalesOrderLine
+
+        c = self.get_object()
+        if c.status != ContractStatus.ACTIVE:
+            return Response({'detail': 'Chỉ hợp đồng đã ký (Hiệu lực) mới tạo được đơn.'},
+                            status=400)
+        if not c.quote_id:
+            return Response({'detail': 'Hợp đồng này không có báo giá gốc — không tự lấy '
+                             'được dòng hàng để tạo đơn. Vào Đơn bán tạo tay.',
+                             'code': 'NO_QUOTE'}, status=400)
+
+        year = timezone.now().year
+        pre = f'DH-{year}-'
+        last = SalesOrder.objects.filter(code__startswith=pre).order_by('-code').first()
+        seq = (int(last.code.rsplit('-', 1)[-1]) + 1) if last else 1
+        code = f'{pre}{seq:03d}'
+
+        with transaction.atomic():
+            order = SalesOrder.objects.create(
+                code=code, customer=c.customer, contract=c,
+                issued_date=timezone.localdate(), owner=c.owner,
+                created_by=request.user, updated_by=request.user,
+                status='draft', order_type='framework',
+            )
+            for idx, ql in enumerate(c.quote.lines.all()):
+                part = Part.objects.filter(pk=ql.part_no).first()
+                torch = None if part else Torch.objects.filter(pk=ql.part_no).first()
+                SalesOrderLine.objects.create(
+                    order=order, part=part, torch=torch,
+                    description=ql.part_name or ql.part_no,
+                    qty=ql.qty, unit_price=ql.unit_price_vnd,
+                    line_total=ql.qty * ql.unit_price_vnd, order_idx=idx)
+            sales_services.recompute_order_total(order)
+        AuditLog.record(user=request.user, action='to_order', entity='crm.Contract',
+                        entity_id=c.id, diff={'order_code': code})
+        return Response({'order_code': code, 'order_id': str(order.id),
+                         'total_vnd': str(order.total_vnd)})
 
     @action(detail=True, methods=['get'], url_path='export-docx')
     def export_docx(self, request, pk=None):
@@ -230,7 +308,7 @@ class ActivityViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = Activity.objects.select_related('customer', 'owner')
         u = self.request.user
-        return qs if is_manager(u) else qs.filter(customer__owner_id=u.id)
+        return qs if has_capability(u, 'crm.activity.view_all') else qs.filter(customer__owner_id=u.id)
 
     def perform_create(self, serializer):
         obj = serializer.save(owner=self.request.user)

@@ -20,7 +20,7 @@ import {
 } from '@/components/ui'
 import { TodayTasks, type TodayTask } from '@/components/TodayTasks'
 import { SalesPerformancePage } from '@/pages/crm/SalesPerformance'
-import { CeoRevenuePage } from '@/pages/ceo/Revenue'
+import { RevenuePanel } from '@/pages/ceo/RevenuePanel'
 
 const OPEN_STAGES = new Set(['prospect', 'qualify', 'proposal', 'negotiate'])
 
@@ -173,7 +173,7 @@ export function DashboardPage() {
       {mgr && (
         <div className="mt-6 pt-2 border-t border-line/60 space-y-2">
           <SalesPerformancePage />
-          <CeoRevenuePage />
+          <RevenuePanel />
         </div>
       )}
     </div>

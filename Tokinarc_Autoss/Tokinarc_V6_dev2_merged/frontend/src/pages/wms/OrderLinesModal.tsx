@@ -7,15 +7,21 @@ import type { ReactNode } from 'react'
 import { PackageCheck } from 'lucide-react'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
+import { formatVnd } from '@/lib/crm'
 
-export interface DocLine { key: string; name: string; code: string; q1: number; q2: number }
+export interface DocLine {
+  key: string; name: string; code: string; q1: number; q2: number
+  unitPrice?: string | null; lineTotal?: string | null
+}
 
-export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, lines }: {
+export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, lines, showPrice }: {
   open: boolean; onClose: () => void; title: string; meta?: ReactNode
-  q1Label: string; q2Label: string; lines: DocLine[]
+  q1Label: string; q2Label: string; lines: DocLine[]; showPrice?: boolean
 }) {
   const totalQ1 = lines.reduce((s, l) => s + (l.q1 || 0), 0)
   const totalQ2 = lines.reduce((s, l) => s + (l.q2 || 0), 0)
+  const totalValue = lines.reduce((s, l) => s + Number(l.lineTotal || 0), 0)
+  const cols = 5 + (showPrice ? 2 : 0)
   return (
     <Modal open={open} onClose={onClose} wide title={title}
       icon={<PackageCheck size={18} className="text-flame" />}
@@ -29,6 +35,8 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
             <th className="text-right">{q1Label}</th>
             <th className="text-right">{q2Label}</th>
             <th className="text-right">Lệch</th>
+            {showPrice && <th className="text-right">Đơn giá</th>}
+            {showPrice && <th className="text-right">Thành tiền</th>}
           </tr>
         </thead>
         <tbody>
@@ -46,10 +54,12 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
                   ? <span className="text-danger font-medium">thiếu {-diff}</span>
                   : <span className="text-ok">đủ ✓</span>}
               </td>
+              {showPrice && <td className="text-right tabular-nums text-txt-2">{l.unitPrice ? formatVnd(l.unitPrice) : '—'}</td>}
+              {showPrice && <td className="text-right tabular-nums">{l.lineTotal ? formatVnd(l.lineTotal) : '—'}</td>}
             </tr>
           )})}
           {lines.length === 0 && (
-            <tr><td colSpan={5} className="py-3 text-center text-txt-2">Không có dòng nào.</td></tr>
+            <tr><td colSpan={cols} className="py-3 text-center text-txt-2">Không có dòng nào.</td></tr>
           )}
         </tbody>
         {lines.length > 0 && (
@@ -63,6 +73,8 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
                   ? <span className="text-danger">thiếu {totalQ1 - totalQ2}</span>
                   : <span className="text-ok">đủ</span>}
               </td>
+              {showPrice && <td />}
+              {showPrice && <td className="text-right tabular-nums text-flame">{formatVnd(totalValue)}</td>}
             </tr>
           </tfoot>
         )}

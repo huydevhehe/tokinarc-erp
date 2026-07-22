@@ -57,6 +57,20 @@ def test_line_total_computed_by_backend(auth, sale):
 
 
 @pytest.mark.django_db
+def test_order_line_rejects_negative_and_bad_discount(auth, sale):
+    """Regression (bug hunt 22/07): dòng Đơn bán phải chặn qty âm / đơn giá âm /
+    chiết khấu >100% ở đầu vào (400), tránh sập 500 hoặc tổng tiền âm."""
+    cust = CustomerFactory(owner=sale)
+    base = {'code': 'HD-NEG', 'customer': str(cust.id), 'issued_date': '2026-06-01', 'payment_terms': 'net_30'}
+    assert auth.post('/api/v1/sales/orders/', {**base, 'code': 'HD-N1',
+        'lines': [{'description': 'x', 'qty': -5, 'unit_price': 10000}]}, format='json').status_code == 400
+    assert auth.post('/api/v1/sales/orders/', {**base, 'code': 'HD-N2',
+        'lines': [{'description': 'x', 'qty': 5, 'unit_price': -10000}]}, format='json').status_code == 400
+    assert auth.post('/api/v1/sales/orders/', {**base, 'code': 'HD-N3',
+        'lines': [{'description': 'x', 'qty': 5, 'unit_price': 10000, 'discount_pct': 150}]}, format='json').status_code == 400
+
+
+@pytest.mark.django_db
 def test_sign_ship_flow(auth, sale):
     cust = CustomerFactory(owner=sale)
     r = auth.post('/api/v1/sales/orders/', {
@@ -131,6 +145,29 @@ def test_invoice_misa_export_and_sync(db):
     r = c.post(f"/api/v1/sales/invoices/{inv['id']}/mark-synced/", {'misa_ref': 'HD0000123'}, format='json')
     assert r.data['misa_status'] == 'synced' and r.data['misa_ref'] == 'HD0000123'
     assert Invoice.objects.get(pk=inv['id']).synced_at is not None
+
+
+@pytest.mark.django_db
+def test_create_invoice_and_mark_synced_blocked_for_sales_role(db):
+    """Đợt A (mục #1 biên bản): sale không có capability
+    `sales.order.create_invoice`/`sales.invoice.mark_synced` (mặc định chỉ
+    manager/CEO) — chuyển sang engine capability không đổi hành vi."""
+    from apps.accounts.models import Role as R, User as U
+    sale = U.objects.create(username='sl_inv', role=R.SALES)
+    cust = CustomerFactory(owner=sale)
+    order = SalesOrder.objects.create(code='HD-INV-BLOCK', customer=cust, issued_date=dt.date(2026, 6, 1),
+                                      total_vnd=1_000_000, status='active', owner=sale)
+    c = APIClient(); c.force_authenticate(sale)
+    r = c.post(f'/api/v1/sales/orders/{order.id}/create-invoice/', {'tax_pct': 8}, format='json')
+    assert r.status_code == 403
+
+    from apps.sales.models import Invoice
+    inv = Invoice.objects.create(code='INV-BLOCK-1', order=order, customer=cust,
+                                 issue_date=dt.date(2026, 6, 1), subtotal_vnd=1_000_000,
+                                 tax_pct=8, tax_vnd=80_000, total_vnd=1_080_000,
+                                 created_by=sale, updated_by=sale)
+    r = c.post(f'/api/v1/sales/invoices/{inv.id}/mark-synced/', {'misa_ref': 'X'}, format='json')
+    assert r.status_code == 403
 
 
 @pytest.mark.django_db

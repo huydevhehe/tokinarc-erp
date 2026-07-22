@@ -22,7 +22,7 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from apps.accounts.roles import is_manager
+from apps.accounts.roles import Role, is_manager, role_of
 
 from .models import (
     Contact, ContactChannel, Contract, ContractStatus, Customer,
@@ -82,8 +82,12 @@ def _resolve_owner(username: str, default_user):
 
 def validate_and_build(rows: list[dict], user):
     """Trả (valid_items, errors, skipped). Không ghi DB."""
+    from .duplicate_check import find_duplicate_customers
+
     valid, errors, skipped = [], [], 0
-    seen_codes = set()
+    seen_codes: set[str] = set()
+    seen_tax_codes: set[str] = set()
+    seen_phones: set[str] = set()
     existing = set(Customer.all_objects.values_list('code', flat=True)) \
         if hasattr(Customer, 'all_objects') else set(Customer.objects.values_list('code', flat=True))
 
@@ -100,7 +104,21 @@ def validate_and_build(rows: list[dict], user):
             errors.append({'row': i, 'message': f'KH {code}: thiếu tên.'}); continue
         if code in existing or code in seen_codes:
             skipped += 1; continue
+
+        # Trùng KH theo SĐT/MST (#7 biên bản) — check với KH đã có trong DB
+        # lẫn các dòng khác NGAY TRONG file đang import.
+        tax_code = (row.get('tax_code') or '').strip()
+        phone = (row.get('contact_phone') or '').strip()
+        if tax_code and (tax_code in seen_tax_codes or find_duplicate_customers(tax_code=tax_code)):
+            errors.append({'row': i, 'message': f'KH {code}: MST "{tax_code}" trùng với KH khác.'}); continue
+        if phone and (phone in seen_phones or find_duplicate_customers(phone=phone)):
+            errors.append({'row': i, 'message': f'KH {code}: SĐT "{phone}" trùng với KH khác.'}); continue
+
         seen_codes.add(code)
+        if tax_code:
+            seen_tax_codes.add(tax_code)
+        if phone:
+            seen_phones.add(phone)
 
         valid.append({
             'code': code, 'name': name,
@@ -124,8 +142,10 @@ class CustomerImportView(APIView):
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request):
-        if not is_manager(request.user):
-            return Response({'detail': 'Chỉ quản lý/CEO/admin được import dữ liệu.'}, status=403)
+        # #3 biên bản (2026-07-22): mở thêm cho Sale — KH là dữ liệu Sale trực
+        # tiếp sở hữu/nhập liệu, không chỉ Quản lý/CEO như trước.
+        if not (is_manager(request.user) or role_of(request.user) == Role.SALES):
+            return Response({'detail': 'Chỉ Sale/quản lý/CEO/admin được import dữ liệu.'}, status=403)
         f = request.FILES.get('file')
         if not f:
             return Response({'detail': 'Thiếu file.'}, status=400)
@@ -406,7 +426,10 @@ class EntityImportView(APIView):
         spec = ENTITY_SPECS.get(entity)
         if not spec:
             return Response({'detail': f'Không hỗ trợ import "{entity}".'}, status=404)
-        if not is_manager(request.user):
+        # #3 biên bản (2026-07-22): Sale được import Lead (dữ liệu Sale sở hữu);
+        # Hợp đồng/Đơn hàng vẫn CHỈ quản lý/CEO (nghiệp vụ tài chính nhạy cảm).
+        is_sale_allowed = entity == 'leads' and role_of(request.user) == Role.SALES
+        if not (is_manager(request.user) or is_sale_allowed):
             return Response({'detail': 'Chỉ quản lý/CEO/admin được import dữ liệu.'}, status=403)
         f = request.FILES.get('file')
         if not f:

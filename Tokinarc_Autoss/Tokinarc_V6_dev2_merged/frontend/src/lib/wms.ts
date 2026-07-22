@@ -3,7 +3,7 @@
  * Nhãn + tone tag cho enum WMS (khớp apps/wms/models.py).
  */
 import type {
-  SerialStatus, MovementReason, InboundStatus, OutboundStatus, OutboundRule,
+  SerialStatus, MovementReason, InboundStatus, OutboundStatus, OutboundRule, OutboundPurpose,
 } from '@/lib/types'
 import type { TagTone } from '@/lib/crm'
 
@@ -43,4 +43,11 @@ export const OUTBOUND_STATUS_TONE: Record<OutboundStatus, TagTone> = {
 
 export const RULE_LABEL: Record<OutboundRule, string> = {
   FIFO: 'FIFO (nhập trước xuất trước)', FEFO: 'FEFO (hết hạn trước)', NEAREST: 'Gần nhất',
+}
+
+export const OUTBOUND_PURPOSE_LABEL: Record<OutboundPurpose, string> = {
+  sale: 'Hàng bán', project: 'Hàng xuất dự án',
+}
+export const OUTBOUND_PURPOSE_TONE: Record<OutboundPurpose, TagTone> = {
+  sale: 'blue', project: 'purple',
 }

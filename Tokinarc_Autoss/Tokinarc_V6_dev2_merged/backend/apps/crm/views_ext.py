@@ -23,14 +23,17 @@ from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
-from apps.accounts.roles import CEO_ROLES, MANAGER_ROLES, is_ceo, is_manager, role_of
+from apps.accounts.capabilities import has_capability
+from apps.accounts.roles import CEO_ROLES, MANAGER_ROLES, Role, is_manager, role_of
 from apps.common.models import AuditLog, notify, notify_roles
 
 from . import opportunity_flow as oflow
 from .models import (
-    Lead, Opportunity, OppLostReason, OppStage, Quote, QuoteStatus, Ticket, Visit,
+    Contract, Lead, Opportunity, OppLostReason, OppStage, Quote, QuoteStatus,
+    Ticket, TicketResolutionLog, TicketStatus, Visit,
 )
 from .permissions import CustomerPermission, IsAuthenticatedWithRole
 from .serializers_ext import (
@@ -48,9 +51,9 @@ def _audit(request, act, entity, entity_id, diff=None):
     )
 
 
-def _own_filter(qs, user, field='owner_id'):
-    """Sale chỉ thấy bản ghi của mình; manager+ thấy hết."""
-    if is_manager(user):
+def _own_filter(qs, user, field='owner_id', cap_key='crm.lead.view_all'):
+    """Sale chỉ thấy bản ghi của mình; role có capability `cap_key` thấy hết."""
+    if has_capability(user, cap_key):
         return qs
     return qs.filter(**{field: user.id})
 
@@ -72,13 +75,48 @@ def _next_code(model, prefix):
 class LeadViewSet(viewsets.ModelViewSet):
     serializer_class   = LeadSerializer
     permission_classes = [CustomerPermission]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_fields    = ['status']
 
     def get_queryset(self):
-        return _own_filter(Lead.objects.all(), self.request.user)
+        qs = Lead.objects.all()
+        if self.action == 'destroy' and has_capability(self.request.user, 'crm.lead.delete'):
+            return qs   # capability holder có thể target bất kỳ lead nào để xoá
+        return _own_filter(qs, self.request.user)
 
     def perform_create(self, serializer):
         obj = serializer.save(owner=self.request.user)
         _audit(self.request, 'create', 'Lead', obj.id)
+
+    def _destroy_bypass(self, request) -> bool:
+        # `CustomerPermission`/`is_manager()` KHÔNG tính admin (đúng chủ đích: admin
+        # chỉ quản trị hệ thống, không có visibility nghiệp vụ mặc định) — nhưng
+        # nếu capability engine đã cấp quyền xoá, admin cần vượt qua được check
+        # thô (has_permission) LẪN check theo bản ghi (has_object_permission)
+        # CHỈ cho đúng hành động xoá, để quyền vừa cấp có tác dụng thật (không
+        # chỉ xoá được bản ghi admin tình cờ sở hữu).
+        return (self.action == 'destroy' and request.user.is_authenticated
+                and has_capability(request.user, 'crm.lead.delete'))
+
+    def check_permissions(self, request):
+        if self._destroy_bypass(request):
+            return
+        super().check_permissions(request)
+
+    def check_object_permissions(self, request, obj):
+        if self._destroy_bypass(request):
+            return
+        super().check_object_permissions(request, obj)
+
+    def perform_destroy(self, instance):
+        """Xoá an toàn (#4 biên bản): engine capability (mặc định chỉ admin)
+        HOẶC chủ bản ghi tự xoá — giữ đúng hành vi cũ cho owner. Soft-delete
+        (khôi phục được) — đúng pattern Customer đã dùng."""
+        u = self.request.user
+        if not (has_capability(u, 'crm.lead.delete') or instance.owner_id == u.id):
+            raise PermissionDenied('Không có quyền xoá lead.')
+        instance.soft_delete(user=u)
+        _audit(self.request, 'delete', 'Lead', instance.id)
 
     @action(detail=True, methods=['post'])
     def assign(self, request, pk=None):
@@ -140,13 +178,40 @@ class LeadViewSet(viewsets.ModelViewSet):
 class OpportunityViewSet(viewsets.ModelViewSet):
     serializer_class   = OpportunitySerializer
     permission_classes = [CustomerPermission]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_fields    = ['stage']
 
     def get_queryset(self):
-        return _own_filter(Opportunity.objects.all(), self.request.user)
+        qs = Opportunity.objects.all()
+        if self.action == 'destroy' and has_capability(self.request.user, 'crm.opportunity.delete'):
+            return qs
+        return _own_filter(qs, self.request.user, cap_key='crm.opportunity.view_all')
 
     def perform_create(self, serializer):
         obj = serializer.save(owner=self.request.user)
         _audit(self.request, 'create', 'Opportunity', obj.id)
+
+    def _destroy_bypass(self, request) -> bool:
+        # Xem ghi chú ở LeadViewSet._destroy_bypass — cùng lý do.
+        return (self.action == 'destroy' and request.user.is_authenticated
+                and has_capability(request.user, 'crm.opportunity.delete'))
+
+    def check_permissions(self, request):
+        if self._destroy_bypass(request):
+            return
+        super().check_permissions(request)
+
+    def check_object_permissions(self, request, obj):
+        if self._destroy_bypass(request):
+            return
+        super().check_object_permissions(request, obj)
+
+    def perform_destroy(self, instance):
+        u = self.request.user
+        if not (has_capability(u, 'crm.opportunity.delete') or instance.owner_id == u.id):
+            raise PermissionDenied('Không có quyền xoá cơ hội.')
+        instance.soft_delete(user=u)
+        _audit(self.request, 'delete', 'Opportunity', instance.id)
 
     @action(detail=False, methods=['get'])
     def forecast(self, request):
@@ -155,7 +220,7 @@ class OpportunityViewSet(viewsets.ModelViewSet):
         from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum
 
         qs = _own_filter(Opportunity.objects.exclude(stage__in=['won', 'lost']),
-                         request.user)
+                         request.user, cap_key='crm.opportunity.view_all')
         weighted = ExpressionWrapper(F('est_value_vnd') * F('probability') / 100.0,
                                      output_field=DecimalField(max_digits=18, decimal_places=2))
         rows = (qs.values('stage')
@@ -210,9 +275,29 @@ class OpportunityViewSet(viewsets.ModelViewSet):
 class QuoteViewSet(viewsets.ModelViewSet):
     serializer_class   = QuoteSerializer
     permission_classes = [CustomerPermission]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_fields    = ['status']
 
     def get_queryset(self):
-        return _own_filter(Quote.objects.all(), self.request.user)
+        qs = Quote.objects.all()
+        if self.action == 'destroy' and has_capability(self.request.user, 'crm.quote.delete'):
+            return qs
+        return _own_filter(qs, self.request.user, cap_key='crm.quote.view_all')
+
+    def _destroy_bypass(self, request) -> bool:
+        # Xem ghi chú ở LeadViewSet._destroy_bypass — cùng lý do.
+        return (self.action == 'destroy' and request.user.is_authenticated
+                and has_capability(request.user, 'crm.quote.delete'))
+
+    def check_permissions(self, request):
+        if self._destroy_bypass(request):
+            return
+        super().check_permissions(request)
+
+    def check_object_permissions(self, request, obj):
+        if self._destroy_bypass(request):
+            return
+        super().check_object_permissions(request, obj)
 
     def perform_create(self, serializer):
         # Hạn hiệu lực mặc định = hôm nay + QUOTE_VALID_DAYS (nếu chưa nhập).
@@ -244,6 +329,13 @@ class QuoteViewSet(viewsets.ModelViewSet):
             if obj.status == QuoteStatus.APPROVED:
                 oflow.advance(opp, OppStage.NEGOTIATE, self.request.user,
                               source=f'quote-approved:{obj.code}')
+
+    def perform_destroy(self, instance):
+        u = self.request.user
+        if not (has_capability(u, 'crm.quote.delete') or instance.owner_id == u.id):
+            raise PermissionDenied('Không có quyền xoá báo giá.')
+        instance.soft_delete(user=u)
+        _audit(self.request, 'delete', 'Quote', instance.id)
 
     @action(detail=False, methods=['get'], url_path='pending-approvals')
     def pending_approvals(self, request):
@@ -296,10 +388,10 @@ class QuoteViewSet(viewsets.ModelViewSet):
         - Chống tự duyệt: người tạo không tự duyệt (trừ admin).
         """
         quote = self.get_object()
-        if not is_manager(request.user):
+        if not has_capability(request.user, 'crm.quote.approve'):
             return Response({'detail': 'Chỉ quản lý/CEO/admin được duyệt báo giá.'},
                             status=status.HTTP_403_FORBIDDEN)
-        if quote.owner_id == request.user.id and role_of(request.user) != 'admin':
+        if quote.owner_id == request.user.id and role_of(request.user) != Role.ADMIN:
             return Response({'detail': 'Không tự duyệt báo giá của chính mình.'},
                             status=status.HTTP_403_FORBIDDEN)
         if quote.status not in (QuoteStatus.DRAFT, QuoteStatus.SENT):
@@ -331,14 +423,14 @@ class QuoteViewSet(viewsets.ModelViewSet):
     def approve_l2(self, request, pk=None):
         """Duyệt cấp 2 (CEO/admin) cho báo giá vượt ngưỡng đang PENDING_CEO."""
         quote = self.get_object()
-        if not is_ceo(request.user):
+        if not has_capability(request.user, 'crm.quote.approve_l2'):
             return Response({'detail': 'Chỉ CEO/admin được duyệt cấp 2.'},
                             status=status.HTTP_403_FORBIDDEN)
         if quote.status != QuoteStatus.PENDING_CEO:
             return Response({'detail': f'Báo giá ở trạng thái {quote.status}, không chờ CEO duyệt.'},
                             status=400)
         # Chống tự duyệt: người tạo / người đã duyệt cấp 1 không tự duyệt cấp 2 (trừ admin).
-        if role_of(request.user) != 'admin' and request.user.id in (quote.owner_id, quote.l1_approved_by_id):
+        if role_of(request.user) != Role.ADMIN and request.user.id in (quote.owner_id, quote.l1_approved_by_id):
             return Response({'detail': 'Người tạo/đã duyệt cấp 1 không tự duyệt cấp 2.'},
                             status=status.HTTP_403_FORBIDDEN)
         now = timezone.now()
@@ -359,7 +451,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
     def reject(self, request, pk=None):
         """Từ chối báo giá kèm lý do (manager/CEO/admin). Lưu lý do vào notes + audit."""
         quote = self.get_object()
-        if not is_manager(request.user):
+        if not has_capability(request.user, 'crm.quote.reject'):
             return Response({'detail': 'Chỉ quản lý/CEO/admin được từ chối báo giá.'},
                             status=status.HTTP_403_FORBIDDEN)
         if quote.status not in (QuoteStatus.DRAFT, QuoteStatus.SENT, QuoteStatus.PENDING_CEO):
@@ -388,16 +480,23 @@ class QuoteViewSet(viewsets.ModelViewSet):
         if self._is_expired(quote):
             return Response({'detail': f'Báo giá đã hết hạn ({quote.valid_until}). '
                              'Cần làm lại báo giá mới.', 'code': 'QUOTE_EXPIRED'}, status=400)
-        # Loose link: tạo mã hợp đồng, gắn vào quote. SalesOrder thật do sales app
-        # tạo qua flow riêng (tránh circular import crm→sales).
-        order_code = _next_code_simple('HD', Quote, 'contract_order_code')
-        quote.contract_order_code = order_code
+        # Tạo Contract THẬT (trước đây chỉ ghi 1 mã ảo lên quote.contract_order_code,
+        # không có bản ghi Hợp đồng nào phía sau — bug). Tái dùng _next_contract_code
+        # của ContractViewSet (đếm trên đúng bảng Contract) thay vì _next_code_simple
+        # (đếm lẫn với mã DH- của SalesOrder trên field contract_order_code dùng chung
+        # → từng sinh trùng mã HD-0001 cho 2 báo giá khác nhau).
+        from .contracts_activities import _next_contract_code
+        ct = Contract.objects.create(
+            code=_next_contract_code(), customer=quote.customer, quote=quote,
+            value_vnd=quote.total_vnd, title=f"Hợp đồng từ báo giá {quote.code}",
+            owner=quote.owner)
+        quote.contract_order_code = ct.code
         quote.status = QuoteStatus.CONVERTED
         quote.save(update_fields=['contract_order_code', 'status', 'updated_at'])
-        _audit(request, 'to_contract', 'Quote', quote.id, {'order_code': order_code})
+        _audit(request, 'to_contract', 'Quote', quote.id, {'order_code': ct.code})
         oflow.advance(oflow.opp_of_quote(quote), OppStage.WON, request.user,
                       source=f'to-contract:{quote.code}')
-        return Response({'contract_order_code': order_code,
+        return Response({'contract_order_code': ct.code,
                          'quote': QuoteSerializer(quote).data})
 
     @action(detail=True, methods=['post'], url_path='to-order')
@@ -405,7 +504,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
         """Báo giá ĐÃ DUYỆT → tạo SalesOrder thật (draft) + lines từ QuoteLine."""
         from django.utils import timezone
 
-        from apps.catalog.models import Part
+        from apps.catalog.models import Part, Torch
         from apps.sales import services as sales_services
         from apps.sales.models import SalesOrder, SalesOrderLine
 
@@ -427,14 +526,20 @@ class QuoteViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             order = SalesOrder.objects.create(
-                code=code, customer=quote.customer, issued_date=timezone.now().date(),
+                # localdate() (KHÔNG phải now().date()): USE_TZ=True → now() luôn trả
+                # UTC, .date() lấy nhầm ngày UTC → lùi 1 ngày trong khung 00:00-07:00 giờ VN.
+                code=code, customer=quote.customer, issued_date=timezone.localdate(),
                 owner=quote.owner, created_by=request.user, updated_by=request.user,
                 status='draft', payment_terms_note=quote.payment_terms_note,
             )
             for idx, ql in enumerate(quote.lines.all()):
+                # part_no là loose-key: thử bảng Part trước, không có thì thử Torch
+                # (mã súng hàn) — để dòng đơn giữ được FK cho WMS soạn hàng.
                 part = Part.objects.filter(pk=ql.part_no).first()
+                torch = None if part else Torch.objects.filter(pk=ql.part_no).first()
                 SalesOrderLine.objects.create(
-                    order=order, part=part, description=ql.part_name or ql.part_no,
+                    order=order, part=part, torch=torch,
+                    description=ql.part_name or ql.part_no,
                     qty=ql.qty, unit_price=ql.unit_price_vnd,
                     line_total=ql.qty * ql.unit_price_vnd, order_idx=idx,
                 )
@@ -469,7 +574,7 @@ class VisitViewSet(viewsets.ModelViewSet):
     search_fields      = ['code', 'customer__name']
 
     def get_queryset(self):
-        return _own_filter(Visit.objects.all(), self.request.user)
+        return _own_filter(Visit.objects.all(), self.request.user, cap_key='crm.visit.view_all')
 
     def perform_create(self, serializer):
         obj = serializer.save(owner=self.request.user)
@@ -486,11 +591,44 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         # Service/manager+ thấy hết; sale chỉ ticket của KH mình tạo.
-        qs = Ticket.objects.all()
+        qs = Ticket.objects.all().prefetch_related('resolution_logs')
         u = self.request.user
-        if is_manager(u) or role_of(u) == 'service':
+        if has_capability(u, 'crm.ticket.view_all'):
             return qs
         return qs.filter(created_owner_id=u.id)
+
+    def create(self, request, *args, **kwargs):
+        """#9 biên bản: khách báo lại CÙNG SỰ CỐ (cùng serial_no + cùng khách
+        hàng) sau khi ticket cũ đã Đã giải quyết/Đóng → MỞ LẠI ticket cũ thay
+        vì tạo mã mới (tránh loạn mã). Khác khách hàng dù trùng serial_no thì
+        KHÔNG gộp (serial_no là text tự do, không link cứng WMS — không đủ tin
+        cậy để gộp xuyên khách hàng)."""
+        serial_no = str(request.data.get('serial_no') or '').strip()
+        customer_id = request.data.get('customer')
+        if serial_no and customer_id:
+            existing = (Ticket.objects.filter(
+                serial_no=serial_no, customer_id=customer_id,
+                status__in=[TicketStatus.RESOLVED, TicketStatus.CLOSED],
+            ).order_by('-created_at').first())
+            if existing:
+                new_desc = str(request.data.get('description') or '').strip()
+                if new_desc:
+                    stamp = timezone.now().strftime('%d/%m/%Y')
+                    existing.description = (
+                        f"{existing.description}\n\n— Khách báo lại ({stamp}): {new_desc}"
+                    ).strip()
+                existing.status = TicketStatus.OPEN
+                existing.resolved_at = None
+                existing.save(update_fields=['description', 'status', 'resolved_at', 'updated_at'])
+                _audit(request, 'reopen_merged', 'Ticket', existing.id, {'serial_no': serial_no})
+                if existing.assignee_id:
+                    notify(existing.assignee, 'ticket_reopened',
+                          f"Ticket {existing.code} được MỞ LẠI — khách báo lại sự cố cùng máy.",
+                          link='/tickets')
+                data = TicketSerializer(existing).data
+                data['merged_into_existing'] = True
+                return Response(data, status=status.HTTP_200_OK)
+        return super().create(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         obj = serializer.save(created_owner=self.request.user,
@@ -527,13 +665,19 @@ class TicketViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post'])
     def resolve(self, request, pk=None):
-        """Giải quyết: ghi CÁCH XỬ LÝ + báo người tạo ticket."""
+        """Giải quyết: ghi CÁCH XỬ LÝ + báo người tạo ticket.
+        Mỗi lần giải quyết là 1 dòng lịch sử riêng (TicketResolutionLog) —
+        #9 biên bản: ticket có thể được mở lại nhiều lần (khách báo lại cùng
+        sự cố), mỗi lần xử lý không ghi đè lần trước."""
         ticket = self.get_object()
         ticket.status = 'resolved'
         ticket.resolved_at = timezone.now()
         res = str(request.data.get('resolution', '')).strip()
         if res:
             ticket.resolution = res
+            next_attempt = ticket.resolution_logs.count() + 1
+            TicketResolutionLog.objects.create(
+                ticket=ticket, attempt_no=next_attempt, content=res, resolved_by=request.user)
         ticket.save(update_fields=['status', 'resolved_at', 'resolution', 'updated_at'])
         _audit(request, 'resolve', 'Ticket', ticket.id, {'resolution': res[:120]})
         # Báo người tạo ticket: đã xử lý xong.

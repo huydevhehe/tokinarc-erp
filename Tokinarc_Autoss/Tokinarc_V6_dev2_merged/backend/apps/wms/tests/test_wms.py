@@ -300,6 +300,86 @@ def test_inbound_scan_receive_then_confirm(auth, part, wh_user):
     assert InventoryItem.objects.get(bin=b, part=part).qty_on_hand == 10
 
 
+# ─── #11 biên bản: 2 luồng nhập kho (nội bộ vs NCC) ─────────────────────────
+@pytest.mark.django_db
+def test_inbound_default_flow_type_is_internal(auth, part, wh_user):
+    """Tạo tay không truyền flow_type → mặc định 'internal' (an toàn, không bắt
+    buộc giá/thuế) — chỉ luồng NCC (PO/ASN) mới tự set 'supplier' rõ trong code."""
+    from apps.wms.models import Bin, InboundLine, InboundOrder, InventoryItem, Warehouse, Zone
+    wh = Warehouse.objects.create(code='HCM2', name='K2', is_active=True, is_default=True)
+    z = Zone.objects.create(warehouse=wh, code='A', name='A')
+    b = Bin.objects.create(zone=z, rack='R01', bin_code='B1', full_code='HCM2-A-R01-B1')
+    io = InboundOrder.objects.create(code='IN-2', warehouse=wh, created_by=wh_user, updated_by=wh_user)
+    assert io.flow_type == 'internal'
+    InboundLine.objects.create(inbound=io, part=part, qty_expected=5, target_bin=b)
+    r = auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
+    assert r.status_code == 200
+    assert InventoryItem.objects.get(bin=b, part=part).qty_on_hand == 5
+
+
+@pytest.mark.django_db
+def test_inbound_supplier_flow_blocks_confirm_without_price_or_tax(auth, part, wh_user):
+    """Luồng NCC thiếu đơn giá/thuế → confirm() bị chặn cứng (400), không cộng tồn."""
+    from apps.wms.models import Bin, InboundLine, InboundOrder, InventoryItem, Warehouse, Zone
+    wh = Warehouse.objects.create(code='HCM3', name='K3', is_active=True, is_default=True)
+    z = Zone.objects.create(warehouse=wh, code='A', name='A')
+    b = Bin.objects.create(zone=z, rack='R01', bin_code='B1', full_code='HCM3-A-R01-B1')
+    io = InboundOrder.objects.create(code='IN-3', warehouse=wh, flow_type='supplier',
+                                     created_by=wh_user, updated_by=wh_user)
+    InboundLine.objects.create(inbound=io, part=part, qty_expected=5, target_bin=b, unit_cost=0)
+    r = auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
+    assert r.status_code == 400
+    assert r.data['code'] == 'MISSING_PRICE_OR_TAX'
+    assert not InventoryItem.objects.filter(bin=b, part=part).exists()
+    # Điền đủ giá + thuế → confirm được, và received_by = người xác nhận.
+    io.tax_pct = 8
+    io.save(update_fields=['tax_pct'])
+    io.lines.update(unit_cost=1000)
+    r = auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
+    assert r.status_code == 200
+    assert r.data['status'] == 'putaway'
+    io.refresh_from_db()
+    assert io.received_by_id == wh_user.id
+    assert InventoryItem.objects.get(bin=b, part=part).qty_on_hand == 5
+
+
+@pytest.mark.django_db
+def test_create_inbound_from_po_defaults_supplier_flow():
+    """#11: phiếu nhập tạo TỪ đơn mua (create_inbound) tự set flow_type='supplier'."""
+    from apps.accounts.models import Role
+    from apps.catalog.models import Part as CatalogPart
+    from apps.purchasing.models import PurchaseOrder, Supplier
+    from apps.wms.models import InboundOrder, Warehouse, Zone
+    mgr = User.objects.create(username='qlpo1', role=Role.MANAGER)
+    wh = Warehouse.objects.create(code='HCM4', name='K4', is_active=True, is_default=True)
+    Zone.objects.create(warehouse=wh, code='A', name='A')
+    p = CatalogPart.objects.create(tokin_part_no='003001', category='Tip', display_name_vi='Bép 2')
+    sup = Supplier.objects.create(code='NCC-INB', name='NCC test', created_by=mgr, updated_by=mgr)
+    po = PurchaseOrder.objects.create(code='PO-INB-1', supplier=sup, warehouse=wh,
+                                      status='ordered', total_vnd=0, owner=mgr,
+                                      created_by=mgr, updated_by=mgr)
+    po.lines.create(part=p, qty=10, unit_cost=5000, line_total=50000)
+    c = APIClient(); c.force_authenticate(mgr)
+    r = c.post(f'/api/v1/purchasing/orders/{po.id}/create-inbound/')
+    assert r.status_code == 201
+    io = InboundOrder.objects.get(id=r.data['inbound_id'])
+    assert io.flow_type == 'supplier'
+
+
+# ─── Đợt A (mục #1 biên bản): sửa cấu trúc kho qua capability ────────────────
+@pytest.mark.django_db
+def test_warehouse_staff_cannot_create_warehouse(auth):
+    """NV kho thường không có capability `wms.control.write` (mặc định QL kho+)."""
+    r = auth.post('/api/v1/wms/warehouses/', {'code': 'HN', 'name': 'Kho HN'}, format='json')
+    assert r.status_code == 403
+
+
+@pytest.mark.django_db
+def test_wh_manager_can_create_warehouse(auth_mgr):
+    r = auth_mgr.post('/api/v1/wms/warehouses/', {'code': 'HN2', 'name': 'Kho HN2'}, format='json')
+    assert r.status_code == 201
+
+
 @pytest.mark.django_db
 def test_outbound_scan_pick_deducts(auth, part, wh_user):
     from apps.wms.models import (Bin, InventoryItem, OutboundLine, OutboundOrder,

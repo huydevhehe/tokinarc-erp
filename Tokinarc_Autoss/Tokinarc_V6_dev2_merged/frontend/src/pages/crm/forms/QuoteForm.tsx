@@ -25,12 +25,22 @@ interface Form {
 const EMPTY_LINE: LineForm = { part_no: '', part_name: '', qty: 1, unit_price_vnd: 0 }
 const EMPTY: Form = { customer: '', due_date: '', valid_until: '', discount_pct: 0, payment_terms_note: '', notes: '', lines: [{ ...EMPTY_LINE }] }
 
-interface PInfo { name: string; available: number; discount: number; list: number; suggested: number; segment: string; contact: boolean }
+interface PInfo { missing?: boolean; name: string; available: number; discount: number; list: number; suggested: number; segment: string; contact: boolean }
+
+const MISSING_INFO: PInfo = { missing: true, name: '', available: 0, discount: 0, list: 0, suggested: 0, segment: '', contact: false }
 
 /** Dòng thông tin dưới mỗi line: tồn khả dụng (cảnh báo nếu SL > tồn) + giá theo phân khúc. */
 function LineInfo({ control, index, info }: { control: Control<Form>; index: number; info: PInfo }) {
   const qty = Number(useWatch({ control, name: `lines.${index}.qty` })) || 0
   const short = qty > info.available
+  if (info.missing) {
+    return (
+      <div className="text-[11px] mt-0.5 ml-1 text-danger">
+        ⚠ Mã không có trong catalog — đơn hàng/phiếu xuất kho sẽ KHÔNG tự soạn được dòng này.
+        Kiểm tra lại mã (phụ tùng hoặc model súng hàn).
+      </div>
+    )
+  }
   return (
     <div className="text-[11px] mt-0.5 ml-1 flex flex-wrap gap-x-3 gap-y-0.5">
       <span className={short ? 'text-danger font-semibold' : 'text-txt-2'}>
@@ -81,7 +91,7 @@ export function QuoteForm({ open, onClose, editing }: {
     try {
       const customer = getValues('customer')
       const { data } = await api.get(`/crm/part-quote-info/`, { params: { part_no: code, customer } })
-      if (!data.found) { setLineInfo((m) => { const n = { ...m }; delete n[i]; return n }); return }
+      if (!data.found) { setLineInfo((m) => ({ ...m, [i]: MISSING_INFO })); return }
       const info: PInfo = {
         name: data.part_name, available: data.available_qty, discount: data.discount_pct,
         list: data.list_price_vnd, suggested: data.suggested_price_vnd,

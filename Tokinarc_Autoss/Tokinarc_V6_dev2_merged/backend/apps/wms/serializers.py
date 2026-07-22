@@ -127,13 +127,15 @@ class InboundLineSerializer(serializers.ModelSerializer):
 class InboundOrderSerializer(serializers.ModelSerializer):
     lines = InboundLineSerializer(many=True, required=False)
     po_code = serializers.CharField(source='purchase_order.code', read_only=True, default='')
+    received_by_username = serializers.CharField(source='received_by.username', read_only=True, default='')
 
     class Meta:
         model  = InboundOrder
         fields = ['id', 'code', 'warehouse', 'asn', 'purchase_order', 'po_code', 'status',
                   'supplier', 'invoice_no', 'shortage_note', 'received_at', 'lines', 'notes',
+                  'flow_type', 'tax_pct', 'delivered_by_name', 'received_by', 'received_by_username',
                   'created_at', 'updated_at']
-        read_only_fields = ['id', 'status', 'received_at', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'status', 'received_at', 'received_by', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (IN-YYYY-NNN).
         extra_kwargs = {'code': {'required': False}}
 
@@ -162,7 +164,8 @@ class OutboundLineSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = OutboundLine
-        fields = ['id', 'part', 'torch', 'part_name', 'qty_ordered', 'qty_picked', 'order_idx']
+        fields = ['id', 'part', 'torch', 'part_name', 'qty_ordered', 'qty_picked', 'order_idx',
+                  'unit_price', 'line_total']
 
     def get_part_name(self, obj) -> str:
         return _line_item_name(obj)
@@ -174,7 +177,7 @@ class OutboundOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model  = OutboundOrder
         fields = ['id', 'code', 'warehouse', 'sales_order_code', 'customer',
-                  'rule', 'status', 'shipped_at', 'lines', 'notes',
+                  'rule', 'status', 'purpose', 'shipped_at', 'lines', 'notes',
                   'created_at', 'updated_at']
         read_only_fields = ['id', 'status', 'shipped_at', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (OUT-YYYY-NNN).

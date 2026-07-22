@@ -1,0 +1,6 @@
+# Playwright E2E — giữ LOCAL, KHÔNG push git (theo yêu cầu 22/07/2026)
+/e2e/
+/playwright.config.ts
+/playwright-report/
+/test-results/
+/.playwright/

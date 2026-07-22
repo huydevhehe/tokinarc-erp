@@ -11,7 +11,7 @@ import { api, apiError } from '@/lib/api'
 import { resolveScanToItem } from '@/lib/scanResolve'
 import { useWarehouseOptions, useItemOptions, splitItem } from '@/lib/useWmsOptions'
 import { useCustomerOptions } from '@/lib/useCustomerOptions'
-import { RULE_LABEL } from '@/lib/wms'
+import { RULE_LABEL, OUTBOUND_PURPOSE_LABEL } from '@/lib/wms'
 import { CameraScanner } from '@/components/CameraScanner'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
@@ -20,10 +20,13 @@ import { FieldRow, TextInput, SelectInput } from '@/components/form'
 interface LineForm { item: string; qty_ordered: number }
 interface Form {
   code: string; warehouse: string; customer: string
-  sales_order_code: string; rule: string; lines: LineForm[]
+  sales_order_code: string; rule: string; purpose: string; lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_ordered: 1 }
-const EMPTY: Form = { code: '', warehouse: '', customer: '', sales_order_code: '', rule: 'FIFO', lines: [{ ...EMPTY_LINE }] }
+const EMPTY: Form = {
+  code: '', warehouse: '', customer: '', sales_order_code: '', rule: 'FIFO', purpose: 'sale',
+  lines: [{ ...EMPTY_LINE }],
+}
 
 export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => void }) {
   const qc = useQueryClient()
@@ -62,6 +65,7 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
       customer: d.customer || null,
       sales_order_code: d.sales_order_code,
       rule: d.rule,
+      purpose: d.purpose,
       lines: d.lines.map((l) => ({ ...splitItem(l.item), qty_ordered: Number(l.qty_ordered) || 0 })),
     }),
     onSuccess: () => {
@@ -97,6 +101,12 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
           <SelectInput label="Rule soạn hàng"
             options={(Object.keys(RULE_LABEL) as (keyof typeof RULE_LABEL)[]).map((k) => ({ value: k, label: RULE_LABEL[k] }))}
             {...register('rule')} />
+        </FieldRow>
+        <FieldRow>
+          <SelectInput label="Mục đích xuất kho"
+            options={(Object.keys(OUTBOUND_PURPOSE_LABEL) as (keyof typeof OUTBOUND_PURPOSE_LABEL)[])
+              .map((k) => ({ value: k, label: OUTBOUND_PURPOSE_LABEL[k] }))}
+            {...register('purpose')} />
         </FieldRow>
 
         <div className="mb-1.5 flex items-center justify-between">

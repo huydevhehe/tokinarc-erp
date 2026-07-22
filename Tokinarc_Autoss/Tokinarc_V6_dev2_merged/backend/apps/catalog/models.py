@@ -153,6 +153,8 @@ class Part(models.Model):
     is_priority_sell = models.BooleanField(default=False, db_index=True)
     price_updated    = models.CharField(max_length=10, blank=True)
     price_tier       = models.CharField(max_length=20, blank=True)
+    # Thuế VAT áp dụng (%) — ví dụ 8 hoặc 10. Trống = chưa xác định.
+    tax_pct          = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
     # Catch-all + provenance
     specs            = models.JSONField(default=dict)

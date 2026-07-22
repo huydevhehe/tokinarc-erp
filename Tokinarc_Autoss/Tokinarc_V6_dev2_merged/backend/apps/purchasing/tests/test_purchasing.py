@@ -113,3 +113,69 @@ def test_sale_cannot_create_po(part, wh):
     r = c.post('/api/v1/purchasing/orders/',
                {'supplier': str(sup.id), 'warehouse': str(wh.id), 'lines': []}, format='json')
     assert r.status_code == 403
+
+
+@pytest.mark.django_db
+def test_po_line_rejects_negative_qty(manager, part, wh):
+    """Regression (bug hunt 22/07): dòng đơn mua phải chặn qty âm ở đầu vào (400),
+    tránh đụng ràng buộc CHECK po_received_le_qty và sập 500."""
+    mc = APIClient(); mc.force_authenticate(manager)
+    sup = Supplier.objects.create(code='NCC-NEG', name='X', created_by=manager, updated_by=manager)
+    r = mc.post('/api/v1/purchasing/orders/', {
+        'supplier': str(sup.id), 'warehouse': str(wh.id),
+        'lines': [{'part': '001002', 'qty': -10, 'unit_cost': 5000}],
+    }, format='json')
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_wh_manager_cannot_create_po(part, wh):
+    """#16 biên bản: 'Quản lý kho' không còn được tạo PO (chỉ Quản lý/CEO)."""
+    whm = User.objects.create(username='qlk1', role=Role.WAREHOUSE_MANAGER)
+    c = APIClient(); c.force_authenticate(whm)
+    sup = Supplier.objects.create(code='NCC-005', name='E')
+    r = c.post('/api/v1/purchasing/orders/',
+               {'supplier': str(sup.id), 'warehouse': str(wh.id), 'lines': []}, format='json')
+    assert r.status_code == 403
+
+
+@pytest.mark.django_db
+def test_po_approve_is_single_level_regardless_of_amount(manager, part, wh):
+    """#16 biên bản: duyệt PO chỉ còn 1 cấp — kể cả đơn giá trị lớn (vượt
+    ngưỡng L2 cũ) vẫn được duyệt xong (approved) ngay ở 1 lần approve()."""
+    mc = APIClient(); mc.force_authenticate(manager)
+    sup = Supplier.objects.create(code='NCC-006', name='F', created_by=manager, updated_by=manager)
+    po = mc.post('/api/v1/purchasing/orders/', {
+        'supplier': str(sup.id), 'warehouse': str(wh.id),
+        'lines': [{'part': '001002', 'qty': 1000, 'unit_cost': 200_000}],   # 200 triệu — vượt ngưỡng L2 cũ
+    }, format='json').data
+    assert int(po['total_vnd']) == 200_000_000
+    r = mc.post(f"/api/v1/purchasing/orders/{po['id']}/approve/")
+    assert r.status_code == 200
+    assert r.data['status'] == 'approved'
+    assert r.data['l1_approved_by'] == manager.id
+
+
+@pytest.mark.django_db
+def test_po_approve_and_reject_blocked_for_warehouse_role(part, wh):
+    """Đợt A (mục #1 biên bản): NV kho không có capability
+    `purchasing.po.approve`/`purchasing.po.reject` (mặc định chỉ manager/CEO)."""
+    wh_user = User.objects.create(username='po_wh1', role=Role.WAREHOUSE)
+    manager = User.objects.create(username='po_mgr_a', role=Role.MANAGER)
+    sup = Supplier.objects.create(code='NCC-008', name='H', created_by=manager, updated_by=manager)
+    po = PurchaseOrder.objects.create(code='PO-T-3', supplier=sup, warehouse=wh,
+                                      status='draft', total_vnd=1_000_000, owner=manager,
+                                      created_by=manager, updated_by=manager)
+    c = APIClient(); c.force_authenticate(wh_user)
+    assert c.post(f'/api/v1/purchasing/orders/{po.id}/approve/').status_code == 403
+    assert c.post(f'/api/v1/purchasing/orders/{po.id}/reject/').status_code == 403
+
+
+@pytest.mark.django_db
+def test_po_approve_l2_endpoint_removed():
+    """#16 biên bản: action approve-l2 đã bị xoá hoàn toàn khỏi router (không
+    còn resolve được nữa) — dùng reverse() để tránh lỗi render trang 404 mặc
+    định của Django khi gọi thẳng URL không tồn tại qua test client."""
+    from django.urls import NoReverseMatch, reverse
+    with pytest.raises(NoReverseMatch):
+        reverse('purchaseorder-approve-l2', args=['x'])

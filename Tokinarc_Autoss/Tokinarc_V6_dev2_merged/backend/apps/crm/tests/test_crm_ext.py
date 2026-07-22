@@ -135,6 +135,19 @@ def test_create_quote_total_computed_server(api, sale):
 
 
 @pytest.mark.django_db
+def test_quote_rejects_negative_qty_and_bad_discount(api, sale):
+    """Regression (bug hunt 22/07): báo giá phải chặn qty âm và chiết khấu >100%
+    ở đầu vào (400) — trước đây lọt và lưu thành báo giá có tổng tiền ÂM."""
+    cust = CustomerFactory(owner=sale)
+    r1 = api.post('/api/v1/crm/quotes/', {'customer': str(cust.id),
+                  'lines': [{'part_no': 'X', 'qty': -5, 'unit_price_vnd': 10000}]}, format='json')
+    assert r1.status_code == 400
+    r2 = api.post('/api/v1/crm/quotes/', {'customer': str(cust.id), 'discount_pct': 150,
+                  'lines': [{'part_no': 'X', 'qty': 5, 'unit_price_vnd': 10000}]}, format='json')
+    assert r2.status_code == 400
+
+
+@pytest.mark.django_db
 def test_approve_quote_blocks_self_approve(api, sale):
     """Sale tạo quote rồi tự approve → 403 (sale không phải manager)."""
     cust = CustomerFactory(owner=sale)
@@ -163,6 +176,47 @@ def test_manager_approve_then_to_contract(manager, sale):
     rc = mc.post(f"/api/v1/crm/quotes/{q['id']}/to-contract/")
     assert rc.status_code == 200
     assert rc.data['contract_order_code'].startswith('HD-')
+    # Bug fix: to-contract phải tạo Contract THẬT (trước đây chỉ ghi mã ảo lên quote,
+    # không có bản ghi Hợp đồng nào phía sau → mất tích trên /contracts).
+    from apps.crm.models import Contract
+    ct = Contract.objects.get(code=rc.data['contract_order_code'])
+    assert str(ct.quote_id) == q['id']
+    assert str(ct.customer_id) == str(cust.id)
+    assert int(ct.value_vnd) == int(q['total_vnd'])
+
+
+@pytest.mark.django_db
+def test_to_contract_codes_never_collide(manager, sale):
+    """Bug cũ: sinh mã lẫn với DH- của SalesOrder → 2 quote khác nhau cùng ra HD-0001.
+    Xen kẽ to-order (mã DH-) giữa 2 lần to-contract để tái hiện đúng kịch bản lỗi."""
+    from apps.crm.models import Contract
+    cust = CustomerFactory(owner=sale)
+    sc = APIClient(); sc.force_authenticate(sale)
+
+    def _approved_quote():
+        q = sc.post('/api/v1/crm/quotes/', {'customer': str(cust.id),
+                    'lines': [{'part_no': 'X', 'qty': 1, 'unit_price_vnd': 1000}]},
+                    format='json').data
+        assert q['status'] == 'approved'   # CK 0% ≤5% → tự duyệt
+        return q
+
+    q1 = _approved_quote()
+    r1 = sc.post(f"/api/v1/crm/quotes/{q1['id']}/to-contract/")
+    assert r1.status_code == 200
+
+    # Xen 1 lần to-order (sinh mã DH-...) — đây là bước gây lệch bộ đếm ở bug cũ.
+    q_mid = _approved_quote()
+    r_mid = sc.post(f"/api/v1/crm/quotes/{q_mid['id']}/to-order/")
+    assert r_mid.status_code == 200
+
+    q2 = _approved_quote()
+    r2 = sc.post(f"/api/v1/crm/quotes/{q2['id']}/to-contract/")
+    assert r2.status_code == 200
+
+    code1, code2 = r1.data['contract_order_code'], r2.data['contract_order_code']
+    assert code1 != code2
+    assert Contract.objects.filter(code=code1).exists()
+    assert Contract.objects.filter(code=code2).exists()
 
 
 # ─── Duyệt theo % CHIẾT KHẤU (sale ≤5% tự duyệt · manager ≤10% · CEO >10%) ──
@@ -270,6 +324,75 @@ def test_create_ticket(api, sale):
                  'title': 'Máy hàn lỗi', 'priority': 'high'}, format='json')
     assert r.status_code == 201
     assert r.data['code'].startswith('TK-')
+
+
+# ─── Ticket: gộp cùng sự cố (#9 biên bản) ────────────────────────────────
+@pytest.mark.django_db
+def test_ticket_reopens_existing_when_same_serial_and_customer(api, sale):
+    from apps.crm.models import Ticket
+
+    cust = CustomerFactory(owner=sale)
+    old = Ticket.objects.create(
+        code='TK-9001', customer=cust, title='Máy hàn lỗi lần 1',
+        serial_no='SN-001', status='resolved', created_owner=sale,
+    )
+    r = api.post('/api/v1/crm/tickets/', {
+        'customer': str(cust.id), 'title': 'Máy hàn lại lỗi', 'serial_no': 'SN-001',
+        'description': 'Lỗi tương tự lần trước',
+    }, format='json')
+    assert r.status_code == 200   # KHÔNG phải 201 tạo mới — mở lại ticket cũ
+    assert r.data['merged_into_existing'] is True
+    assert r.data['code'] == 'TK-9001'
+    old.refresh_from_db()
+    assert old.status == 'open'
+    assert 'Lỗi tương tự lần trước' in old.description
+    assert Ticket.objects.filter(serial_no='SN-001', customer=cust).count() == 1   # không tạo mã mới
+
+
+@pytest.mark.django_db
+def test_ticket_does_not_merge_across_different_customers(api, sale):
+    from apps.crm.models import Ticket
+
+    cust_a = CustomerFactory(owner=sale)
+    cust_b = CustomerFactory(owner=sale)
+    Ticket.objects.create(
+        code='TK-9010', customer=cust_a, title='Lỗi máy A',
+        serial_no='SN-DUP', status='resolved', created_owner=sale,
+    )
+    r = api.post('/api/v1/crm/tickets/', {
+        'customer': str(cust_b.id), 'title': 'Lỗi máy B (trùng SN do nhập tay)',
+        'serial_no': 'SN-DUP',
+    }, format='json')
+    assert r.status_code == 201   # tạo ticket MỚI, không gộp vì khác khách hàng
+    assert Ticket.objects.filter(serial_no='SN-DUP').count() == 2
+
+
+@pytest.mark.django_db
+def test_ticket_resolve_logs_each_attempt(api, sale, manager):
+    from apps.crm.models import Ticket, TicketResolutionLog
+
+    cust = CustomerFactory(owner=sale)
+    t = Ticket.objects.create(code='TK-9020', customer=cust, title='Lỗi 1',
+                              serial_no='SN-020', status='open', created_owner=sale)
+    mgr_client = APIClient(); mgr_client.force_authenticate(manager)
+
+    r1 = mgr_client.post(f'/api/v1/crm/tickets/{t.id}/resolve/', {'resolution': 'Thay linh kiện A'}, format='json')
+    assert r1.status_code == 200
+    assert TicketResolutionLog.objects.filter(ticket=t).count() == 1
+    assert TicketResolutionLog.objects.get(ticket=t, attempt_no=1).content == 'Thay linh kiện A'
+
+    # Khách báo lại cùng máy → mở lại → giải quyết lần 2 → log lần 2 (không ghi đè lần 1).
+    reopen = api.post('/api/v1/crm/tickets/', {
+        'customer': str(cust.id), 'title': 'Lại lỗi', 'serial_no': 'SN-020',
+    }, format='json')
+    assert reopen.data['merged_into_existing'] is True
+    r2 = mgr_client.post(f'/api/v1/crm/tickets/{t.id}/resolve/', {'resolution': 'Thay linh kiện B'}, format='json')
+    assert r2.status_code == 200
+    logs = list(TicketResolutionLog.objects.filter(ticket=t).order_by('attempt_no'))
+    assert len(logs) == 2
+    assert logs[0].content == 'Thay linh kiện A'
+    assert logs[1].content == 'Thay linh kiện B'
+    assert logs[1].attempt_no == 2
 
 
 # ─── Ownership ───────────────────────────────────────────────────────────

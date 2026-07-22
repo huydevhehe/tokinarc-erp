@@ -36,6 +36,7 @@ export function CeoOverviewPage() {
   const revData = (rev.data ?? []).map((r) => ({ label: r.month, value: r.revenue_vnd }))
   const segData = (seg.data ?? []).map((s) => ({ label: SEGMENT_LABEL[s.segment] ?? s.segment, value: s.revenue_vnd }))
   const fcData = (fc.data ?? []).map((f) => ({ label: OPP_STAGE_LABEL[f.stage as OppStage] ?? f.stage, value: f.weighted_vnd }))
+  const totalSeg = (seg.data ?? []).reduce((s, r) => s + r.revenue_vnd, 0)
   const topDebt = [...(debt.data?.results ?? [])].sort((a, b) => b.days_overdue - a.days_overdue).slice(0, 6)
 
   return (
@@ -63,6 +64,26 @@ export function CeoOverviewPage() {
         <Card>
           <SectionTitle>Doanh thu theo phân khúc</SectionTitle>
           {seg.isLoading ? <Loading /> : <MoneyBarChart data={segData} multicolor />}
+          {seg.data && seg.data.length > 0 && (
+            <div className="mt-3">
+              <TableCard>
+                <thead><tr className="border-b border-line">
+                  <Th>Phân khúc</Th><Th className="text-right">Doanh thu</Th>
+                  <Th className="text-right">Tỷ trọng</Th><Th className="text-right">Số đơn</Th>
+                </tr></thead>
+                <tbody>
+                  {seg.data.map((r) => (
+                    <tr key={r.segment} className="border-b border-line/50 last:border-0">
+                      <Td className="font-medium">{SEGMENT_LABEL[r.segment] ?? r.segment}</Td>
+                      <Td className="text-right text-flame tabular-nums">{formatVnd(r.revenue_vnd)}</Td>
+                      <Td className="text-right text-txt-2 tabular-nums">{totalSeg ? Math.round((r.revenue_vnd / totalSeg) * 100) : 0}%</Td>
+                      <Td className="text-right text-txt-2 tabular-nums">{r.orders}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </TableCard>
+            </div>
+          )}
         </Card>
       </div>
 

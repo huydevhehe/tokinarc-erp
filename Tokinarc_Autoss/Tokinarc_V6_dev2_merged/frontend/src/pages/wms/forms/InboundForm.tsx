@@ -18,10 +18,19 @@ import { FieldRow, TextInput, SelectInput } from '@/components/form'
 import type { InboundOrder } from '@/lib/types'
 
 interface BinLite { id: string; full_code: string }
+interface SupplierLite { id: string; name: string }
 interface LineForm { item: string; qty_expected: number; target_bin: string; unit_cost: number; serials: string }
-interface Form { code: string; warehouse: string; supplier: string; invoice_no: string; lines: LineForm[] }
+interface Form {
+  code: string; warehouse: string; supplier: string; invoice_no: string
+  flow_type: '' | 'internal' | 'supplier'; tax_pct: string; delivered_by_name: string
+  lines: LineForm[]
+}
 const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, serials: '' }
-const EMPTY: Form = { code: '', warehouse: '', supplier: '', invoice_no: '', lines: [{ ...EMPTY_LINE }] }
+const EMPTY: Form = {
+  code: '', warehouse: '', supplier: '', invoice_no: '',
+  flow_type: '', tax_pct: '', delivered_by_name: '',
+  lines: [{ ...EMPTY_LINE }],
+}
 
 export function InboundForm({ open, onClose, editing }: {
   open: boolean; onClose: () => void; editing?: InboundOrder | null
@@ -31,9 +40,13 @@ export function InboundForm({ open, onClose, editing }: {
   const { options: items, isLoading: itemsLoading } = useItemOptions()
   const bins = useQuery({ queryKey: ['wms-bins-opt'], queryFn: () => fetchAll<BinLite>('/wms/bins/') })
   const binItems = bins.data?.items ?? []
+  // #10/#11 biên bản: NCC phải SỔ TÊN CÓ SẴN (dropdown), không gõ tay tự do.
+  const suppliers = useQuery({ queryKey: ['suppliers-opt'], queryFn: () => fetchAll<SupplierLite>('/purchasing/suppliers/') })
+  const supplierNames = (suppliers.data?.items ?? []).map((s) => s.name)
   const { register, handleSubmit, reset, control, setValue, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
   const watched = (useWatch({ control, name: 'lines' }) as LineForm[] | undefined) ?? []
+  const flowType = useWatch({ control, name: 'flow_type' })
   const itemLabel = (v: string) => items.find((o) => o.value === v)?.label ?? v
   const filled = watched.filter((l) => l?.item)
   const totalQty = filled.reduce((s, l) => s + (Number(l.qty_expected) || 0), 0)
@@ -59,6 +72,8 @@ export function InboundForm({ open, onClose, editing }: {
     reset(editing ? {
       code: editing.code, warehouse: editing.warehouse,
       supplier: editing.supplier ?? '', invoice_no: editing.invoice_no ?? '',
+      flow_type: editing.flow_type ?? '', tax_pct: editing.tax_pct != null ? String(editing.tax_pct) : '',
+      delivered_by_name: editing.delivered_by_name ?? '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
         qty_expected: l.qty_expected, target_bin: l.target_bin ?? '',
@@ -71,6 +86,9 @@ export function InboundForm({ open, onClose, editing }: {
     mutationFn: (d: Form) => {
       const payload = {
         code: d.code, warehouse: d.warehouse, supplier: d.supplier, invoice_no: d.invoice_no,
+        flow_type: d.flow_type || 'internal',
+        tax_pct: d.flow_type === 'supplier' && d.tax_pct !== '' ? Number(d.tax_pct) : null,
+        delivered_by_name: d.delivered_by_name,
         lines: d.lines.map((l) => ({
           ...splitItem(l.item),
           qty_expected: Number(l.qty_expected) || 0,
@@ -112,11 +130,28 @@ export function InboundForm({ open, onClose, editing }: {
             {...register('warehouse', { required: 'Chọn kho' })} />
         </FieldRow>
         <FieldRow>
-          <TextInput label="Nhà cung cấp" placeholder="Tên NCC (nếu nhập không qua đơn mua)"
+          <SelectInput label="Nhà cung cấp" placeholder="— Chọn NCC có sẵn —"
+            options={[...new Set([...(editing?.supplier ? [editing.supplier] : []), ...supplierNames])]
+              .map((n) => ({ value: n, label: n }))}
             {...register('supplier')} />
           <TextInput label="Số hóa đơn/phiếu NCC" placeholder="VD: HD-12345"
             {...register('invoice_no')} />
         </FieldRow>
+        <FieldRow>
+          <SelectInput label="Loại phiếu nhập *" error={errors.flow_type?.message}
+            placeholder="— Chọn loại —"
+            options={[{ value: 'internal', label: 'Nội bộ' }, { value: 'supplier', label: 'Nhà cung cấp (NCC)' }]}
+            {...register('flow_type', { required: 'Chọn loại phiếu nhập' })} />
+          <TextInput label="Người giao hàng" placeholder="Tên nhân viên NCC/bên giao hàng"
+            {...register('delivered_by_name')} />
+        </FieldRow>
+        {flowType === 'supplier' && (
+          <FieldRow>
+            <TextInput label="Thuế (%) *" type="number" placeholder="VD: 8"
+              error={errors.tax_pct?.message}
+              {...register('tax_pct', { required: 'Luồng NCC bắt buộc nhập thuế' })} />
+          </FieldRow>
+        )}
 
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-txt-2">Dòng hàng</span>

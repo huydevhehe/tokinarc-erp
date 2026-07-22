@@ -99,6 +99,44 @@ class CustomerViewSet(viewsets.ModelViewSet):
             return Customer360Serializer
         return CustomerDetailSerializer
 
+    # ── Kiểm tra trùng KH (#7 biên bản) — SĐT hoặc MST, tạo tay lẫn sửa ──────
+    def _duplicate_response(self, request, exclude_pk=None):
+        """Trả Response 409 nếu nghi trùng SĐT/MST với KH khác, trừ khi FE đã
+        gửi allow_duplicate=true (người dùng xác nhận không phải trùng)."""
+        if str(request.data.get('allow_duplicate', '')).lower() in ('1', 'true', 'yes'):
+            return None
+        from .duplicate_check import find_duplicate_customers
+
+        tax_code = str(request.data.get('tax_code') or '').strip()
+        phones = [str(c.get('phone') or '').strip()
+                  for c in (request.data.get('contacts') or []) if c.get('phone')]
+        dups: dict = {}
+        if tax_code:
+            for c in find_duplicate_customers(tax_code=tax_code, exclude_pk=exclude_pk):
+                dups[c.id] = c
+        for phone in phones:
+            for c in find_duplicate_customers(phone=phone, exclude_pk=exclude_pk):
+                dups[c.id] = c
+        if not dups:
+            return None
+        return Response({
+            'detail': 'Có thể trùng khách hàng đã có trong hệ thống (SĐT/MST khớp).',
+            'code': 'POSSIBLE_DUPLICATE',
+            'matches': [{'id': str(c.id), 'code': c.code, 'name': c.name} for c in dups.values()],
+        }, status=status.HTTP_409_CONFLICT)
+
+    def create(self, request, *args, **kwargs):
+        dup = self._duplicate_response(request)
+        if dup is not None:
+            return dup
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+        dup = self._duplicate_response(request, exclude_pk=self.get_object().pk)
+        if dup is not None:
+            return dup
+        return super().update(request, *args, **kwargs)
+
     # ── Hooks ───────────────────────────────────────────────────────────────
     def perform_create(self, serializer):
         # Mặc định owner = user hiện tại; manager có thể override qua payload

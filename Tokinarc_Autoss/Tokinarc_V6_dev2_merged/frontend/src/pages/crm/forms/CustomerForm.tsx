@@ -3,10 +3,11 @@
  * Modal tạo/sửa Khách hàng. POST /crm/customers/ hoặc PATCH /crm/customers/{id}/.
  * (owner do backend tự gán; code phải bắt đầu 'KH-'.)
  */
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Building2 } from 'lucide-react'
+import type { AxiosError } from 'axios'
+import { Building2, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { SEGMENT_LABEL, CUSTOMER_STATUS_LABEL } from '@/lib/crm'
@@ -25,6 +26,8 @@ const EMPTY: Form = {
   code: '', name: '', tax_code: '', segment: 'factory', region: '', status: 'new', notes: '',
 }
 
+interface DupMatch { id: string; code: string; name: string }
+
 export function CustomerForm({ open, onClose, editing, onSaved }: {
   open: boolean
   onClose: () => void
@@ -33,9 +36,11 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
 }) {
   const qc = useQueryClient()
   const { register, handleSubmit, reset, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
+  const [dupMatches, setDupMatches] = useState<DupMatch[] | null>(null)
 
   useEffect(() => {
     if (!open) return
+    setDupMatches(null)
     reset(editing ? {
       code: editing.code, name: editing.name, tax_code: editing.tax_code,
       segment: editing.segment, region: editing.region, status: editing.status,
@@ -56,7 +61,15 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
       onSaved?.()
       onClose()
     },
-    onError: (e) => toast.error(apiError(e)),
+    onError: (e) => {
+      const data = (e as AxiosError<{ code?: string; matches?: DupMatch[] }>).response?.data
+      if (data?.code === 'POSSIBLE_DUPLICATE') {
+        setDupMatches(data.matches ?? [])
+      } else {
+        setDupMatches(null)
+      }
+      toast.error(apiError(e))
+    },
   })
 
   return (
@@ -94,6 +107,19 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
           <div />
         </FieldRow>
         <TextArea label="Ghi chú" {...register('notes')} />
+
+        {dupMatches && dupMatches.length > 0 && (
+          <div className="bg-danger/10 border border-danger/30 rounded-md px-3 py-2 mt-1">
+            <p className="text-sm text-danger font-medium flex items-center gap-1.5">
+              <AlertTriangle size={14} /> Có thể trùng với khách hàng đã có:
+            </p>
+            <ul className="text-sm mt-1 space-y-0.5">
+              {dupMatches.map((m) => (
+                <li key={m.id}><span className="font-mono text-flame">{m.code}</span> — {m.name}</li>
+              ))}
+            </ul>
+          </div>
+        )}
       </form>
     </Modal>
   )

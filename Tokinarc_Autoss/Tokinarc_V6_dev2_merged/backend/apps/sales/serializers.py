@@ -3,6 +3,8 @@ Tokinarc V6.C — apps/sales/serializers.py
 """
 from __future__ import annotations
 
+from decimal import Decimal
+
 from django.db import transaction
 from rest_framework import serializers
 
@@ -64,6 +66,13 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
 
 class SalesOrderLineSerializer(serializers.ModelSerializer):
+    # Chặn dữ liệu bẩn ở đầu vào (số âm/chiết khấu vô lý) — nếu không sẽ lọt
+    # xuống DB gây tổng tiền âm hoặc sập ràng buộc CHECK (lỗi 500).
+    qty          = serializers.IntegerField(min_value=1)
+    unit_price   = serializers.DecimalField(max_digits=14, decimal_places=0, min_value=Decimal(0))
+    discount_pct = serializers.DecimalField(max_digits=5, decimal_places=2,
+                                            min_value=Decimal(0), max_value=Decimal(100), required=False)
+
     class Meta:
         model  = SalesOrderLine
         fields = ['id', 'part', 'torch', 'description', 'qty', 'unit_price',
@@ -74,23 +83,26 @@ class SalesOrderLineSerializer(serializers.ModelSerializer):
 class SalesOrderListSerializer(serializers.ModelSerializer):
     customer_name = serializers.CharField(source='customer.name', read_only=True)
     debt_vnd      = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    contract_code = serializers.CharField(source='contract.code', read_only=True, default=None)
 
     class Meta:
         model  = SalesOrder
         fields = ['id', 'code', 'customer', 'customer_name', 'order_type',
                   'issued_date', 'total_vnd', 'paid_vnd', 'debt_vnd',
-                  'payment_terms', 'payment_terms_note', 'status', 'owner', 'created_at']
+                  'payment_terms', 'payment_terms_note', 'status', 'owner', 'contract',
+                  'contract_code', 'created_at']
         read_only_fields = fields
 
 
 class SalesOrderDetailSerializer(serializers.ModelSerializer):
     lines    = SalesOrderLineSerializer(many=True)
     debt_vnd = serializers.DecimalField(max_digits=14, decimal_places=0, read_only=True)
+    contract_code = serializers.CharField(source='contract.code', read_only=True, default=None)
 
     class Meta:
         model  = SalesOrder
-        fields = ['id', 'code', 'customer', 'order_type', 'parent_order',
-                  'issued_date', 'valid_from', 'valid_to', 'total_vnd', 'paid_vnd',
+        fields = ['id', 'code', 'customer', 'order_type', 'parent_order', 'contract',
+                  'contract_code', 'issued_date', 'valid_from', 'valid_to', 'total_vnd', 'paid_vnd',
                   'debt_vnd', 'payment_terms', 'payment_terms_note', 'status', 'owner', 'ship_address',
                   'lines', 'notes', 'created_at', 'updated_at']
         read_only_fields = ['id', 'total_vnd', 'paid_vnd', 'status', 'created_at', 'updated_at']
