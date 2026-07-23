@@ -25,13 +25,13 @@ interface LineForm {
   unit_cost: number; tax_pct: string; serials: string
 }
 interface Form {
-  code: string; warehouse: string; supplier: string; invoice_no: string
+  warehouse: string; supplier: string; invoice_no: string
   flow_type: '' | 'internal' | 'supplier'; delivered_by_name: string
   lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '', serials: '' }
 const EMPTY: Form = {
-  code: '', warehouse: '', supplier: '', invoice_no: '',
+  warehouse: '', supplier: '', invoice_no: '',
   flow_type: '', delivered_by_name: '',
   lines: [{ ...EMPTY_LINE }],
 }
@@ -74,7 +74,7 @@ export function InboundForm({ open, onClose, editing }: {
   useEffect(() => {
     if (!open) return
     reset(editing ? {
-      code: editing.code, warehouse: editing.warehouse,
+      warehouse: editing.warehouse,
       supplier: editing.supplier ?? '', invoice_no: editing.invoice_no ?? '',
       flow_type: editing.flow_type ?? '',
       delivered_by_name: editing.delivered_by_name ?? '',
@@ -91,7 +91,10 @@ export function InboundForm({ open, onClose, editing }: {
   const save = useMutation({
     mutationFn: (d: Form) => {
       const payload = {
-        code: d.code, warehouse: d.warehouse, supplier: d.supplier, invoice_no: d.invoice_no,
+        // Tạo mới: KHÔNG gửi code — backend tự sinh IN-YYYY-NNN (xem
+        // InboundViewSet.perform_create). Sửa: giữ nguyên mã cũ, không đổi.
+        ...(editing ? { code: editing.code } : {}),
+        warehouse: d.warehouse, supplier: d.supplier, invoice_no: d.invoice_no,
         flow_type: d.flow_type || 'internal',
         delivered_by_name: d.delivered_by_name,
         lines: d.lines.map((l) => ({
@@ -129,8 +132,12 @@ export function InboundForm({ open, onClose, editing }: {
       }>
       <form onSubmit={handleSubmit((d) => save.mutate(d))}>
         <FieldRow>
-          <TextInput label="Mã đơn *" placeholder="IN-2026-001" error={errors.code?.message}
-            {...register('code', { required: 'Bắt buộc' })} />
+          {editing
+            ? <TextInput label="Mã đơn" value={editing.code} disabled readOnly />
+            : <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Mã đơn</label>
+                <p className="text-sm text-txt-2 py-2">Tự động tạo khi lưu (IN-{new Date().getFullYear()}-xxx)</p>
+              </div>}
           <SelectInput label="Kho *" error={errors.warehouse?.message}
             placeholder="— Chọn kho —" options={whs}
             {...register('warehouse', { required: 'Chọn kho' })} />
@@ -173,41 +180,54 @@ export function InboundForm({ open, onClose, editing }: {
             <p className="text-[11px] text-txt-2 mt-1">Quét tem hàng → tự thêm dòng; quét lại cùng mã → +1 SL. Nhớ chọn Bin đích trước khi tạo.</p>
           </div>
         )}
-        <div className="space-y-2 mb-3 overflow-x-auto">
-          <div className="grid grid-cols-[1.1fr_0.45fr_0.7fr_0.55fr_0.9fr_auto] gap-2 px-0.5 min-w-[640px] text-[10px] uppercase tracking-wide text-txt-2">
-            <span>Mặt hàng</span><span>SL</span><span>Đơn giá nhập</span><span>Thuế %</span><span>Bin đích</span><span></span>
-          </div>
+        <div className="space-y-2 mb-3">
           {fields.map((f, i) => {
             const isTorch = !!splitItem(watched[i]?.item || '').torch
             return (
-            <div key={f.id} className="border border-line/40 rounded-md p-2 min-w-[640px] space-y-1.5">
-              <div className="grid grid-cols-[1.1fr_0.45fr_0.7fr_0.55fr_0.9fr_auto] gap-2 items-start">
+            <div key={f.id} className="border border-line/40 rounded-md p-2 space-y-1.5">
+              <div className="flex items-start gap-2">
                 {/* input ẩn giữ nguyên đăng ký react-hook-form (validate required
                     khi submit) — ô hiển thị là SearchableSelect, đồng bộ qua setValue. */}
                 <input type="hidden" {...register(`lines.${i}.item` as const, { required: true })} />
-                <SearchableSelect
-                  value={watched[i]?.item ?? ''}
-                  onChange={(v) => setValue(`lines.${i}.item` as const, v, { shouldValidate: true })}
-                  options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
-                <input type="number" min={1} placeholder="SL"
-                  {...register(`lines.${i}.qty_expected` as const, { valueAsNumber: true })}
-                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
-                <input type="number" min={0} placeholder="Đơn giá nhập"
-                  {...register(`lines.${i}.unit_cost` as const, { valueAsNumber: true })}
-                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
-                <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
-                  {...register(`lines.${i}.tax_pct` as const)}
-                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
-                <input type="hidden" {...register(`lines.${i}.target_bin` as const)} />
-                <SearchableSelect
-                  value={watched[i]?.target_bin ?? ''}
-                  onChange={(v) => setValue(`lines.${i}.target_bin` as const, v)}
-                  options={binItems.map((b) => ({ value: b.id, label: b.full_code }))}
-                  loading={bins.isLoading} placeholder="— Bin đích —" />
+                <div className="flex-1">
+                  <SearchableSelect
+                    value={watched[i]?.item ?? ''}
+                    onChange={(v) => setValue(`lines.${i}.item` as const, v, { shouldValidate: true })}
+                    options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
+                </div>
                 <button type="button" onClick={() => fields.length > 1 && remove(i)}
-                  className="text-txt-2 hover:text-danger p-1.5 disabled:opacity-30" disabled={fields.length <= 1} aria-label="Xóa">
+                  className="text-txt-2 hover:text-danger p-1.5 shrink-0 disabled:opacity-30" disabled={fields.length <= 1} aria-label="Xóa">
                   <Trash2 size={15} />
                 </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">SL</label>
+                  <input type="number" min={1} placeholder="SL"
+                    {...register(`lines.${i}.qty_expected` as const, { valueAsNumber: true })}
+                    className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Đơn giá nhập</label>
+                  <input type="number" min={0} placeholder="Đơn giá nhập"
+                    {...register(`lines.${i}.unit_cost` as const, { valueAsNumber: true })}
+                    className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Thuế %</label>
+                  <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
+                    {...register(`lines.${i}.tax_pct` as const)}
+                    className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Bin đích</label>
+                  <input type="hidden" {...register(`lines.${i}.target_bin` as const)} />
+                  <SearchableSelect
+                    value={watched[i]?.target_bin ?? ''}
+                    onChange={(v) => setValue(`lines.${i}.target_bin` as const, v)}
+                    options={binItems.map((b) => ({ value: b.id, label: b.full_code }))}
+                    loading={bins.isLoading} placeholder="— Bin đích —" />
+                </div>
               </div>
               {isTorch && (
                 <textarea rows={2} placeholder="Serial từng cây súng hàn (mỗi dòng 1 serial) — cho bảo hành…"
