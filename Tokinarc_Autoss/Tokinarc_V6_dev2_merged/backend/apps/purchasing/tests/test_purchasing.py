@@ -129,11 +129,23 @@ def test_po_line_rejects_negative_qty(manager, part, wh):
 
 
 @pytest.mark.django_db
-def test_wh_manager_cannot_create_po(part, wh):
-    """#16 biên bản: 'Quản lý kho' không còn được tạo PO (chỉ Quản lý/CEO)."""
+def test_wh_manager_can_create_po(part, wh):
+    """#16 biên bản (đọc lại đúng nghĩa đen 2026-07-23): chỉ 'NV kho' (warehouse)
+    không được tạo PO — 'Quản lý kho' (wh_manager) vẫn được, cùng Quản lý/CEO."""
     whm = User.objects.create(username='qlk1', role=Role.WAREHOUSE_MANAGER)
     c = APIClient(); c.force_authenticate(whm)
     sup = Supplier.objects.create(code='NCC-005', name='E')
+    r = c.post('/api/v1/purchasing/orders/',
+               {'supplier': str(sup.id), 'warehouse': str(wh.id), 'lines': []}, format='json')
+    assert r.status_code == 201
+
+
+@pytest.mark.django_db
+def test_warehouse_staff_cannot_create_po(part, wh):
+    """#16 biên bản: 'NV kho' (role warehouse thường) vẫn không được tạo PO."""
+    staff = User.objects.create(username='nvk1', role=Role.WAREHOUSE)
+    c = APIClient(); c.force_authenticate(staff)
+    sup = Supplier.objects.create(code='NCC-006', name='F')
     r = c.post('/api/v1/purchasing/orders/',
                {'supplier': str(sup.id), 'warehouse': str(wh.id), 'lines': []}, format='json')
     assert r.status_code == 403

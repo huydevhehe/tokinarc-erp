@@ -19,11 +19,13 @@ from .roles import Role, role_of
 # chỉ đổi *nguồn* quyết định, không đổi hành vi ngày deploy.
 CAPABILITY_SEED: dict[str, tuple[str, str, frozenset[str]]] = {
     'purchasing.po.create': (
-        # #16 biên bản (chốt 2026-07-21): CHỈ "Quản lý" (Role.MANAGER) + CEO —
-        # "Quản lý kho" (wh_manager) KHÔNG được tạo PO nữa (trước đó có, đã bỏ).
+        # #16 biên bản: đọc lại đúng nghĩa đen — biên bản gốc chỉ loại "NV kho"
+        # (Role.WAREHOUSE) ra, không hề nhắc "Quản lý kho". Chốt 2026-07-21 từng
+        # hiểu nhầm thành loại luôn cả wh_manager — sếp xác nhận lại 2026-07-23:
+        # Quản lý kho (wh_manager) VẪN được tạo PO, chỉ NV kho thường là không.
         # KHÔNG có admin (admin chỉ quản trị hệ thống, không làm nghiệp vụ mua hàng).
         'Tạo đơn mua hàng (PO)', 'Mua hàng',
-        frozenset({Role.MANAGER, Role.CEO})),
+        frozenset({Role.WAREHOUSE_MANAGER, Role.MANAGER, Role.CEO})),
     'purchasing.po.delete': (
         'Xoá đơn mua hàng (PO nháp)', 'Mua hàng',
         frozenset({Role.ADMIN})),
