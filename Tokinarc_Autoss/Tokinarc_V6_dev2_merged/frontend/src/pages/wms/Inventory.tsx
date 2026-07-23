@@ -74,12 +74,11 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
                 groupView ? 'border-flame text-flame bg-flame/10' : 'border-line text-txt-2 hover:text-txt'}`}>
               <Layers size={14} /> Xem theo nhóm hàng
             </button>
-            {groupView ? (
-              <Button variant="ghost"
-                onClick={() => downloadFile('/wms/inventory/export-by-category/', 'ton_kho_theo_nhom.xlsx')}>
-                <Download size={14} /> Xuất Excel
-              </Button>
-            ) : (
+            <Button variant="ghost"
+              onClick={() => downloadFile('/wms/inventory/export-by-category/', 'ton_kho_theo_nhom.xlsx')}>
+              <Download size={14} /> Xuất Excel theo nhóm
+            </Button>
+            {!groupView && (
               <>
                 <button onClick={() => { setLowStock((v) => !v); setPage(1) }}
                   className={`flex items-center gap-1.5 text-xs rounded-md px-2.5 py-2 border transition-colors ${
