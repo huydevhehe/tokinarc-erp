@@ -10,13 +10,14 @@ import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
+import { useDebounced } from '@/lib/useDebounced'
 import {
   OUTBOUND_STATUS_LABEL, OUTBOUND_STATUS_TONE, RULE_LABEL,
   OUTBOUND_PURPOSE_LABEL, OUTBOUND_PURPOSE_TONE,
 } from '@/lib/wms'
-import type { OutboundOrder, OutboundStatus } from '@/lib/types'
+import type { OutboundOrder, OutboundStatus, OutboundPurpose } from '@/lib/types'
 import {
-  PageHeader, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
+  PageHeader, SearchInput, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { Modal } from '@/components/Modal'
 import { OutboundForm } from '@/pages/wms/forms/OutboundForm'
@@ -26,6 +27,7 @@ import { OrderLinesModal } from '@/pages/wms/OrderLinesModal'
 interface Pick { id: string; bin_code: string; qty: number; is_picked: boolean; serial: string | null }
 
 const OUTBOUND_STATUSES: (OutboundStatus | '')[] = ['', 'draft', 'picking', 'picked', 'partial', 'shipped', 'cancelled']
+const OUTBOUND_PURPOSES: (OutboundPurpose | '')[] = ['', 'sale', 'project']
 
 export function OutboundPage() {
   const qc = useQueryClient()
@@ -37,12 +39,18 @@ export function OutboundPage() {
   const [rejectFor, setRejectFor] = useState<OutboundOrder | null>(null)   // phiếu đang từ chối
   const [reason, setReason] = useState('')
   const [status, setStatus] = useState<OutboundStatus | ''>('')
+  const [purpose, setPurpose] = useState<OutboundPurpose | ''>('')
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
+  const debounced = useDebounced(search, 350, () => setPage(1))
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-outbound-list', status, page, pageSize],
-    queryFn: () => fetchPage<OutboundOrder>('/wms/outbound/', { status: status || undefined, page, page_size: pageSize }),
+    queryKey: ['wms-outbound-list', debounced, status, purpose, page, pageSize],
+    queryFn: () => fetchPage<OutboundOrder>('/wms/outbound/', {
+      search: debounced || undefined, status: status || undefined, purpose: purpose || undefined,
+      page, page_size: pageSize,
+    }),
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
@@ -82,6 +90,12 @@ export function OutboundPage() {
         subtitle={data ? `${data.count} đơn xuất` : undefined}
         actions={
           <>
+            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã đơn, đơn bán, khách hàng…" />
+            <select value={purpose} onChange={(e) => { setPurpose(e.target.value as OutboundPurpose | ''); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+              <option value="">Tất cả mục đích</option>
+              {OUTBOUND_PURPOSES.filter(Boolean).map((p) => <option key={p} value={p}>{OUTBOUND_PURPOSE_LABEL[p as OutboundPurpose]}</option>)}
+            </select>
             <select value={status} onChange={(e) => { setStatus(e.target.value as OutboundStatus | ''); setPage(1) }}
               className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
               {OUTBOUND_STATUSES.map((s) => <option key={s} value={s}>{s ? OUTBOUND_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}

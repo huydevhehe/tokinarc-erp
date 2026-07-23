@@ -10,10 +10,11 @@ import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
+import { useDebounced } from '@/lib/useDebounced'
 import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE } from '@/lib/wms'
 import type { InboundOrder, InboundStatus } from '@/lib/types'
 import {
-  PageHeader, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
+  PageHeader, SearchInput, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { InboundForm } from '@/pages/wms/forms/InboundForm'
 import { ScanOrderModal } from '@/pages/wms/ScanOrderModal'
@@ -32,11 +33,15 @@ export function InboundPage() {
   const [fullFor, setFullFor] = useState<InboundOrder | null>(null)   // xác nhận nhận đủ khi chưa quét
   const [editOrder, setEditOrder] = useState<InboundOrder | null>(null)   // sửa phiếu Nháp
   const [status, setStatus] = useState<InboundStatus | ''>('')
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
+  const debounced = useDebounced(search, 350, () => setPage(1))
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-inbound-list', status, page, pageSize],
-    queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', { status: status || undefined, page, page_size: pageSize }),
+    queryKey: ['wms-inbound-list', debounced, status, page, pageSize],
+    queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', {
+      search: debounced || undefined, status: status || undefined, page, page_size: pageSize,
+    }),
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
@@ -63,6 +68,7 @@ export function InboundPage() {
         subtitle={data ? `${data.count} đơn nhập` : undefined}
         actions={
           <>
+            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã đơn, NCC, mã đơn mua…" />
             <select value={status} onChange={(e) => { setStatus(e.target.value as InboundStatus | ''); setPage(1) }}
               className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
               {INBOUND_STATUSES.map((s) => <option key={s} value={s}>{s ? INBOUND_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}

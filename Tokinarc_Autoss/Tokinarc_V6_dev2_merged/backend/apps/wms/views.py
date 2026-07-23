@@ -474,8 +474,9 @@ class InboundViewSet(viewsets.ModelViewSet):
     serializer_class = InboundOrderSerializer
     permission_classes = [WMSPermission]
     queryset = InboundOrder.objects.prefetch_related('lines')
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['status', 'warehouse']
+    search_fields = ['code', 'supplier', 'purchase_order__code']
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
@@ -739,8 +740,9 @@ class OutboundViewSet(viewsets.ModelViewSet):
     serializer_class = OutboundOrderSerializer
     permission_classes = [WMSPermission]
     queryset = OutboundOrder.objects.prefetch_related('lines')
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['status', 'purpose', 'warehouse']
+    search_fields = ['code', 'sales_order_code', 'customer__name']
 
     def perform_create(self, serializer):
         code = serializer.validated_data.get('code') or _next_doc_code(OutboundOrder, 'OUT')
