@@ -142,7 +142,10 @@ class InventoryItem(models.Model):
 
     class Meta:
         db_table = 'wms_inventory_item'
-        ordering = ['bin__full_code']
+        # 'id' phá thế hòa khi nhiều dòng cùng chung 1 bin (ordering chỉ theo
+        # bin__full_code không ổn định giữa các trang — phân trang có thể
+        # lặp/bỏ sót dòng, làm sai tổng số lượng ở dashboard).
+        ordering = ['bin__full_code', 'id']
         constraints = [
             models.UniqueConstraint(fields=['bin', 'part'], name='uniq_bin_part',
                                     condition=models.Q(part__isnull=False)),
