@@ -8,7 +8,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { UserCog, Plus, Lock, Unlock, Pencil } from 'lucide-react'
+import { UserCog, Plus, Lock, Unlock, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
@@ -37,13 +37,14 @@ export function AdminUsersPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<User | null>(null)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['admin-users', page],
-    queryFn: () => fetchPage<User>('/accounts/users/', { page }),
+    queryKey: ['admin-users', page, pageSize],
+    queryFn: () => fetchPage<User>('/accounts/users/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-users'] })
 
@@ -57,6 +58,11 @@ export function AdminUsersPage() {
     mutationFn: (v: { id: string; is_active: boolean }) =>
       api.patch(`/accounts/users/${v.id}/`, { is_active: v.is_active }),
     onSuccess: (_r, v) => { toast.success(v.is_active ? 'Đã mở khóa' : 'Đã khóa'); invalidate() },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const del = useMutation({
+    mutationFn: (id: string) => api.delete(`/accounts/users/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá tài khoản'); invalidate() },
     onError: (e) => toast.error(apiError(e)),
   })
 
@@ -123,6 +129,17 @@ export function AdminUsersPage() {
                           onClick={() => toggleActive.mutate({ id: u.id, is_active: true })}>
                           <Unlock size={13} /> Mở
                         </Button>}
+                    <Button variant="ghost" size="sm" disabled={isSelf || del.isPending}
+                      title={isSelf ? 'Không thể tự xoá tài khoản của mình' : 'Xoá tài khoản'}
+                      className="!text-danger"
+                      onClick={() => {
+                        if (isSelf) return
+                        if (confirm(`Xoá vĩnh viễn tài khoản "${u.username}"? Không khôi phục được.`)) {
+                          del.mutate(u.id)
+                        }
+                      }}>
+                      <Trash2 size={13} /> Xoá
+                    </Button>
                   </span>
                 </Td>
               </tr>
@@ -131,8 +148,9 @@ export function AdminUsersPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 
