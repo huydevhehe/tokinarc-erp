@@ -7,24 +7,31 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { History } from 'lucide-react'
 import { apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
-import { formatDate } from '@/lib/crm'
+import { useDebounced } from '@/lib/useDebounced'
+import { formatDateTime } from '@/lib/crm'
+import { useWarehouseOptions } from '@/lib/useWmsOptions'
 import { MOVE_REASON_LABEL, MOVE_REASON_TONE } from '@/lib/wms'
 import type { StockMovement, MovementReason } from '@/lib/types'
 import {
-  PageHeader, Tag, TableCard, Th, Td, RowMsg, Pagination,
+  PageHeader, SearchInput, Tag, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 
 const REASONS: (MovementReason | '')[] = ['', 'inbound', 'outbound', 'adjust', 'transfer', 'return']
 
 export function MovementsPage() {
+  const { options: whs } = useWarehouseOptions()
   const [reason, setReason] = useState<MovementReason | ''>('')
+  const [warehouse, setWarehouse] = useState('')
+  const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
+  const debounced = useDebounced(search, 350, () => setPage(1))
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-moves', reason, page, pageSize],
+    queryKey: ['wms-moves', debounced, reason, warehouse, page, pageSize],
     queryFn: () => fetchPage<StockMovement>('/wms/stock-movements/', {
-      reason: reason || undefined, page, page_size: pageSize,
+      search: debounced || undefined, reason: reason || undefined,
+      warehouse: warehouse || undefined, page, page_size: pageSize,
     }),
     placeholderData: keepPreviousData,
   })
@@ -38,10 +45,18 @@ export function MovementsPage() {
         title="Lịch sử kho"
         subtitle={data ? `${data.count} biến động` : undefined}
         actions={
-          <select value={reason} onChange={(e) => { setReason(e.target.value as MovementReason | ''); setPage(1) }}
-            className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
-            {REASONS.map((r) => <option key={r} value={r}>{r ? MOVE_REASON_LABEL[r] : 'Tất cả loại'}</option>)}
-          </select>
+          <>
+            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã hàng, vị trí, tham chiếu…" />
+            <select value={warehouse} onChange={(e) => { setWarehouse(e.target.value); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+              <option value="">Tất cả kho</option>
+              {whs.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
+            </select>
+            <select value={reason} onChange={(e) => { setReason(e.target.value as MovementReason | ''); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+              {REASONS.map((r) => <option key={r} value={r}>{r ? MOVE_REASON_LABEL[r] : 'Tất cả loại'}</option>)}
+            </select>
+          </>
         }
       />
 
@@ -58,7 +73,7 @@ export function MovementsPage() {
           {data?.results.length === 0 && <RowMsg colSpan={7}>Chưa có biến động.</RowMsg>}
           {data?.results.map((m) => (
             <tr key={m.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
-              <Td className="text-txt-2 whitespace-nowrap">{formatDate(m.ts)}</Td>
+              <Td className="text-txt-2 whitespace-nowrap">{formatDateTime(m.ts)}</Td>
               <Td className="font-medium">{m.part || m.torch || '—'}</Td>
               <Td className="font-mono text-txt-2">{m.bin}</Td>
               <Td className={`text-right tabular-nums ${m.delta >= 0 ? 'text-ok' : 'text-danger'}`}>{m.delta > 0 ? `+${m.delta}` : m.delta}</Td>

@@ -438,8 +438,9 @@ class LotViewSet(viewsets.ReadOnlyModelViewSet):
 class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StockMovementSerializer
     permission_classes = [WMSPermission]
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['reason', 'warehouse', 'part', 'bin']
+    search_fields = ['part__tokin_part_no', 'torch__model_code', 'bin__full_code', 'ref_id']
 
     def get_queryset(self):
         return StockMovement.objects.select_related('by_user').order_by('-ts')
