@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { PackageCheck, Truck, ClipboardList, Plus, ScanLine, Eye, Download } from 'lucide-react'
+import { PackageCheck, Truck, ClipboardList, Plus, ScanLine, Eye, Download, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
@@ -38,6 +38,7 @@ export function OutboundPage() {
   const [viewOrder, setViewOrder] = useState<OutboundOrder | null>(null)
   const [rejectFor, setRejectFor] = useState<OutboundOrder | null>(null)   // phiếu đang từ chối
   const [reason, setReason] = useState('')
+  const [editOrder, setEditOrder] = useState<OutboundOrder | null>(null)   // sửa phiếu Nháp
   const [status, setStatus] = useState<OutboundStatus | ''>('')
   const [purpose, setPurpose] = useState<OutboundPurpose | ''>('')
   const [search, setSearch] = useState('')
@@ -70,6 +71,16 @@ export function OutboundPage() {
       api.post(`/wms/outbound/${v.id}/reject/`, { reason: v.reason }),
     onSuccess: () => {
       toast.success('Đã từ chối phiếu — đơn trả về sale xử lý')
+      qc.invalidateQueries({ queryKey: ['wms-outbound-list'] })
+      qc.invalidateQueries({ queryKey: ['wms'] })
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/wms/outbound/${id}/`),
+    onSuccess: () => {
+      toast.success('Đã xóa phiếu xuất')
       qc.invalidateQueries({ queryKey: ['wms-outbound-list'] })
       qc.invalidateQueries({ queryKey: ['wms'] })
     },
@@ -134,6 +145,20 @@ export function OutboundPage() {
                   disabled={viewPicks.isPending} onClick={() => viewPicks.mutate(o)}>
                   <ClipboardList size={13} /> Pick-list
                 </Button>
+                {o.status === 'draft' && (
+                  <Button variant="ghost" size="sm" className="mr-1.5" onClick={() => setEditOrder(o)}>
+                    <Pencil size={13} /> Sửa
+                  </Button>
+                )}
+                {o.status === 'draft' && (
+                  <Button variant="ghost" size="sm" className="mr-1.5 !text-danger"
+                    disabled={remove.isPending && remove.variables === o.id}
+                    onClick={() => {
+                      if (confirm(`Xóa phiếu xuất "${o.code}"? Không thể hoàn tác.`)) remove.mutate(o.id)
+                    }}>
+                    <Trash2 size={13} /> Xóa
+                  </Button>
+                )}
                 {o.status !== 'shipped' && o.status !== 'cancelled' && (
                   <Button variant="ghost" size="sm" className="mr-1.5" onClick={() => setScanId(o.id)}>
                     <ScanLine size={13} /> Quét
@@ -164,7 +189,8 @@ export function OutboundPage() {
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 
-      <OutboundForm open={formOpen} onClose={() => setFormOpen(false)} />
+      <OutboundForm open={formOpen || !!editOrder} editing={editOrder}
+        onClose={() => { setFormOpen(false); setEditOrder(null) }} />
       <ScanOrderModal open={!!scanId} onClose={() => setScanId(null)} kind="outbound" orderId={scanId} />
       <OrderLinesModal
         open={!!viewOrder} onClose={() => setViewOrder(null)}

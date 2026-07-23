@@ -190,6 +190,20 @@ class OutboundOrderSerializer(serializers.ModelSerializer):
         OutboundLine.objects.bulk_create([OutboundLine(outbound=order, **l) for l in lines])
         return order
 
+    def update(self, instance, validated_data):
+        # Chỉ sửa phiếu NHÁP (chưa soạn/giữ tồn) — phiếu đã soạn/giao khóa để tránh lệch tồn.
+        if instance.status != 'draft':
+            raise serializers.ValidationError('Chỉ sửa được phiếu Nháp (chưa soạn hàng).')
+        lines = validated_data.pop('lines', None)
+        for k, v in validated_data.items():
+            setattr(instance, k, v)
+        instance.save()
+        if lines is not None:   # thay toàn bộ dòng (draft chưa soạn nên an toàn)
+            instance.lines.all().delete()
+            OutboundLine.objects.bulk_create(
+                [OutboundLine(outbound=instance, **ln) for ln in lines])
+        return instance
+
 
 class PickListItemSerializer(serializers.ModelSerializer):
     bin_code = serializers.CharField(source='bin.full_code', read_only=True)

@@ -492,6 +492,15 @@ class InboundViewSet(viewsets.ModelViewSet):
                      f"Phiếu nhập {inbound.code} cần nhận hàng (kho {inbound.warehouse.code}).",
                      link='/wms/inbound', exclude_user=self.request.user)
 
+    def destroy(self, request, *args, **kwargs):
+        """Chỉ xoá được phiếu Nháp (chưa nhận hàng) — phiếu đã nhận/cất kho đã ghi
+        StockMovement, xoá phiếu sẽ mất chứng từ gốc trong khi tồn vẫn còn hiệu lực."""
+        inbound = self.get_object()
+        if inbound.status != 'draft':
+            return Response({'detail': 'Chỉ xoá được phiếu Nháp (chưa nhận hàng).',
+                             'code': 'CONFLICT'}, status=status.HTTP_409_CONFLICT)
+        return super().destroy(request, *args, **kwargs)
+
     @action(detail=True, methods=['get'], url_path='export-xlsx')
     def export_xlsx(self, request, pk=None):
         """Xuất phiếu nhập kho ra Excel (đầu trang NCC nếu có + bảng dòng hàng)."""
@@ -750,6 +759,15 @@ class OutboundViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         code = serializer.validated_data.get('code') or _next_doc_code(OutboundOrder, 'OUT')
         serializer.save(created_by=self.request.user, updated_by=self.request.user, code=code)
+
+    def destroy(self, request, *args, **kwargs):
+        """Chỉ xoá được phiếu Nháp (chưa soạn hàng/giữ tồn) — phiếu đã soạn/giao
+        đã ảnh hưởng tồn kho thật, xoá sẽ mất chứng từ gốc đối chiếu."""
+        outbound = self.get_object()
+        if outbound.status != 'draft':
+            return Response({'detail': 'Chỉ xoá được phiếu Nháp (chưa soạn hàng).',
+                             'code': 'CONFLICT'}, status=status.HTTP_409_CONFLICT)
+        return super().destroy(request, *args, **kwargs)
 
     @action(detail=True, methods=['get'], url_path='export-xlsx')
     def export_xlsx(self, request, pk=None):

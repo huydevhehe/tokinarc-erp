@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { PackageCheck, Check, Plus, ScanLine, Eye, Download, Pencil } from 'lucide-react'
+import { PackageCheck, Check, Plus, ScanLine, Eye, Download, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
@@ -56,6 +56,16 @@ export function InboundPage() {
       qc.invalidateQueries({ queryKey: ['wms-inbound-list'] })
       qc.invalidateQueries({ queryKey: ['wms'] })
       qc.invalidateQueries({ queryKey: ['wms-inventory'] })
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
+  const remove = useMutation({
+    mutationFn: (id: string) => api.delete(`/wms/inbound/${id}/`),
+    onSuccess: () => {
+      toast.success('Đã xóa phiếu nhập')
+      qc.invalidateQueries({ queryKey: ['wms-inbound-list'] })
+      qc.invalidateQueries({ queryKey: ['wms'] })
     },
     onError: (e) => toast.error(apiError(e)),
   })
@@ -111,6 +121,15 @@ export function InboundPage() {
                 {o.status === 'draft' && (
                   <Button variant="ghost" size="sm" onClick={() => setEditOrder(o)}>
                     <Pencil size={13} /> Sửa
+                  </Button>
+                )}
+                {o.status === 'draft' && (
+                  <Button variant="ghost" size="sm" className="!text-danger"
+                    disabled={remove.isPending && remove.variables === o.id}
+                    onClick={() => {
+                      if (window.confirm(`Xóa phiếu nhập "${o.code}"? Không thể hoàn tác.`)) remove.mutate(o.id)
+                    }}>
+                    <Trash2 size={13} /> Xóa
                   </Button>
                 )}
                 {(o.status === 'draft' || o.status === 'confirmed' || o.status === 'partial') ? (

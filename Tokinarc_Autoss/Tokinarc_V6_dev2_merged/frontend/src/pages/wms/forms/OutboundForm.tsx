@@ -15,8 +15,9 @@ import { RULE_LABEL, OUTBOUND_PURPOSE_LABEL } from '@/lib/wms'
 import { CameraScanner } from '@/components/CameraScanner'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
-import { FieldRow, SelectInput } from '@/components/form'
+import { FieldRow, TextInput, SelectInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
+import type { OutboundOrder } from '@/lib/types'
 
 interface LineForm { item: string; qty_ordered: number }
 interface Form {
@@ -29,7 +30,9 @@ const EMPTY: Form = {
   lines: [{ ...EMPTY_LINE }],
 }
 
-export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function OutboundForm({ open, onClose, editing }: {
+  open: boolean; onClose: () => void; editing?: OutboundOrder | null
+}) {
   const qc = useQueryClient()
   const { options: whs } = useWarehouseOptions()
   const { options: items, isLoading: itemsLoading } = useItemOptions()
@@ -58,20 +61,37 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
     toast.success(`✓ ${itemLabel(val)}`)
   }
 
-  useEffect(() => { if (open) reset(EMPTY) }, [open, reset])
+  useEffect(() => {
+    if (!open) return
+    reset(editing ? {
+      warehouse: editing.warehouse, customer: editing.customer ?? '',
+      sales_order_code: editing.sales_order_code ?? '', rule: editing.rule, purpose: editing.purpose,
+      lines: (editing.lines ?? []).map((l) => ({
+        item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
+        qty_ordered: l.qty_ordered,
+      })),
+    } : EMPTY)
+  }, [open, editing, reset])
 
   const save = useMutation({
-    // KHÔNG gửi code — backend tự sinh OUT-YYYY-NNN (xem OutboundViewSet.perform_create).
-    mutationFn: (d: Form) => api.post('/wms/outbound/', {
-      warehouse: d.warehouse,
-      customer: d.customer || null,
-      sales_order_code: d.sales_order_code,
-      rule: d.rule,
-      purpose: d.purpose,
-      lines: d.lines.map((l) => ({ ...splitItem(l.item), qty_ordered: Number(l.qty_ordered) || 0 })),
-    }),
+    mutationFn: (d: Form) => {
+      const payload = {
+        // Tạo mới: KHÔNG gửi code — backend tự sinh OUT-YYYY-NNN (xem
+        // OutboundViewSet.perform_create). Sửa: giữ nguyên mã cũ, không đổi.
+        ...(editing ? { code: editing.code } : {}),
+        warehouse: d.warehouse,
+        customer: d.customer || null,
+        sales_order_code: d.sales_order_code,
+        rule: d.rule,
+        purpose: d.purpose,
+        lines: d.lines.map((l) => ({ ...splitItem(l.item), qty_ordered: Number(l.qty_ordered) || 0 })),
+      }
+      return editing
+        ? api.patch(`/wms/outbound/${editing.id}/`, payload)
+        : api.post('/wms/outbound/', payload)
+    },
     onSuccess: () => {
-      toast.success('Đã tạo đơn xuất')
+      toast.success(editing ? 'Đã cập nhật phiếu xuất' : 'Đã tạo đơn xuất')
       qc.invalidateQueries({ queryKey: ['wms-outbound-list'] })
       qc.invalidateQueries({ queryKey: ['wms'] })
       onClose()
@@ -80,22 +100,25 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
   })
 
   return (
-    <Modal open={open} onClose={onClose} xwide title="Tạo đơn xuất kho"
+    <Modal open={open} onClose={onClose} xwide
+      title={editing ? `Sửa phiếu xuất ${editing.code}` : 'Tạo đơn xuất kho'}
       icon={<PackageCheck size={18} className="text-flame" />}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Hủy</Button>
           <Button onClick={handleSubmit((d) => save.mutate(d))} disabled={save.isPending}>
-            {save.isPending ? 'Đang lưu…' : 'Tạo'}
+            {save.isPending ? 'Đang lưu…' : editing ? 'Lưu' : 'Tạo'}
           </Button>
         </>
       }>
       <form onSubmit={handleSubmit((d) => save.mutate(d))}>
         <FieldRow>
-          <div>
-            <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Mã đơn</label>
-            <p className="text-sm text-txt-2 py-2">Tự động tạo khi lưu (OUT-{new Date().getFullYear()}-xxx)</p>
-          </div>
+          {editing
+            ? <TextInput label="Mã đơn" value={editing.code} disabled readOnly />
+            : <div>
+                <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Mã đơn</label>
+                <p className="text-sm text-txt-2 py-2">Tự động tạo khi lưu (OUT-{new Date().getFullYear()}-xxx)</p>
+              </div>}
           <SelectInput label="Kho *" error={errors.warehouse?.message}
             placeholder="— Chọn kho —" options={whs}
             {...register('warehouse', { required: 'Chọn kho' })} />

@@ -622,3 +622,53 @@ def test_outbound_filtered_by_status(auth, wh_user):
     r = auth.get('/api/v1/wms/outbound/', {'status': 'shipped'})
     codes = [o['code'] for o in r.data['results']]
     assert codes == ['OUT-S1']
+
+
+# ─── Sửa/Xóa phiếu Nhập/Xuất kho — chỉ cho phép ở trạng thái Nháp ───────────
+@pytest.mark.django_db
+def test_inbound_delete_only_allowed_when_draft(auth, wh_user):
+    from apps.wms.models import InboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    draft = InboundOrder.objects.create(code='IN-DEL1', warehouse=wh, status='draft',
+                                        created_by=wh_user, updated_by=wh_user)
+    putaway = InboundOrder.objects.create(code='IN-DEL2', warehouse=wh, status='putaway',
+                                          created_by=wh_user, updated_by=wh_user)
+    r = auth.delete(f'/api/v1/wms/inbound/{putaway.id}/')
+    assert r.status_code == 409
+    assert InboundOrder.objects.filter(pk=putaway.id).exists()
+    r = auth.delete(f'/api/v1/wms/inbound/{draft.id}/')
+    assert r.status_code == 204
+    assert not InboundOrder.objects.filter(pk=draft.id).exists()
+
+
+@pytest.mark.django_db
+def test_outbound_update_only_allowed_when_draft(auth, wh_user):
+    from apps.wms.models import OutboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    draft = OutboundOrder.objects.create(code='OUT-UPD1', warehouse=wh, status='draft',
+                                         created_by=wh_user, updated_by=wh_user)
+    r = auth.patch(f'/api/v1/wms/outbound/{draft.id}/', {'notes': 'sua roi'}, format='json')
+    assert r.status_code == 200
+    draft.refresh_from_db()
+    assert draft.notes == 'sua roi'
+
+    shipped = OutboundOrder.objects.create(code='OUT-UPD2', warehouse=wh, status='shipped',
+                                           created_by=wh_user, updated_by=wh_user)
+    r = auth.patch(f'/api/v1/wms/outbound/{shipped.id}/', {'notes': 'x'}, format='json')
+    assert r.status_code == 400
+
+
+@pytest.mark.django_db
+def test_outbound_delete_only_allowed_when_draft(auth, wh_user):
+    from apps.wms.models import OutboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    draft = OutboundOrder.objects.create(code='OUT-DEL1', warehouse=wh, status='draft',
+                                         created_by=wh_user, updated_by=wh_user)
+    shipped = OutboundOrder.objects.create(code='OUT-DEL2', warehouse=wh, status='shipped',
+                                           created_by=wh_user, updated_by=wh_user)
+    r = auth.delete(f'/api/v1/wms/outbound/{shipped.id}/')
+    assert r.status_code == 409
+    assert OutboundOrder.objects.filter(pk=shipped.id).exists()
+    r = auth.delete(f'/api/v1/wms/outbound/{draft.id}/')
+    assert r.status_code == 204
+    assert not OutboundOrder.objects.filter(pk=draft.id).exists()
