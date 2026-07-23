@@ -66,6 +66,29 @@ api.interceptors.response.use(
   },
 )
 
+/** Đào sâu vào lỗi validate DRF để tìm CHUỖI lỗi đầu tiên — xử lý cả lỗi
+ * serializer lồng nhau (VD dòng hàng PO/Nhập/Xuất/Báo giá: `{lines: [{},
+ * {part: ["..."]}]}`), không chỉ field phẳng (`{phone: ["..."]}`). Không có
+ * bước này thì gặp lỗi lồng nhau sẽ in ra "[object Object]" vô nghĩa (do gọi
+ * String() thẳng lên 1 object thay vì lấy đúng câu lỗi bên trong). */
+function _firstErrorString(v: unknown): string | null {
+  if (typeof v === 'string' && v.trim()) return v.trim()
+  if (Array.isArray(v)) {
+    for (const item of v) {
+      const found = _firstErrorString(item)
+      if (found) return found
+    }
+    return null
+  }
+  if (v && typeof v === 'object') {
+    for (const val of Object.values(v)) {
+      const found = _firstErrorString(val)
+      if (found) return found
+    }
+  }
+  return null
+}
+
 /** Lấy message lỗi từ response Django (DRF detail / non_field_errors).
  * Luôn trả CHUỖI CÓ NỘI DUNG — không bao giờ rỗng (tránh hiển thị "Lỗi:" trống khi
  * backend chưa chạy / proxy trả body rỗng). */
@@ -77,14 +100,14 @@ export function apiError(e: unknown): string {
   if (typeof d === 'string' && d.trim() && !/^\s*<(!doctype|html)/i.test(d)) {
     return d.trim()
   }
-  // DRF chuẩn: {detail} · {non_field_errors} · hoặc lỗi field đầu tiên ({phone:[...]}).
+  // DRF chuẩn: {detail} · {non_field_errors} · hoặc lỗi field đầu tiên, kể cả lồng nhau.
   if (d && typeof d === 'object') {
     if (typeof d.detail === 'string' && d.detail.trim()) return d.detail.trim()
     if (Array.isArray(d.non_field_errors) && d.non_field_errors.length) {
       return String(d.non_field_errors[0])
     }
-    const firstFieldErr = Object.values(d).find((v) => Array.isArray(v) && v.length)
-    if (Array.isArray(firstFieldErr)) return String(firstFieldErr[0])
+    const found = _firstErrorString(d)
+    if (found) return found
   }
   // Không có phản hồi (mất mạng) hoặc proxy trả rỗng vì backend chưa chạy.
   const status = ax.response?.status
