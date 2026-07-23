@@ -21,6 +21,7 @@ import { TransferForm } from '@/pages/wms/forms/TransferForm'
 
 interface BinLite { id: string; full_code: string }
 interface CategoryRow { kind: 'part' | 'torch'; group: string; qty: number; value: number }
+interface ProductGroupLite { id: number; name: string }
 const KIND_LABEL: Record<CategoryRow['kind'], string> = { part: 'Phụ tùng', torch: 'Súng hàn' }
 
 export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boolean }) {
@@ -29,15 +30,27 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [lowStock, setLowStock] = useState(initialLow)
   const [groupView, setGroupView] = useState(false)
+  const [groupFilter, setGroupFilter] = useState('')
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null)
   const [transferItem, setTransferItem] = useState<InventoryItem | null>(null)
   const debounced = useDebounced(search, 350, () => setPage(1))
 
   const grouped = useQuery({
-    queryKey: ['wms-inventory-by-category'],
-    queryFn: async () => (await api.get<CategoryRow[]>('/wms/inventory/by-category/')).data,
+    queryKey: ['wms-inventory-by-category', groupFilter],
+    queryFn: async () => (await api.get<CategoryRow[]>('/wms/inventory/by-category/', {
+      params: { group: groupFilter || undefined },
+    })).data,
     enabled: groupView,
   })
+
+  const productGroups = useQuery({
+    queryKey: ['product-groups'],
+    queryFn: async () => (await api.get<{ results: ProductGroupLite[] } | ProductGroupLite[]>('/catalog/product-groups/')).data,
+    enabled: groupView,
+  })
+  const groupOptions: ProductGroupLite[] = Array.isArray(productGroups.data)
+    ? productGroups.data
+    : (productGroups.data?.results ?? [])
 
   const bins = useQuery({ queryKey: ['wms-bins-opt'], queryFn: () => fetchAll<BinLite>('/wms/bins/') })
   const binOptions: Option[] = (bins.data?.items ?? []).map((b) => ({ value: b.id, label: b.full_code }))
@@ -74,8 +87,20 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
                 groupView ? 'border-flame text-flame bg-flame/10' : 'border-line text-txt-2 hover:text-txt'}`}>
               <Layers size={14} /> Xem theo nhóm hàng
             </button>
+            {groupView && (
+              <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}
+                className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+                <option value="">Tất cả nhóm SP</option>
+                {groupOptions.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
+              </select>
+            )}
             <Button variant="ghost"
-              onClick={() => downloadFile('/wms/inventory/export-by-category/', 'ton_kho_theo_nhom.xlsx')}>
+              onClick={() => {
+                const g = groupOptions.find((o) => String(o.id) === groupFilter)
+                const fname = g ? `ton_kho_${g.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx` : 'ton_kho_theo_nhom.xlsx'
+                downloadFile(
+                  `/wms/inventory/export-by-category/${groupFilter ? `?group=${groupFilter}` : ''}`, fname)
+              }}>
               <Download size={14} /> Xuất Excel theo nhóm
             </Button>
             {!groupView && (

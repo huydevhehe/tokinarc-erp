@@ -228,36 +228,46 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
             qs = qs.filter(qty_on_hand__lte=F('min_level'))
         return qs
 
-    def _category_rows(self):
-        """Tồn kho gộp theo nhóm hàng — Part gộp theo `category`, Torch gộp theo `family`."""
+    def _category_rows(self, group_id=None):
+        """Tồn kho gộp theo nhóm hàng — Part gộp theo Nhóm sản phẩm (ProductGroup,
+        trang "Nhóm & Danh mục SP"), Torch gộp theo `family` (chưa có hệ phân
+        cấp mới, torch không thuộc phạm vi ProductGroup). `group_id` lọc còn
+        đúng 1 Nhóm (chỉ áp dụng cho Part — torch không gắn Nhóm nào)."""
         base = self.get_queryset()
-        part_rows = (base.filter(part__isnull=False)
-                     .values(group=F('part__category'))
+        part_qs = base.filter(part__isnull=False)
+        if group_id:
+            part_qs = part_qs.filter(part__product_category__group_id=group_id)
+        part_rows = (part_qs
+                     .values(group=F('part__product_category__group__name'))
                      .annotate(qty=Sum('qty_on_hand'),
                                value=Sum(F('qty_on_hand') * F('part__cost_vnd')))
                      .order_by('group'))
-        torch_rows = (base.filter(torch__isnull=False)
-                      .values(group=F('torch__family'))
-                      .annotate(qty=Sum('qty_on_hand'),
-                                value=Sum(F('qty_on_hand') * F('torch__cost_vnd')))
-                      .order_by('group'))
         rows = [{'kind': 'part', 'group': r['group'] or '(chưa phân loại)',
                  'qty': r['qty'] or 0, 'value': r['value'] or 0} for r in part_rows]
-        rows += [{'kind': 'torch', 'group': r['group'] or '(chưa phân loại)',
-                  'qty': r['qty'] or 0, 'value': r['value'] or 0} for r in torch_rows]
+        if not group_id:   # lọc theo Nhóm SP (Part-only) thì không trộn thêm súng hàn
+            torch_rows = (base.filter(torch__isnull=False)
+                          .values(group=F('torch__family'))
+                          .annotate(qty=Sum('qty_on_hand'),
+                                    value=Sum(F('qty_on_hand') * F('torch__cost_vnd')))
+                          .order_by('group'))
+            rows += [{'kind': 'torch', 'group': r['group'] or '(chưa phân loại)',
+                      'qty': r['qty'] or 0, 'value': r['value'] or 0} for r in torch_rows]
         return rows
 
     @action(detail=False, methods=['get'], url_path='by-category')
     def by_category(self, request):
-        """Tồn kho gộp theo nhóm hàng (không theo mã lẻ) — phục vụ lên đơn đặt NCC."""
-        return Response(self._category_rows())
+        """Tồn kho gộp theo nhóm hàng (không theo mã lẻ) — phục vụ lên đơn đặt NCC.
+        ?group=<id ProductGroup> để chỉ xem đúng 1 Nhóm sản phẩm."""
+        return Response(self._category_rows(group_id=request.query_params.get('group')))
 
     @action(detail=False, methods=['get'], url_path='export-by-category')
     def export_by_category(self, request):
-        """Xuất Excel tồn kho theo nhóm sản phẩm."""
+        """Xuất Excel tồn kho theo nhóm sản phẩm. ?group=<id ProductGroup> để
+        chỉ xuất đúng 1 Nhóm."""
         from apps.common.excel import xlsx_response
         from openpyxl import Workbook
-        rows = self._category_rows()
+        group_id = request.query_params.get('group')
+        rows = self._category_rows(group_id=group_id)
         wb = Workbook()
         ws = wb.active
         ws.title = 'TonKhoTheoNhom'
@@ -267,7 +277,14 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
             ws.append([kind_label.get(r['kind'], r['kind']), r['group'], r['qty'], r['value']])
         buf = io.BytesIO()
         wb.save(buf)
-        return xlsx_response(buf.getvalue(), 'ton_kho_theo_nhom.xlsx')
+        fname = 'ton_kho_theo_nhom.xlsx'
+        if group_id:
+            from apps.catalog.models import ProductGroup
+            g = ProductGroup.objects.filter(pk=group_id).first()
+            if g:
+                safe = ''.join(c for c in g.name if c.isalnum() or c in ' _-').strip().replace(' ', '_')
+                fname = f'ton_kho_{safe or group_id}.xlsx'
+        return xlsx_response(buf.getvalue(), fname)
 
     @action(detail=False, methods=['post'], url_path='adjust')
     def adjust(self, request):
