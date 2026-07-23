@@ -4,13 +4,15 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Building, Plus } from 'lucide-react'
+import { Building, Plus, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { Modal } from '@/components/Modal'
 import { PageHeader, Button, TableCard, Th, Td, RowMsg } from '@/components/ui'
 import { FieldRow, TextInput } from '@/components/form'
 import { useForm } from 'react-hook-form'
+import { useAuth } from '@/lib/auth/store'
+import { ImportModal } from '@/pages/crm/ImportModal'
 
 interface Supplier { id: string; code: string; name: string; tax_code: string; phone: string; email: string }
 interface Form { code: string; name: string; tax_code: string; phone: string; email: string; address: string }
@@ -18,6 +20,10 @@ interface Form { code: string; name: string; tax_code: string; phone: string; em
 export function SuppliersPage() {
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
+  const [importOpen, setImportOpen] = useState(false)
+  // Import NCC: Quản lý kho trở lên (khớp backend PO_WRITE_ROLES).
+  const role = useAuth((s) => s.user?.role)
+  const canImport = role === 'wh_manager' || role === 'manager' || role === 'ceo'
   const { register, handleSubmit, reset } = useForm<Form>()
   const { data, isLoading } = useQuery({
     queryKey: ['suppliers'],
@@ -33,7 +39,14 @@ export function SuppliersPage() {
     <div className="max-w-4xl">
       <PageHeader icon={<Building size={20} className="text-flame" />} title="Nhà cung cấp"
         subtitle={data ? `${data.length} NCC` : undefined}
-        actions={<Button onClick={() => setOpen(true)}><Plus size={14} /> Thêm NCC</Button>} />
+        actions={
+          <>
+            {canImport && (
+              <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Import</Button>
+            )}
+            <Button onClick={() => setOpen(true)}><Plus size={14} /> Thêm NCC</Button>
+          </>
+        } />
       <TableCard>
         <thead><tr className="border-b border-line"><Th>Mã</Th><Th>Tên</Th><Th>MST</Th><Th>Điện thoại</Th></tr></thead>
         <tbody>
@@ -65,6 +78,15 @@ export function SuppliersPage() {
           <TextInput label="Địa chỉ" full {...register('address')} />
         </form>
       </Modal>
+
+      <ImportModal open={importOpen} onClose={() => setImportOpen(false)} spec={{
+        title: 'Import nhà cung cấp',
+        importUrl: '/purchasing/suppliers/import/',
+        templateUrl: '/purchasing/suppliers/import-template/',
+        templateFilename: 'mau_import_nha_cung_cap.xlsx',
+        invalidateKey: 'suppliers',
+        hint: 'Mỗi dòng = 1 NCC. Bắt buộc cột "name" (tên). Có "code" trùng → cập nhật; thiếu code nhưng trùng "tax_code" (MST) → cập nhật NCC đó; còn lại tạo mới, tự sinh mã NCC-XXXX.',
+      }} />
     </div>
   )
 }
