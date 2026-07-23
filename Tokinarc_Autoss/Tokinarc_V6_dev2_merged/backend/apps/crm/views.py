@@ -18,6 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.roles import WMS_OP_ROLES, role_of
 from apps.common.models import AuditLog
 
 from .models import Customer
@@ -98,6 +99,18 @@ class CustomerViewSet(viewsets.ModelViewSet):
         if self.action == 'customer_360':
             return Customer360Serializer
         return CustomerDetailSerializer
+
+    @action(detail=False, methods=['get'], url_path='wms-options')
+    def wms_options(self, request):
+        """KH rút gọn (mã+tên) cho phiếu xuất kho (NV kho trở lên) — KHÔNG lọc
+        theo owner: NV kho cần gán đơn xuất cho KH của BẤT KỲ sale nào, không
+        chỉ KH mình sở hữu (khác GET /crm/customers/ chính vốn lọc owner để
+        giữ ranh giới dữ liệu CRM giữa các sale)."""
+        if role_of(request.user) not in WMS_OP_ROLES:
+            return Response({'detail': 'Cần quyền kho.'}, status=403)
+        data = [{'id': str(c.id), 'code': c.code, 'name': c.name}
+                for c in Customer.objects.order_by('name')]
+        return Response(data)
 
     # ── Kiểm tra trùng KH (#7 biên bản) — SĐT hoặc MST, tạo tay lẫn sửa ──────
     def _duplicate_response(self, request, exclude_pk=None):

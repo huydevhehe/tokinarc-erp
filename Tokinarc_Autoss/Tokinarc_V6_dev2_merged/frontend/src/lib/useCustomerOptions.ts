@@ -4,6 +4,7 @@
  * Cache lâu vì danh sách KH ít đổi trong 1 phiên.
  */
 import { useQuery } from '@tanstack/react-query'
+import { api } from '@/lib/api'
 import { fetchAll } from '@/lib/list'
 import type { Customer } from '@/lib/types'
 import type { Option } from '@/components/form'
@@ -15,6 +16,25 @@ export function useCustomerOptions() {
     staleTime: 5 * 60 * 1000,
   })
   const options: Option[] = (q.data?.items ?? []).map((c) => ({
+    value: c.id,
+    label: `${c.code} — ${c.name}`,
+  }))
+  return { options, isLoading: q.isLoading, isError: q.isError }
+}
+
+/**
+ * KH rút gọn cho phiếu xuất kho — dùng /crm/customers/wms-options/, KHÔNG lọc
+ * theo owner (khác useCustomerOptions ở trên): NV kho cần gán đơn xuất cho
+ * KH của bất kỳ sale nào, không chỉ KH của riêng người tạo phiếu.
+ */
+interface CustomerLite { id: string; code: string; name: string }
+export function useOutboundCustomerOptions() {
+  const q = useQuery({
+    queryKey: ['customer-options-wms'],
+    queryFn: async () => (await api.get<CustomerLite[]>('/crm/customers/wms-options/')).data,
+    staleTime: 5 * 60 * 1000,
+  })
+  const options: Option[] = (q.data ?? []).map((c) => ({
     value: c.id,
     label: `${c.code} — ${c.name}`,
   }))

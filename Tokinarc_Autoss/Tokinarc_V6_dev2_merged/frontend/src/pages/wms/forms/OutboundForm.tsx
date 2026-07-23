@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { resolveScanToItem } from '@/lib/scanResolve'
 import { useWarehouseOptions, useItemOptions, splitItem } from '@/lib/useWmsOptions'
-import { useCustomerOptions } from '@/lib/useCustomerOptions'
+import { useOutboundCustomerOptions } from '@/lib/useCustomerOptions'
 import { RULE_LABEL, OUTBOUND_PURPOSE_LABEL } from '@/lib/wms'
 import { CameraScanner } from '@/components/CameraScanner'
 import { Modal } from '@/components/Modal'
@@ -33,10 +33,11 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
   const qc = useQueryClient()
   const { options: whs } = useWarehouseOptions()
   const { options: items, isLoading: itemsLoading } = useItemOptions()
-  const { options: customers } = useCustomerOptions()
+  const { options: customers, isLoading: customersLoading } = useOutboundCustomerOptions()
   const { register, handleSubmit, reset, control, setValue, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
   const watched = (useWatch({ control, name: 'lines' }) as LineForm[] | undefined) ?? []
+  const watchedCustomer = (useWatch({ control, name: 'customer' }) as string | undefined) ?? ''
   const itemLabel = (v: string) => items.find((o) => o.value === v)?.label ?? v
   const filled = watched.filter((l) => l?.item)
   const totalQty = filled.reduce((s, l) => s + (Number(l.qty_ordered) || 0), 0)
@@ -98,7 +99,14 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
             {...register('warehouse', { required: 'Chọn kho' })} />
         </FieldRow>
         <FieldRow>
-          <SelectInput label="Khách hàng" placeholder="— (tùy chọn) —" options={customers} {...register('customer')} />
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Khách hàng</label>
+            <input type="hidden" {...register('customer')} />
+            <SearchableSelect
+              value={watchedCustomer}
+              onChange={(v) => setValue('customer', v)}
+              options={customers} loading={customersLoading} placeholder="— (tùy chọn) — gõ mã/tên để tìm…" />
+          </div>
           <SelectInput label="Rule soạn hàng"
             options={(Object.keys(RULE_LABEL) as (keyof typeof RULE_LABEL)[]).map((k) => ({ value: k, label: RULE_LABEL[k] }))}
             {...register('rule')} />
