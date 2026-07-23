@@ -76,7 +76,8 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     lookup_value_regex = r'[^/]+'   # part_no có thể chứa ký tự đặc biệt
 
     filter_backends   = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    filterset_fields  = ['category', 'ecosystem', 'current_class', 'is_priority_sell']
+    filterset_fields  = ['category', 'ecosystem', 'current_class', 'is_priority_sell',
+                         'product_category', 'product_category__group']
     search_fields     = ['tokin_part_no', 'display_name_vi', 'display_name_en', 'category', 'barcode']
     ordering_fields   = ['tokin_part_no', 'category', 'price_vnd']
 

@@ -155,6 +155,11 @@ class Part(models.Model):
     price_tier       = models.CharField(max_length=20, blank=True)
     # Thuế VAT áp dụng (%) — ví dụ 8 hoặc 10. Trống = chưa xác định.
     tax_pct          = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    # Phân loại "mềm" do Quản lý kho gắn (Nhóm→Danh mục→SP). Nullable: chưa gắn.
+    # KHÔNG thay thế ecosystem/category cũ — bổ sung song song. FK khai bằng
+    # string 'ProductCategory' vì model đó định nghĩa SAU Part trong file này.
+    product_category = models.ForeignKey('ProductCategory', null=True, blank=True,
+                                         on_delete=models.SET_NULL, related_name='parts')
 
     # Catch-all + provenance
     specs            = models.JSONField(default=dict)
@@ -173,6 +178,46 @@ class Part(models.Model):
 
     def __str__(self) -> str:
         return f"{self.tokin_part_no} — {self.display_name_vi}"
+
+
+# ─── Nhóm / Danh mục sản phẩm (do Quản lý kho tự quản lý) ────────────────────
+# Phân cấp: ProductGroup (Nhóm) → ProductCategory (Danh mục) → Part (sản phẩm).
+# Đây là hệ phân loại "mềm" do người dùng tạo/sửa/xoá qua giao diện — TÁCH BIỆT
+# với 2 field text cũ Part.ecosystem/Part.category (giữ nguyên cho tìm kiếm/
+# import/chatbot đang phụ thuộc). Part.product_category (FK, nullable) là liên
+# kết mới; sản phẩm chưa gắn thì để trống.
+class ProductGroup(models.Model):
+    """Nhóm sản phẩm — cấp cao nhất, do Quản lý kho tạo."""
+    id         = models.BigAutoField(primary_key=True)
+    name       = models.CharField(max_length=100, unique=True)
+    sort_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'catalog_product_group'
+        ordering = ['sort_order', 'name']
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class ProductCategory(models.Model):
+    """Danh mục sản phẩm — thuộc đúng 1 Nhóm."""
+    id         = models.BigAutoField(primary_key=True)
+    group      = models.ForeignKey(ProductGroup, on_delete=models.CASCADE, related_name='categories')
+    name       = models.CharField(max_length=100)
+    sort_order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'catalog_product_category'
+        ordering = ['sort_order', 'name']
+        constraints = [
+            models.UniqueConstraint(fields=['group', 'name'], name='uniq_category_name_in_group'),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.group.name} / {self.name}"
 
 
 # ─── CompatibilityEdge ───────────────────────────────────────────────────────

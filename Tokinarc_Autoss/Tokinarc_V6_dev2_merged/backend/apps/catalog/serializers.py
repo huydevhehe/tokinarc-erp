@@ -26,6 +26,9 @@ class PartLiteSerializer(serializers.ModelSerializer):
 
     effective_price_vnd = serializers.SerializerMethodField()
     price_display       = serializers.SerializerMethodField()
+    # Nhóm/Danh mục "mềm" đã gắn (managed) — hiển thị trên bảng danh mục SP.
+    group_name          = serializers.CharField(source='product_category.group.name', default=None, read_only=True)
+    category_name       = serializers.CharField(source='product_category.name', default=None, read_only=True)
 
     class Meta:
         model = Part
@@ -34,6 +37,7 @@ class PartLiteSerializer(serializers.ModelSerializer):
             'display_name_vi', 'display_name_en',
             'effective_price_vnd', 'price_display', 'is_contact_price',
             'is_priority_sell', 'tax_pct',
+            'product_category', 'group_name', 'category_name',
         ]
 
     def get_effective_price_vnd(self, obj: Part):

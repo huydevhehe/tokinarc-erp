@@ -300,6 +300,28 @@ export interface CatalogPart {
   is_contact_price: boolean
   is_priority_sell: boolean
   tax_pct: string | null
+  // Phân loại "mềm" đã gắn (Nhóm→Danh mục quản lý được). null = chưa phân loại.
+  product_category: number | null
+  group_name: string | null
+  category_name: string | null
+}
+
+// Nhóm sản phẩm > Danh mục (do Quản lý kho quản lý qua giao diện).
+export interface ProductCategoryNode {
+  id: number
+  group: number
+  group_name: string
+  name: string
+  sort_order: number
+  part_count: number
+}
+export interface ProductGroupNode {
+  id: number
+  name: string
+  sort_order: number
+  category_count: number
+  part_count: number
+  categories: ProductCategoryNode[]
 }
 
 export interface CatalogTorch {

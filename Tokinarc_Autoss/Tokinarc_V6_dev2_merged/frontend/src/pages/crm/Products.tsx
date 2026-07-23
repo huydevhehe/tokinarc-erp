@@ -2,17 +2,21 @@
  * Tokinarc frontend — src/pages/crm/Products.tsx
  * Tra cứu sản phẩm THẬT từ catalog (838 phụ tùng + 122 súng hàn).
  * 2 tab: Phụ tùng / Súng hàn — search + phân trang.
+ *
+ * Nhóm sản phẩm → Danh mục → Sản phẩm (quản lý được, #10 biên bản): Quản lý kho
+ * tạo/sửa/xoá Nhóm & Danh mục (nút "Quản lý Nhóm/Danh mục"), gắn từng sản phẩm
+ * vào Danh mục ngay trên bảng. Lọc theo Nhóm → Danh mục.
  */
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Wrench, Flame, Coins, Upload } from 'lucide-react'
+import { Wrench, Flame, Coins, Upload, FolderTree, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
 import { api, apiError } from '@/lib/api'
 import { toast } from 'sonner'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
 import { formatVnd } from '@/lib/crm'
 import { useAuth, isManager } from '@/lib/auth/store'
-import type { CatalogPart, CatalogTorch } from '@/lib/types'
+import type { CatalogPart, CatalogTorch, ProductGroupNode } from '@/lib/types'
 import { Modal } from '@/components/Modal'
 import { ImportModal } from '@/pages/crm/ImportModal'
 import {
@@ -21,27 +25,33 @@ import {
 
 type TabKey = 'parts' | 'torches'
 
-interface GroupNode { ecosystem: string; total: number; categories: { category: string; count: number }[] }
+/** Quản lý Nhóm/Danh mục + gắn SP: Quản lý kho trở lên (khớp backend WMS_CONTROL). */
+function useCanManageTaxonomy(): boolean {
+  const role = useAuth((s) => s.user?.role)
+  return role === 'wh_manager' || role === 'manager' || role === 'ceo'
+}
 
 export function ProductsPage() {
   const [tab, setTab] = useState<TabKey>('parts')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [importOpen, setImportOpen] = useState(false)
-  // #10 biên bản: duyệt phân cấp Nhóm sản phẩm (ecosystem) → Danh mục (category).
-  const [ecoFilter, setEcoFilter] = useState('')
-  const [catFilter, setCatFilter] = useState('')
-  // #3 biên bản (2026-07-22): mở thêm cho Kho (NV kho + QL kho) — danh mục phụ
-  // tùng là dữ liệu Kho trực tiếp quản lý.
+  const [taxOpen, setTaxOpen] = useState(false)
+  const [groupFilter, setGroupFilter] = useState('')   // id Nhóm ('' = tất cả)
+  const [catFilter, setCatFilter] = useState('')        // id Danh mục
   const importRole = useAuth((s) => s.user?.role)
   const canImport = isManager(importRole) || importRole === 'warehouse' || importRole === 'wh_manager'
+  const canManage = useCanManageTaxonomy()
   const debounced = useDebounced(search, 350, () => setPage(1))
 
   const groups = useQuery({
-    queryKey: ['catalog-part-groups'],
-    queryFn: async () => (await api.get<{ groups: GroupNode[] }>('/catalog/parts/groups/')).data.groups,
+    queryKey: ['product-groups'],
+    queryFn: async () => (await api.get<{ results: ProductGroupNode[] } | ProductGroupNode[]>('/catalog/product-groups/')).data,
   })
-  const currentGroup = groups.data?.find((g) => g.ecosystem === ecoFilter)
+  const groupList: ProductGroupNode[] = Array.isArray(groups.data)
+    ? groups.data
+    : (groups.data?.results ?? [])
+  const currentGroup = groupList.find((g) => String(g.id) === groupFilter)
 
   const switchTab = (t: TabKey) => { setTab(t); setSearch(''); setPage(1) }
 
@@ -53,6 +63,11 @@ export function ProductsPage() {
         actions={
           <>
             <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã, tên sản phẩm…" />
+            {tab === 'parts' && canManage && (
+              <Button variant="ghost" onClick={() => setTaxOpen(true)}>
+                <FolderTree size={14} /> Quản lý Nhóm/Danh mục
+              </Button>
+            )}
             {tab === 'parts' && canImport && (
               <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Import</Button>
             )}
@@ -71,25 +86,25 @@ export function ProductsPage() {
             <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">
               Nhóm sản phẩm
             </label>
-            <select value={ecoFilter}
-              onChange={(e) => { setEcoFilter(e.target.value); setCatFilter(''); setPage(1) }}
+            <select value={groupFilter}
+              onChange={(e) => { setGroupFilter(e.target.value); setCatFilter(''); setPage(1) }}
               className="bg-ink-3 border border-line rounded-md px-3 py-2 text-sm min-w-[220px]">
-              <option value="">— Tất cả nhóm ({groups.data?.reduce((s, g) => s + g.total, 0) ?? 0} SP) —</option>
-              {groups.data?.map((g) => (
-                <option key={g.ecosystem} value={g.ecosystem}>{g.ecosystem} ({g.total} SP)</option>
+              <option value="">— Tất cả nhóm —</option>
+              {groupList.map((g) => (
+                <option key={g.id} value={g.id}>{g.name} ({g.part_count} SP)</option>
               ))}
             </select>
           </div>
           <div>
             <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">
-              Danh mục {ecoFilter && <span className="normal-case text-txt-2/70">(trong nhóm {ecoFilter})</span>}
+              Danh mục {currentGroup && <span className="normal-case text-txt-2/70">(trong {currentGroup.name})</span>}
             </label>
             <select value={catFilter} onChange={(e) => { setCatFilter(e.target.value); setPage(1) }}
-              disabled={!ecoFilter}
+              disabled={!groupFilter}
               className="bg-ink-3 border border-line rounded-md px-3 py-2 text-sm min-w-[220px] disabled:opacity-50">
               <option value="">— Tất cả danh mục —</option>
               {currentGroup?.categories.map((c) => (
-                <option key={c.category} value={c.category}>{c.category} ({c.count})</option>
+                <option key={c.id} value={c.id}>{c.name} ({c.part_count})</option>
               ))}
             </select>
           </div>
@@ -97,7 +112,8 @@ export function ProductsPage() {
       )}
 
       {tab === 'parts'
-        ? <PartsTable search={debounced} page={page} setPage={setPage} ecosystem={ecoFilter} category={catFilter} />
+        ? <PartsTable search={debounced} page={page} setPage={setPage}
+            group={groupFilter} category={catFilter} groupList={groupList} canManage={canManage} />
         : <TorchesTable search={debounced} page={page} setPage={setPage} />}
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} spec={{
@@ -108,6 +124,7 @@ export function ProductsPage() {
         invalidateKey: 'catalog-parts',
         hint: 'Mỗi dòng = 1 phụ tùng. Trùng mã (tokin_part_no) sẽ CẬP NHẬT, không tạo trùng. Có thể tải thẳng file "Báo cáo tổng hợp Nhập Xuất Tồn" từ phần mềm kế toán lên đây — hệ thống tự nhận diện, tự tách tên/mã và lấy giá vốn, không cần chỉnh sửa file trước.',
       }} />
+      <TaxonomyModal open={taxOpen} onClose={() => setTaxOpen(false)} groups={groupList} />
     </div>
   )
 }
@@ -130,28 +147,64 @@ function PriceCell({ display, contact }: { display: string; contact: boolean }) 
   return <span className="tabular-nums">{display || '—'}</span>
 }
 
-function PartsTable({ search, page, setPage, ecosystem, category }: {
+/** Dropdown gắn 1 sản phẩm vào Danh mục (option nhóm theo Nhóm). */
+function AssignCell({ part, groupList }: { part: CatalogPart; groupList: ProductGroupNode[] }) {
+  const qc = useQueryClient()
+  const m = useMutation({
+    mutationFn: async (catId: string) => {
+      if (catId === '') {
+        await api.post('/catalog/product-categories/unassign/', { part_nos: [part.tokin_part_no] })
+      } else {
+        await api.post(`/catalog/product-categories/${catId}/assign/`, { part_nos: [part.tokin_part_no] })
+      }
+    },
+    onSuccess: () => {
+      toast.success('Đã cập nhật phân loại')
+      qc.invalidateQueries({ queryKey: ['catalog-parts'] })
+      qc.invalidateQueries({ queryKey: ['product-groups'] })
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  return (
+    <select value={part.product_category ?? ''} disabled={m.isPending}
+      onChange={(e) => m.mutate(e.target.value)}
+      className="bg-ink-3 border border-line rounded-md px-2 py-1 text-xs max-w-[200px] focus:border-flame focus:outline-none">
+      <option value="">— Chưa phân loại —</option>
+      {groupList.map((g) => (
+        <optgroup key={g.id} label={g.name}>
+          {g.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+        </optgroup>
+      ))}
+    </select>
+  )
+}
+
+function PartsTable({ search, page, setPage, group, category, groupList, canManage }: {
   search: string; page: number; setPage: (f: (p: number) => number) => void
-  ecosystem?: string; category?: string
+  group?: string; category?: string; groupList: ProductGroupNode[]; canManage: boolean
 }) {
   const canSeeCost = isManager(useAuth((s) => s.user?.role))
   const [costPart, setCostPart] = useState<string | null>(null)
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['catalog-parts', search, page, ecosystem, category],
+    queryKey: ['catalog-parts', search, page, group, category],
     queryFn: () => fetchPage<CatalogPart>('/catalog/parts/', {
       search: search || undefined, page,
-      ecosystem: ecosystem || undefined, category: category || undefined,
+      product_category__group: group || undefined,
+      product_category: category || undefined,
     }),
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
-  const cols = canSeeCost ? 7 : 6
+  // cột: Mã, Tên, Nhóm, Danh mục, [Gắn], Giá bán, Thuế, [Giá vốn]
+  const cols = 6 + (canManage ? 1 : 0) + (canSeeCost ? 1 : 0)
   return (
     <>
       {data && <p className="text-xs text-txt-2 mb-2">{data.count} phụ tùng</p>}
       <TableCard>
         <thead><tr className="border-b border-line">
-          <Th>Mã</Th><Th>Tên</Th><Th>Nhóm SP</Th><Th>Danh mục</Th><Th className="text-right">Giá bán</Th>
+          <Th>Mã</Th><Th>Tên</Th><Th>Nhóm SP</Th><Th>Danh mục</Th>
+          {canManage && <Th>Gắn danh mục</Th>}
+          <Th className="text-right">Giá bán</Th>
           <Th className="text-right">Thuế</Th>
           {canSeeCost && <Th className="text-right">Giá vốn</Th>}
         </tr></thead>
@@ -163,8 +216,9 @@ function PartsTable({ search, page, setPage, ecosystem, category }: {
             <tr key={p.tokin_part_no} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{p.tokin_part_no}{p.is_priority_sell && <Tag tone="warn"> ưu tiên</Tag>}</Td>
               <Td className="font-medium">{p.display_name_vi || p.display_name_en || '—'}</Td>
-              <Td className="text-txt-2">{p.ecosystem || '—'}</Td>
-              <Td className="text-txt-2">{p.category || '—'}</Td>
+              <Td className="text-txt-2">{p.group_name || '—'}</Td>
+              <Td className="text-txt-2">{p.category_name || '—'}</Td>
+              {canManage && <Td><AssignCell part={p} groupList={groupList} /></Td>}
               <Td className="text-right"><PriceCell display={p.price_display} contact={p.is_contact_price} /></Td>
               <Td className="text-right text-txt-2 tabular-nums">{p.tax_pct != null ? `${p.tax_pct}%` : '—'}</Td>
               {canSeeCost && (
@@ -184,6 +238,121 @@ function PartsTable({ search, page, setPage, ecosystem, category }: {
       )}
       <CostModal partNo={costPart} open={!!costPart} onClose={() => setCostPart(null)} />
     </>
+  )
+}
+
+// ─── Modal quản lý Nhóm / Danh mục (thêm/sửa/xoá) ────────────────────────────
+function TaxonomyModal({ open, onClose, groups }: { open: boolean; onClose: () => void; groups: ProductGroupNode[] }) {
+  const qc = useQueryClient()
+  const [newGroup, setNewGroup] = useState('')
+  const refresh = () => {
+    qc.invalidateQueries({ queryKey: ['product-groups'] })
+    qc.invalidateQueries({ queryKey: ['catalog-parts'] })
+  }
+  const err = (e: unknown) => toast.error(apiError(e))
+
+  const addGroup = useMutation({
+    mutationFn: (name: string) => api.post('/catalog/product-groups/', { name }),
+    onSuccess: () => { toast.success('Đã thêm nhóm'); setNewGroup(''); refresh() }, onError: err,
+  })
+  const renameGroup = useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) => api.patch(`/catalog/product-groups/${id}/`, { name }),
+    onSuccess: () => { toast.success('Đã đổi tên nhóm'); refresh() }, onError: err,
+  })
+  const delGroup = useMutation({
+    mutationFn: (id: number) => api.delete(`/catalog/product-groups/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá nhóm'); refresh() }, onError: err,
+  })
+  const addCat = useMutation({
+    mutationFn: ({ group, name }: { group: number; name: string }) => api.post('/catalog/product-categories/', { group, name }),
+    onSuccess: () => { toast.success('Đã thêm danh mục'); refresh() }, onError: err,
+  })
+  const renameCat = useMutation({
+    mutationFn: ({ id, name }: { id: number; name: string }) => api.patch(`/catalog/product-categories/${id}/`, { name }),
+    onSuccess: () => { toast.success('Đã đổi tên danh mục'); refresh() }, onError: err,
+  })
+  const delCat = useMutation({
+    mutationFn: (id: number) => api.delete(`/catalog/product-categories/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá danh mục'); refresh() }, onError: err,
+  })
+
+  return (
+    <Modal open={open} onClose={onClose} title="Quản lý Nhóm & Danh mục sản phẩm"
+      icon={<FolderTree size={18} className="text-flame" />}
+      footer={<Button variant="ghost" onClick={onClose}>Đóng</Button>}>
+      <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
+        <div className="flex gap-2">
+          <input value={newGroup} onChange={(e) => setNewGroup(e.target.value)}
+            placeholder="Tên nhóm mới…" onKeyDown={(e) => { if (e.key === 'Enter' && newGroup.trim()) addGroup.mutate(newGroup.trim()) }}
+            className="flex-1 bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
+          <Button onClick={() => newGroup.trim() && addGroup.mutate(newGroup.trim())} disabled={addGroup.isPending}>
+            <Plus size={14} /> Thêm nhóm
+          </Button>
+        </div>
+
+        {groups.length === 0 && <p className="text-sm text-txt-2">Chưa có nhóm nào. Thêm nhóm đầu tiên ở trên.</p>}
+
+        {groups.map((g) => (
+          <div key={g.id} className="border border-line rounded-lg p-3">
+            <EditableRow
+              label={g.name} badge={`${g.category_count} danh mục · ${g.part_count} SP`}
+              onRename={(name) => renameGroup.mutate({ id: g.id, name })}
+              onDelete={() => { if (confirm(`Xoá nhóm "${g.name}"?`)) delGroup.mutate(g.id) }}
+              strong />
+            <div className="mt-2 pl-3 border-l border-line space-y-1.5">
+              {g.categories.map((c) => (
+                <EditableRow key={c.id} label={c.name} badge={`${c.part_count} SP`}
+                  onRename={(name) => renameCat.mutate({ id: c.id, name })}
+                  onDelete={() => { if (confirm(`Xoá danh mục "${c.name}"?`)) delCat.mutate(c.id) }} />
+              ))}
+              <AddCategoryRow onAdd={(name) => addCat.mutate({ group: g.id, name })} pending={addCat.isPending} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </Modal>
+  )
+}
+
+function EditableRow({ label, badge, onRename, onDelete, strong }: {
+  label: string; badge?: string; onRename: (name: string) => void; onDelete: () => void; strong?: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const [val, setVal] = useState(label)
+  useEffect(() => { setVal(label) }, [label])
+  const save = () => { const v = val.trim(); if (v && v !== label) onRename(v); setEditing(false) }
+  return (
+    <div className="flex items-center gap-2 text-sm">
+      {editing ? (
+        <>
+          <input value={val} autoFocus onChange={(e) => setVal(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setVal(label); setEditing(false) } }}
+            className="flex-1 bg-ink-3 border border-flame rounded px-2 py-1 focus:outline-none" />
+          <button title="Lưu" onClick={save} className="text-ok hover:opacity-70"><Check size={15} /></button>
+          <button title="Huỷ" onClick={() => { setVal(label); setEditing(false) }} className="text-txt-2 hover:text-txt"><X size={15} /></button>
+        </>
+      ) : (
+        <>
+          <span className={`flex-1 ${strong ? 'font-semibold text-flame' : ''}`}>{label}</span>
+          {badge && <span className="text-[11px] text-txt-2">{badge}</span>}
+          <button title="Đổi tên" onClick={() => setEditing(true)} className="text-txt-2 hover:text-flame"><Pencil size={13} /></button>
+          <button title="Xoá" onClick={onDelete} className="text-txt-2 hover:text-danger"><Trash2 size={13} /></button>
+        </>
+      )}
+    </div>
+  )
+}
+
+function AddCategoryRow({ onAdd, pending }: { onAdd: (name: string) => void; pending: boolean }) {
+  const [val, setVal] = useState('')
+  const add = () => { const v = val.trim(); if (v) { onAdd(v); setVal('') } }
+  return (
+    <div className="flex items-center gap-2 pt-1">
+      <input value={val} onChange={(e) => setVal(e.target.value)} placeholder="Thêm danh mục…"
+        onKeyDown={(e) => { if (e.key === 'Enter') add() }}
+        className="flex-1 bg-ink-3 border border-line rounded px-2 py-1 text-xs focus:border-flame focus:outline-none" />
+      <button onClick={add} disabled={pending} className="text-flame hover:opacity-70 disabled:opacity-40"><Plus size={15} /></button>
+    </div>
   )
 }
 
