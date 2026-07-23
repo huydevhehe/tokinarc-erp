@@ -16,6 +16,7 @@ import { CameraScanner } from '@/components/CameraScanner'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
 import { FieldRow, TextInput, SelectInput } from '@/components/form'
+import { SearchableSelect } from '@/components/SearchableSelect'
 
 interface LineForm { item: string; qty_ordered: number }
 interface Form {
@@ -129,11 +130,13 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
         <div className="space-y-2 mb-3 overflow-x-auto">
           {fields.map((f, i) => (
             <div key={f.id} className="grid grid-cols-[1fr_0.5fr_auto] gap-2 items-start min-w-[420px]">
-              <select {...register(`lines.${i}.item` as const, { required: true })}
-                className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none">
-                <option value="">{itemsLoading ? 'Đang tải…' : '— Chọn mặt hàng —'}</option>
-                {items.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
+              {/* input ẩn giữ nguyên đăng ký react-hook-form (validate required
+                  khi submit) — ô hiển thị là SearchableSelect, đồng bộ qua setValue. */}
+              <input type="hidden" {...register(`lines.${i}.item` as const, { required: true })} />
+              <SearchableSelect
+                value={watched[i]?.item ?? ''}
+                onChange={(v) => setValue(`lines.${i}.item` as const, v, { shouldValidate: true })}
+                options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
               <input type="number" min={1} placeholder="SL"
                 {...register(`lines.${i}.qty_ordered` as const, { valueAsNumber: true })}
                 className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
