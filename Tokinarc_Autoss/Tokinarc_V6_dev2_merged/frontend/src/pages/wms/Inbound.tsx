@@ -4,16 +4,16 @@
  * (POST /wms/inbound/{id}/confirm/ → cộng tồn theo từng line).
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { PackageCheck, Check, Plus, ScanLine, Eye, Download, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
-import { fetchAll } from '@/lib/list'
+import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE } from '@/lib/wms'
 import type { InboundOrder } from '@/lib/types'
 import {
-  PageHeader, Tag, Button, TableCard, Th, Td, RowMsg,
+  PageHeader, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { InboundForm } from '@/pages/wms/forms/InboundForm'
 import { ScanOrderModal } from '@/pages/wms/ScanOrderModal'
@@ -29,10 +29,13 @@ export function InboundPage() {
   const [reason, setReason] = useState('')
   const [fullFor, setFullFor] = useState<InboundOrder | null>(null)   // xác nhận nhận đủ khi chưa quét
   const [editOrder, setEditOrder] = useState<InboundOrder | null>(null)   // sửa phiếu Nháp
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['wms-inbound-list'],
-    queryFn: () => fetchAll<InboundOrder>('/wms/inbound/'),
+  const [page, setPage] = useState(1)
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ['wms-inbound-list', page],
+    queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', { page }),
+    placeholderData: keepPreviousData,
   })
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
 
   const confirm = useMutation({
     mutationFn: (v: { id: string; partial?: boolean; shortage_note?: string }) =>
@@ -48,7 +51,7 @@ export function InboundPage() {
     onError: (e) => toast.error(apiError(e)),
   })
 
-  const items = data?.items ?? []
+  const items = data?.results ?? []
 
   return (
     <div className="max-w-5xl">
@@ -119,6 +122,11 @@ export function InboundPage() {
           )})}
         </tbody>
       </TableCard>
+
+      {data && data.count > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      )}
 
       <InboundForm open={formOpen || !!editOrder} editing={editOrder}
         onClose={() => { setFormOpen(false); setEditOrder(null) }} />

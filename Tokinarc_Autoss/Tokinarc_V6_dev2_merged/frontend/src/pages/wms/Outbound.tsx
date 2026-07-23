@@ -4,19 +4,19 @@
  * + giao hàng (POST .../ship/ → trừ tồn, ghi movement).
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { PackageCheck, Truck, ClipboardList, Plus, ScanLine, Eye, Download } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
-import { fetchAll } from '@/lib/list'
+import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import {
   OUTBOUND_STATUS_LABEL, OUTBOUND_STATUS_TONE, RULE_LABEL,
   OUTBOUND_PURPOSE_LABEL, OUTBOUND_PURPOSE_TONE,
 } from '@/lib/wms'
 import type { OutboundOrder } from '@/lib/types'
 import {
-  PageHeader, Tag, Button, TableCard, Th, Td, RowMsg,
+  PageHeader, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { Modal } from '@/components/Modal'
 import { OutboundForm } from '@/pages/wms/forms/OutboundForm'
@@ -34,11 +34,14 @@ export function OutboundPage() {
   const [viewOrder, setViewOrder] = useState<OutboundOrder | null>(null)
   const [rejectFor, setRejectFor] = useState<OutboundOrder | null>(null)   // phiếu đang từ chối
   const [reason, setReason] = useState('')
+  const [page, setPage] = useState(1)
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['wms-outbound-list'],
-    queryFn: () => fetchAll<OutboundOrder>('/wms/outbound/'),
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ['wms-outbound-list', page],
+    queryFn: () => fetchPage<OutboundOrder>('/wms/outbound/', { page }),
+    placeholderData: keepPreviousData,
   })
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
 
   const ship = useMutation({
     mutationFn: (id: string) => api.post(`/wms/outbound/${id}/ship/`),
@@ -67,7 +70,7 @@ export function OutboundPage() {
     onError: (e) => toast.error(apiError(e)),
   })
 
-  const items = data?.items ?? []
+  const items = data?.results ?? []
 
   return (
     <div className="max-w-5xl">
@@ -129,6 +132,11 @@ export function OutboundPage() {
           ))}
         </tbody>
       </TableCard>
+
+      {data && data.count > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      )}
 
       <OutboundForm open={formOpen} onClose={() => setFormOpen(false)} />
       <ScanOrderModal open={!!scanId} onClose={() => setScanId(null)} kind="outbound" orderId={scanId} />
