@@ -10,7 +10,7 @@ import {
   Ticket as TicketIcon, ShieldCheck, Wrench, Sparkles, Menu, X, Wallet,
   Package, Barcode, History, PackageCheck,
   Warehouse, Map as MapIcon, Crown, Bot, ClipboardCheck,
-  ShoppingCart, Building, Undo2, CalendarDays, UserCog, MessageSquare,
+  ShoppingCart, Building, Undo2, CalendarDays, UserCog, MessageSquare, FolderTree,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useAuth, isWmsControl, isManager } from '@/lib/auth/store'
@@ -63,6 +63,8 @@ const CRM_NAV: NavGroup[] = [
   ]},
   { group: 'Sản phẩm & AI', items: [
     { to: '/products', icon: <Wrench size={16} />, label: 'Sản phẩm' },
+    // #10: chỉ Quản lý (không phải Sale) quản lý được Nhóm/Danh mục.
+    { to: '/wms/product-groups', icon: <FolderTree size={16} />, label: 'Nhóm & Danh mục SP', mgr: true },
     { to: '/ai', icon: <Sparkles size={16} />, label: 'AI Gợi ý' },
   ]},
 ]
@@ -93,6 +95,9 @@ const WMS_NAV: NavGroup[] = [
     // #3 biên bản (2026-07-22): trước đây khu Kho không có đường vào trang Sản
     // phẩm/Danh mục phụ tùng — NV kho/QL kho không tìm thấy chức năng Import.
     { to: '/products', icon: <Wrench size={16} />, label: 'Danh mục sản phẩm' },
+    // #10 biên bản: tách trang quản lý Nhóm/Danh mục ra riêng, có đường vào
+    // thẳng từ sidebar (trước đây chỉ mở qua nút trong trang Danh mục sản phẩm).
+    { to: '/wms/product-groups', icon: <FolderTree size={16} />, label: 'Nhóm & Danh mục SP', ctrl: true },
   ]},
 ]
 
@@ -117,6 +122,8 @@ const CEO_NAV: NavGroup[] = [
     // #16: CEO cũng có quyền tạo/duyệt PO → cần đường vào trang Mua hàng.
     { to: '/purchasing/orders', icon: <ShoppingCart size={16} />, label: 'Đơn mua (PO)' },
     { to: '/purchasing/suppliers', icon: <Building size={16} />, label: 'Nhà cung cấp' },
+    // #10: CEO/Quản lý cũng quản lý được Nhóm/Danh mục sản phẩm.
+    { to: '/wms/product-groups', icon: <FolderTree size={16} />, label: 'Nhóm & Danh mục SP' },
   ]},
 ]
 

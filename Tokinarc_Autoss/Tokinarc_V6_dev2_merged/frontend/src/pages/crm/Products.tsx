@@ -3,13 +3,15 @@
  * Tra cứu sản phẩm THẬT từ catalog (838 phụ tùng + 122 súng hàn).
  * 2 tab: Phụ tùng / Súng hàn — search + phân trang.
  *
- * Nhóm sản phẩm → Danh mục → Sản phẩm (quản lý được, #10 biên bản): Quản lý kho
- * tạo/sửa/xoá Nhóm & Danh mục (nút "Quản lý Nhóm/Danh mục"), gắn từng sản phẩm
- * vào Danh mục ngay trên bảng. Lọc theo Nhóm → Danh mục.
+ * Nhóm sản phẩm → Danh mục → Sản phẩm (quản lý được, #10 biên bản): thêm/sửa/
+ * xoá Nhóm & Danh mục nằm ở trang riêng `/wms/product-groups` (nút "Quản lý
+ * Nhóm/Danh mục" điều hướng sang đó); trang này chỉ lọc + gắn từng sản phẩm
+ * vào Danh mục ngay trên bảng.
  */
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Wrench, Flame, Coins, Upload, FolderTree, Plus, Pencil, Trash2, Check, X } from 'lucide-react'
+import { Wrench, Flame, Coins, Upload, FolderTree } from 'lucide-react'
 import { api, apiError } from '@/lib/api'
 import { toast } from 'sonner'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
@@ -32,12 +34,12 @@ function useCanManageTaxonomy(): boolean {
 }
 
 export function ProductsPage() {
+  const navigate = useNavigate()
   const [tab, setTab] = useState<TabKey>('parts')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [importOpen, setImportOpen] = useState(false)
-  const [taxOpen, setTaxOpen] = useState(false)
   const [groupFilter, setGroupFilter] = useState('')   // id Nhóm ('' = tất cả)
   const [catFilter, setCatFilter] = useState('')        // id Danh mục
   const importRole = useAuth((s) => s.user?.role)
@@ -65,7 +67,7 @@ export function ProductsPage() {
           <>
             <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã, tên sản phẩm…" />
             {tab === 'parts' && canManage && (
-              <Button variant="ghost" onClick={() => setTaxOpen(true)}>
+              <Button variant="ghost" onClick={() => navigate('/wms/product-groups')}>
                 <FolderTree size={14} /> Quản lý Nhóm/Danh mục
               </Button>
             )}
@@ -125,7 +127,6 @@ export function ProductsPage() {
         invalidateKey: 'catalog-parts',
         hint: 'Mỗi dòng = 1 phụ tùng. Trùng mã (tokin_part_no) sẽ CẬP NHẬT, không tạo trùng. Có thể tải thẳng file "Báo cáo tổng hợp Nhập Xuất Tồn" từ phần mềm kế toán lên đây — hệ thống tự nhận diện, tự tách tên/mã và lấy giá vốn, không cần chỉnh sửa file trước.',
       }} />
-      <TaxonomyModal open={taxOpen} onClose={() => setTaxOpen(false)} groups={groupList} />
     </div>
   )
 }
@@ -241,121 +242,6 @@ function PartsTable({ search, page, setPage, pageSize, setPageSize, group, categ
       )}
       <CostModal partNo={costPart} open={!!costPart} onClose={() => setCostPart(null)} />
     </>
-  )
-}
-
-// ─── Modal quản lý Nhóm / Danh mục (thêm/sửa/xoá) ────────────────────────────
-function TaxonomyModal({ open, onClose, groups }: { open: boolean; onClose: () => void; groups: ProductGroupNode[] }) {
-  const qc = useQueryClient()
-  const [newGroup, setNewGroup] = useState('')
-  const refresh = () => {
-    qc.invalidateQueries({ queryKey: ['product-groups'] })
-    qc.invalidateQueries({ queryKey: ['catalog-parts'] })
-  }
-  const err = (e: unknown) => toast.error(apiError(e))
-
-  const addGroup = useMutation({
-    mutationFn: (name: string) => api.post('/catalog/product-groups/', { name }),
-    onSuccess: () => { toast.success('Đã thêm nhóm'); setNewGroup(''); refresh() }, onError: err,
-  })
-  const renameGroup = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) => api.patch(`/catalog/product-groups/${id}/`, { name }),
-    onSuccess: () => { toast.success('Đã đổi tên nhóm'); refresh() }, onError: err,
-  })
-  const delGroup = useMutation({
-    mutationFn: (id: number) => api.delete(`/catalog/product-groups/${id}/`),
-    onSuccess: () => { toast.success('Đã xoá nhóm'); refresh() }, onError: err,
-  })
-  const addCat = useMutation({
-    mutationFn: ({ group, name }: { group: number; name: string }) => api.post('/catalog/product-categories/', { group, name }),
-    onSuccess: () => { toast.success('Đã thêm danh mục'); refresh() }, onError: err,
-  })
-  const renameCat = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) => api.patch(`/catalog/product-categories/${id}/`, { name }),
-    onSuccess: () => { toast.success('Đã đổi tên danh mục'); refresh() }, onError: err,
-  })
-  const delCat = useMutation({
-    mutationFn: (id: number) => api.delete(`/catalog/product-categories/${id}/`),
-    onSuccess: () => { toast.success('Đã xoá danh mục'); refresh() }, onError: err,
-  })
-
-  return (
-    <Modal open={open} onClose={onClose} title="Quản lý Nhóm & Danh mục sản phẩm"
-      icon={<FolderTree size={18} className="text-flame" />}
-      footer={<Button variant="ghost" onClick={onClose}>Đóng</Button>}>
-      <div className="space-y-4 max-h-[65vh] overflow-y-auto pr-1">
-        <div className="flex gap-2">
-          <input value={newGroup} onChange={(e) => setNewGroup(e.target.value)}
-            placeholder="Tên nhóm mới…" onKeyDown={(e) => { if (e.key === 'Enter' && newGroup.trim()) addGroup.mutate(newGroup.trim()) }}
-            className="flex-1 bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
-          <Button onClick={() => newGroup.trim() && addGroup.mutate(newGroup.trim())} disabled={addGroup.isPending}>
-            <Plus size={14} /> Thêm nhóm
-          </Button>
-        </div>
-
-        {groups.length === 0 && <p className="text-sm text-txt-2">Chưa có nhóm nào. Thêm nhóm đầu tiên ở trên.</p>}
-
-        {groups.map((g) => (
-          <div key={g.id} className="border border-line rounded-lg p-3">
-            <EditableRow
-              label={g.name} badge={`${g.category_count} danh mục · ${g.part_count} SP`}
-              onRename={(name) => renameGroup.mutate({ id: g.id, name })}
-              onDelete={() => { if (confirm(`Xoá nhóm "${g.name}"?`)) delGroup.mutate(g.id) }}
-              strong />
-            <div className="mt-2 pl-3 border-l border-line space-y-1.5">
-              {g.categories.map((c) => (
-                <EditableRow key={c.id} label={c.name} badge={`${c.part_count} SP`}
-                  onRename={(name) => renameCat.mutate({ id: c.id, name })}
-                  onDelete={() => { if (confirm(`Xoá danh mục "${c.name}"?`)) delCat.mutate(c.id) }} />
-              ))}
-              <AddCategoryRow onAdd={(name) => addCat.mutate({ group: g.id, name })} pending={addCat.isPending} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </Modal>
-  )
-}
-
-function EditableRow({ label, badge, onRename, onDelete, strong }: {
-  label: string; badge?: string; onRename: (name: string) => void; onDelete: () => void; strong?: boolean
-}) {
-  const [editing, setEditing] = useState(false)
-  const [val, setVal] = useState(label)
-  useEffect(() => { setVal(label) }, [label])
-  const save = () => { const v = val.trim(); if (v && v !== label) onRename(v); setEditing(false) }
-  return (
-    <div className="flex items-center gap-2 text-sm">
-      {editing ? (
-        <>
-          <input value={val} autoFocus onChange={(e) => setVal(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') { setVal(label); setEditing(false) } }}
-            className="flex-1 bg-ink-3 border border-flame rounded px-2 py-1 focus:outline-none" />
-          <button title="Lưu" onClick={save} className="text-ok hover:opacity-70"><Check size={15} /></button>
-          <button title="Huỷ" onClick={() => { setVal(label); setEditing(false) }} className="text-txt-2 hover:text-txt"><X size={15} /></button>
-        </>
-      ) : (
-        <>
-          <span className={`flex-1 ${strong ? 'font-semibold text-flame' : ''}`}>{label}</span>
-          {badge && <span className="text-[11px] text-txt-2">{badge}</span>}
-          <button title="Đổi tên" onClick={() => setEditing(true)} className="text-txt-2 hover:text-flame"><Pencil size={13} /></button>
-          <button title="Xoá" onClick={onDelete} className="text-txt-2 hover:text-danger"><Trash2 size={13} /></button>
-        </>
-      )}
-    </div>
-  )
-}
-
-function AddCategoryRow({ onAdd, pending }: { onAdd: (name: string) => void; pending: boolean }) {
-  const [val, setVal] = useState('')
-  const add = () => { const v = val.trim(); if (v) { onAdd(v); setVal('') } }
-  return (
-    <div className="flex items-center gap-2 pt-1">
-      <input value={val} onChange={(e) => setVal(e.target.value)} placeholder="Thêm danh mục…"
-        onKeyDown={(e) => { if (e.key === 'Enter') add() }}
-        className="flex-1 bg-ink-3 border border-line rounded px-2 py-1 text-xs focus:border-flame focus:outline-none" />
-      <button onClick={add} disabled={pending} className="text-flame hover:opacity-70 disabled:opacity-40"><Plus size={15} /></button>
-    </div>
   )
 }
 

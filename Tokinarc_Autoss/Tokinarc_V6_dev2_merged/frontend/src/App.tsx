@@ -24,6 +24,7 @@ import { MyActivityPage } from '@/pages/crm/MyActivity'
 import { VisitsPage } from '@/pages/crm/Visits'
 import { TicketsPage } from '@/pages/crm/Tickets'
 import { ProductsPage } from '@/pages/crm/Products'
+import { ProductTaxonomyPage } from '@/pages/wms/ProductTaxonomy'
 import { CrmForecastPage } from '@/pages/crm/Forecast'
 import { SalesPerformancePage } from '@/pages/crm/SalesPerformance'
 import { WarrantyPage } from '@/pages/crm/Warranty'
@@ -132,6 +133,7 @@ export function App() {
           <Route path="wms/cycle-count" element={<WmsCycleCountPage />} />
           <Route path="wms/lots" element={<Navigate to="/wms/trace" replace />} />
           <Route path="wms/ops-kpi" element={<Navigate to="/wms/dashboard" replace />} />
+          <Route path="wms/product-groups" element={<RequireRole roles={[...WMS_CTRL]}><ProductTaxonomyPage /></RequireRole>} />
 
           {/* ── Mua hàng ── */}
           <Route path="purchasing" element={<Navigate to="/purchasing/orders" replace />} />
