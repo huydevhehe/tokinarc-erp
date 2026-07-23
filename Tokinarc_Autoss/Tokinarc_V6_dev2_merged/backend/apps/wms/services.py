@@ -11,7 +11,7 @@ Quy tắc concurrency:
 from __future__ import annotations
 
 from django.db import transaction
-from django.db.models import F
+from django.db.models import F, Sum
 
 from .models import (
     Bin, InventoryItem, MovementReason, OutboundLine, OutboundOrder,
@@ -167,7 +167,12 @@ def generate_pick_list(outbound: OutboundOrder) -> list[PickListItem]:
     """
     picks: list[PickListItem] = []
     for line in outbound.lines.select_related('part', 'torch'):
-        remaining = line.qty_ordered - line.qty_picked
+        # Trừ luôn phần đã có trong pick-list CHƯA giao (is_picked=False) — tránh
+        # gọi lại /pick-list/ (vd. bấm nút 2 lần) sinh thêm picks đè lên bộ cũ,
+        # khiến tổng qty pick vượt qty_ordered và vỡ constraint lúc Giao.
+        already_reserved = (line.picks.filter(is_picked=False)
+                            .aggregate(s=Sum('qty'))['s'] or 0)
+        remaining = line.qty_ordered - line.qty_picked - already_reserved
         if remaining <= 0:
             continue
         candidates = _candidate_inventory(outbound, line)

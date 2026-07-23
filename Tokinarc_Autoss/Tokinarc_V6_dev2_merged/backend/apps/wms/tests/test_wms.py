@@ -11,6 +11,7 @@ import factory
 import pytest
 from django.contrib.auth import get_user_model
 from django.db import IntegrityError
+from django.db.models import Sum
 from rest_framework.test import APIClient
 
 from apps.catalog.models import Part, Torch
@@ -238,6 +239,33 @@ def test_fefo_ship_decrements_lot(part, wh_user):
     services.generate_pick_list(ob)
     services.confirm_pick_and_ship(ob, user=wh_user)
     assert Lot.objects.get(lot_no='LOT-X').qty_remaining == 18   # 30 - 12
+
+
+@pytest.mark.django_db
+def test_generate_pick_list_twice_does_not_duplicate_picks(part, wh_user):
+    """Bug: gọi lại /pick-list/ (GET) trước khi Giao từng sinh THÊM một bộ
+    PickListItem đè lên bộ cũ (vì remaining chỉ trừ qty_picked, không trừ
+    phần đã giữ trong pick-list cũ) → tổng qty pick vượt qty_ordered → 500
+    IntegrityError (outbound_picked_le_ordered) lúc Giao."""
+    from apps.wms.models import Bin, OutboundLine, OutboundOrder, PickListItem, Warehouse, Zone
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    z = Zone.objects.create(warehouse=wh, code='MIG', name='MIG')
+    b = Bin.objects.create(zone=z, rack='T1', bin_code='B01', full_code='HCM-MIG-T1-B01')
+    InventoryItem.objects.create(bin=b, part=part, qty_on_hand=10)
+    ob = OutboundOrder.objects.create(code='OUT-DUP1', warehouse=wh, rule='FIFO',
+                                      created_by=wh_user, updated_by=wh_user)
+    OutboundLine.objects.create(outbound=ob, part=part, qty_ordered=5)
+
+    services.generate_pick_list(ob)
+    services.generate_pick_list(ob)   # người dùng bấm lại nút "Pick-list"
+
+    total_pick_qty = (PickListItem.objects.filter(outbound_line__outbound=ob)
+                      .aggregate(s=Sum('qty'))['s'] or 0)
+    assert total_pick_qty == 5   # không được vượt qty_ordered
+
+    services.confirm_pick_and_ship(ob, user=wh_user)   # không được raise IntegrityError
+    line = OutboundLine.objects.get(outbound=ob)
+    assert line.qty_picked == 5
 
 
 @pytest.mark.django_db
