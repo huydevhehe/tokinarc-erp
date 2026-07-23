@@ -17,6 +17,7 @@ import { useAuth, isWmsControl, isManager } from '@/lib/auth/store'
 import { ChatWidget } from '@/components/ChatWidget'
 import { NotificationBell } from '@/components/NotificationBell'
 import { ProfileModal } from '@/components/ProfileModal'
+import { ThemeToggle } from '@/components/ThemeToggle'
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'Admin', ceo: 'CEO', manager: 'Quản lý', sales: 'Sale',
@@ -244,6 +245,7 @@ export function Layout() {
             <Menu size={20} />
           </button>
           <div className="flex-1" />
+          <ThemeToggle />
           <NotificationBell />
           <button onClick={() => setProfileOpen(true)} title="Tài khoản của tôi — đổi mật khẩu"
             className="flex items-center gap-2 rounded-md px-2 py-1 border border-line hover:border-flame hover:bg-ink-3 transition-colors">
