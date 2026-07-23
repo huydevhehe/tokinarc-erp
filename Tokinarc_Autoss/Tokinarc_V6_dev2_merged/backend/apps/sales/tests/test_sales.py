@@ -113,6 +113,70 @@ def test_customer_role_blocked(db):
 
 
 @pytest.mark.django_db
+def test_payment_list_isolated_by_owner(db):
+    """Bug bảo mật: PaymentViewSet trước đây dùng queryset tĩnh không lọc owner
+    → sale bất kỳ xem/xuất được TOÀN BỘ phiếu thu của mọi khách. Sau fix: sale
+    chỉ thấy phiếu thu của đơn mình sở hữu (gate qua sales.order.view_all)."""
+    sale_a = UserFactory(role=Role.SALES)
+    sale_b = UserFactory(role=Role.SALES)
+    cust_a = CustomerFactory(owner=sale_a)
+    cust_b = CustomerFactory(owner=sale_b)
+    order_a = SalesOrder.objects.create(code='HD-PAY-A', customer=cust_a,
+                                        issued_date=dt.date(2026, 6, 1), total_vnd=1_000_000, owner=sale_a)
+    order_b = SalesOrder.objects.create(code='HD-PAY-B', customer=cust_b,
+                                        issued_date=dt.date(2026, 6, 1), total_vnd=2_000_000, owner=sale_b)
+    services.record_payment(order_a, amount=100_000, paid_at=dt.date(2026, 6, 2), method='cash', user=sale_a)
+    services.record_payment(order_b, amount=200_000, paid_at=dt.date(2026, 6, 2), method='cash', user=sale_b)
+
+    c = APIClient(); c.force_authenticate(sale_a)
+    r = c.get('/api/v1/sales/payments/')
+    assert r.status_code == 200
+    codes = {p['order'] for p in r.data['results']} if 'results' in r.data else {p['order'] for p in r.data}
+    assert order_a.id in codes
+    assert order_b.id not in codes, 'RÒ RỈ: sale A thấy phiếu thu của sale B!'
+
+
+@pytest.mark.django_db
+def test_payment_export_misa_isolated_by_owner(db):
+    """export-misa cũng phải lọc owner — trước đây xuất TOÀN BỘ phiếu thu
+    (tên/MST/SĐT/địa chỉ mọi khách) cho bất kỳ sale nào."""
+    sale_a = UserFactory(role=Role.SALES)
+    sale_b = UserFactory(role=Role.SALES)
+    cust_a = CustomerFactory(owner=sale_a)
+    cust_b = CustomerFactory(owner=sale_b)
+    order_a = SalesOrder.objects.create(code='HD-EXP-A', customer=cust_a,
+                                        issued_date=dt.date(2026, 6, 1), total_vnd=1_000_000, owner=sale_a)
+    order_b = SalesOrder.objects.create(code='HD-EXP-B', customer=cust_b,
+                                        issued_date=dt.date(2026, 6, 1), total_vnd=2_000_000, owner=sale_b)
+    services.record_payment(order_a, amount=100_000, paid_at=dt.date(2026, 6, 2), method='cash', user=sale_a)
+    services.record_payment(order_b, amount=200_000, paid_at=dt.date(2026, 6, 2), method='cash', user=sale_b)
+
+    c = APIClient(); c.force_authenticate(sale_a)
+    r = c.get('/api/v1/sales/payments/export-misa/')
+    assert r.status_code == 200
+    body = b''.join(r.streaming_content) if hasattr(r, 'streaming_content') else r.content
+    # File Excel chứa mã đơn ở dạng text — đơn của sale B tuyệt đối không được có mặt.
+    assert b'HD-EXP-B' not in body, 'RÒ RỈ: export-misa của sale A chứa đơn của sale B!'
+
+
+@pytest.mark.django_db
+def test_payment_list_manager_sees_all(db):
+    """Manager có sales.order.view_all=True → thấy phiếu thu của mọi sale."""
+    mgr = User.objects.create(username='mgr_pay', role=Role.MANAGER)
+    sale_a = UserFactory(role=Role.SALES)
+    cust_a = CustomerFactory(owner=sale_a)
+    order_a = SalesOrder.objects.create(code='HD-MGR-A', customer=cust_a,
+                                        issued_date=dt.date(2026, 6, 1), total_vnd=1_000_000, owner=sale_a)
+    services.record_payment(order_a, amount=100_000, paid_at=dt.date(2026, 6, 2), method='cash', user=sale_a)
+
+    c = APIClient(); c.force_authenticate(mgr)
+    r = c.get('/api/v1/sales/payments/')
+    assert r.status_code == 200
+    n = r.data['count'] if 'count' in r.data else len(r.data)
+    assert n >= 1
+
+
+@pytest.mark.django_db
 def test_create_invoice_with_vat(db):
     from apps.accounts.models import Role as R, User as U
     from apps.sales.models import Invoice

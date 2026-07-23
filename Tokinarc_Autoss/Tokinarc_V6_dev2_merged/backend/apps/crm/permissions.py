@@ -17,6 +17,17 @@ from apps.accounts.roles import (
 
 WRITE_ROLES = frozenset({Role.SALES, Role.MANAGER, Role.CEO})   # admin = quản trị hệ thống, không làm nghiệp vụ
 
+# Model (tên class) → capability "xem tất cả" tương ứng — phải khớp key dùng
+# trong get_queryset()/_own_filter của từng ViewSet (views_ext.py).
+_VIEW_ALL_KEY_BY_MODEL = {
+    'Customer': 'crm.customer.view_all',
+    'Lead': 'crm.lead.view_all',
+    'Opportunity': 'crm.opportunity.view_all',
+    'Quote': 'crm.quote.view_all',
+    'Visit': 'crm.visit.view_all',
+    'Contract': 'crm.contract.view_all',
+}
+
 
 class IsAuthenticatedWithRole(permissions.BasePermission):
     message = "Bạn cần đăng nhập với một role hợp lệ."
@@ -42,10 +53,13 @@ class CustomerPermission(permissions.BasePermission):
         return role_of(request.user) in WRITE_ROLES
 
     def has_object_permission(self, request, view, obj) -> bool:
-        # CustomerPermission được TÁI DÙNG cho cả Contract (owner-or-manager) —
-        # chọn đúng capability theo model của obj để 2 loại cấu hình độc lập.
-        from .models import Contract
-        key = 'crm.contract.view_all' if isinstance(obj, Contract) else 'crm.customer.view_all'
+        # CustomerPermission được TÁI DÙNG cho nhiều model (Customer/Lead/
+        # Opportunity/Quote/Visit/Contract) — phải chọn ĐÚNG capability-key theo
+        # model của obj để khớp với get_queryset()/_own_filter (mỗi model 1 key
+        # độc lập). Trước đây mọi model ngoài Contract đều đổ về
+        # 'crm.customer.view_all' → lệch với lớp lọc ở get_queryset khi 2 key
+        # được cấu hình khác nhau.
+        key = _VIEW_ALL_KEY_BY_MODEL.get(type(obj).__name__, 'crm.customer.view_all')
         return has_capability(request.user, key) or obj.owner_id == request.user.id
 
 

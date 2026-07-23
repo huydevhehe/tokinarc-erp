@@ -240,11 +240,20 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
 
 
 class PaymentViewSet(viewsets.ModelViewSet):
-    queryset = Payment.objects.select_related('order')
     serializer_class = PaymentSerializer
     permission_classes = [SalesPermission]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['order', 'method']
+
+    def get_queryset(self):
+        # BẢO MẬT: phiếu thu gắn với đơn bán — sale chỉ được xem phiếu thu của
+        # đơn MÌNH sở hữu (giống Đơn bán/Hóa đơn). Trước đây thiếu lọc này nên
+        # sale bất kỳ xem/xuất được toàn bộ phiếu thu mọi khách. Dùng chung
+        # capability sales.order.view_all (payment thuộc vòng đời đơn bán).
+        qs = Payment.objects.select_related('order', 'order__customer')
+        if not has_capability(self.request.user, 'sales.order.view_all'):
+            qs = qs.filter(order__owner_id=self.request.user.id)
+        return qs
 
     def create(self, request, *args, **kwargs):
         ser = self.get_serializer(data=request.data)
@@ -268,7 +277,9 @@ class PaymentViewSet(viewsets.ModelViewSet):
 
         from django.http import HttpResponse
         from openpyxl import Workbook
-        qs = Payment.objects.select_related('order', 'order__customer').order_by('-paid_at')
+        # BẢO MẬT: dùng get_queryset() (đã lọc owner) thay vì Payment.objects.all()
+        # — nếu không, sale bất kỳ xuất được toàn bộ phiếu thu (PII) mọi khách.
+        qs = self.get_queryset().order_by('-paid_at')
         if request.query_params.get('from'):
             qs = qs.filter(paid_at__gte=request.query_params['from'])
         if request.query_params.get('to'):

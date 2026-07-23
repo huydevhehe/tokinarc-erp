@@ -46,3 +46,38 @@ def test_upload_endpoint_requires_auth(user):
     r = c.post('/api/v1/storage/upload/', {'file': f2, 'kind': 'misc'})
     assert r.status_code == 201
     assert r.data['filename'] == 'x.txt'
+
+
+@pytest.mark.django_db
+def test_upload_rejects_dangerous_executable(user):
+    """Bug bảo mật: upload trước đây nhận MỌI loại file → có thể chứa mã độc.
+    Chặn các đuôi thực thi nguy hiểm (.exe/.bat/.sh/.php/.js...)."""
+    c = APIClient(); c.force_authenticate(user)
+    for name in ('virus.exe', 'run.bat', 'shell.sh', 'web.php', 'evil.js'):
+        f = SimpleUploadedFile(name, b'MZ...', content_type='application/octet-stream')
+        r = c.post('/api/v1/storage/upload/', {'file': f, 'kind': 'misc'})
+        assert r.status_code == 400, f'{name} lẽ ra phải bị chặn'
+    assert FileObject.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_upload_rejects_oversized_file(user, settings):
+    """Bug bảo mật/ổn định: không giới hạn dung lượng → upload file khổng lồ
+    có thể làm cạn RAM (đọc thẳng vào bộ nhớ). Chặn khi vượt hạn mức."""
+    settings.MAX_UPLOAD_SIZE_BYTES = 1024   # ép hạn mức nhỏ để test
+    c = APIClient(); c.force_authenticate(user)
+    big = SimpleUploadedFile('big.txt', b'x' * 2048, content_type='text/plain')
+    r = c.post('/api/v1/storage/upload/', {'file': big, 'kind': 'misc'})
+    assert r.status_code == 400
+    assert FileObject.objects.count() == 0
+
+
+@pytest.mark.django_db
+def test_upload_still_accepts_normal_files(user):
+    """File hợp lệ (ảnh, âm thanh, tài liệu) vẫn upload bình thường."""
+    c = APIClient(); c.force_authenticate(user)
+    for name, ct in (('anh.png', 'image/png'), ('ghiam.mp3', 'audio/mpeg'),
+                     ('bao_gia.pdf', 'application/pdf')):
+        f = SimpleUploadedFile(name, b'ok-content-' + name.encode(), content_type=ct)
+        r = c.post('/api/v1/storage/upload/', {'file': f, 'kind': 'misc'})
+        assert r.status_code == 201, f'{name} lẽ ra phải upload được'

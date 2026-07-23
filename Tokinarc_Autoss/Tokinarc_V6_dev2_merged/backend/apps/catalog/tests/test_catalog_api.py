@@ -185,3 +185,36 @@ def test_endpoints_are_public(parts, torches):
     assert c.get('/api/v1/catalog/parts/search/?q=chụp').status_code == 200
     assert c.get('/api/v1/catalog/torches/').status_code == 200
     assert c.get('/api/v1/catalog/torches/RR-350A-W/').status_code == 200
+
+
+# ─── Bảo mật: giá vốn (cost_vnd) KHÔNG được lộ qua API công khai ─────────────
+@pytest.mark.django_db
+def test_part_detail_never_leaks_cost_vnd(db):
+    """Bug bảo mật: catalog là public (AllowAny) — detail dùng fields='__all__'
+    từng để lộ cost_vnd (giá vốn NHẠY CẢM). Giá vốn chỉ được xem qua action
+    /cost/ có gate manager+. Detail công khai TUYỆT ĐỐI không được chứa nó."""
+    Part.objects.create(tokin_part_no='009999', category='tip', ecosystem='P',
+                        display_name_vi='Bép test', price_vnd=50000, cost_vnd=32000)
+    c = APIClient()   # không đăng nhập — mô phỏng khách/ẩn danh
+    r = c.get('/api/v1/catalog/parts/009999/')
+    assert r.status_code == 200
+    assert 'cost_vnd' not in r.data, 'RÒ RỈ GIÁ VỐN: cost_vnd xuất hiện trong API công khai!'
+    assert int(r.data['price_vnd']) == 50000   # giá bán vẫn hiển thị bình thường
+
+
+@pytest.mark.django_db
+def test_torch_detail_never_leaks_cost_vnd(db):
+    Torch.objects.create(model_code='TEST-COST', display_name_vi='Súng test',
+                         family='RR', ecosystem='P', price_vnd=9000000, cost_vnd=6000000)
+    c = APIClient()
+    r = c.get('/api/v1/catalog/torches/TEST-COST/')
+    assert r.status_code == 200
+    assert 'cost_vnd' not in r.data, 'RÒ RỈ GIÁ VỐN: cost_vnd xuất hiện trong API công khai!'
+
+
+@pytest.mark.django_db
+def test_cost_action_still_gated_for_anonymous(parts):
+    """Action /cost/ vẫn phải chặn người chưa đăng nhập (401/403)."""
+    c = APIClient()
+    r = c.get('/api/v1/catalog/parts/001005/cost/')
+    assert r.status_code in (401, 403)

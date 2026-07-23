@@ -72,14 +72,18 @@ class TorchLiteSerializer(serializers.ModelSerializer):
 
 # ─── Detail (full) ───────────────────────────────────────────────────────────
 class PartDetailSerializer(serializers.ModelSerializer):
-    """Full field cho detail view. LLM context build từ đây."""
+    """Full field cho detail view. LLM context build từ đây.
+
+    BẢO MẬT: catalog detail là public (AllowAny — khách tra cứu được), nên
+    KHÔNG dùng fields='__all__' (từng làm lộ cost_vnd). Giá vốn (cost_vnd) là
+    dữ liệu nhạy cảm, chỉ xem qua action /cost/ có gate manager+ (views.py)."""
 
     effective_price_vnd = serializers.SerializerMethodField()
     price_display       = serializers.SerializerMethodField()
 
     class Meta:
         model = Part
-        fields = '__all__'
+        exclude = ['cost_vnd']
 
     def get_effective_price_vnd(self, obj: Part):
         v = get_effective_price(obj)
@@ -92,12 +96,13 @@ class PartDetailSerializer(serializers.ModelSerializer):
 
 
 class TorchDetailSerializer(serializers.ModelSerializer):
+    # BẢO MẬT: xem PartDetailSerializer — loại cost_vnd khỏi API public.
     effective_price_vnd = serializers.SerializerMethodField()
     price_display       = serializers.SerializerMethodField()
 
     class Meta:
         model = Torch
-        fields = '__all__'
+        exclude = ['cost_vnd']
 
     def get_effective_price_vnd(self, obj: Torch):
         v = get_effective_price(obj)
