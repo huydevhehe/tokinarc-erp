@@ -20,16 +20,19 @@ import type { InboundOrder } from '@/lib/types'
 
 interface BinLite { id: string; full_code: string }
 interface SupplierLite { id: string; name: string }
-interface LineForm { item: string; qty_expected: number; target_bin: string; unit_cost: number; serials: string }
+interface LineForm {
+  item: string; qty_expected: number; target_bin: string
+  unit_cost: number; tax_pct: string; serials: string
+}
 interface Form {
   code: string; warehouse: string; supplier: string; invoice_no: string
-  flow_type: '' | 'internal' | 'supplier'; tax_pct: string; delivered_by_name: string
+  flow_type: '' | 'internal' | 'supplier'; delivered_by_name: string
   lines: LineForm[]
 }
-const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, serials: '' }
+const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '', serials: '' }
 const EMPTY: Form = {
   code: '', warehouse: '', supplier: '', invoice_no: '',
-  flow_type: '', tax_pct: '', delivered_by_name: '',
+  flow_type: '', delivered_by_name: '',
   lines: [{ ...EMPTY_LINE }],
 }
 
@@ -73,12 +76,14 @@ export function InboundForm({ open, onClose, editing }: {
     reset(editing ? {
       code: editing.code, warehouse: editing.warehouse,
       supplier: editing.supplier ?? '', invoice_no: editing.invoice_no ?? '',
-      flow_type: editing.flow_type ?? '', tax_pct: editing.tax_pct != null ? String(editing.tax_pct) : '',
+      flow_type: editing.flow_type ?? '',
       delivered_by_name: editing.delivered_by_name ?? '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
         qty_expected: l.qty_expected, target_bin: l.target_bin ?? '',
-        unit_cost: Number(l.unit_cost ?? 0), serials: l.serials_raw ?? '',
+        unit_cost: Number(l.unit_cost ?? 0),
+        tax_pct: l.tax_pct != null ? String(l.tax_pct) : '',
+        serials: l.serials_raw ?? '',
       })),
     } : EMPTY)
   }, [open, editing, reset])
@@ -88,13 +93,13 @@ export function InboundForm({ open, onClose, editing }: {
       const payload = {
         code: d.code, warehouse: d.warehouse, supplier: d.supplier, invoice_no: d.invoice_no,
         flow_type: d.flow_type || 'internal',
-        tax_pct: d.flow_type === 'supplier' && d.tax_pct !== '' ? Number(d.tax_pct) : null,
         delivered_by_name: d.delivered_by_name,
         lines: d.lines.map((l) => ({
           ...splitItem(l.item),
           qty_expected: Number(l.qty_expected) || 0,
           target_bin: l.target_bin || null,
           unit_cost: Number(l.unit_cost) || 0,
+          tax_pct: l.tax_pct !== '' ? Number(l.tax_pct) : null,
           serials_raw: l.serials || '',
         })),
       }
@@ -147,13 +152,10 @@ export function InboundForm({ open, onClose, editing }: {
             {...register('delivered_by_name')} />
         </FieldRow>
         {flowType === 'supplier' && (
-          <FieldRow>
-            <TextInput label="Thuế (%) *" type="number" placeholder="VD: 8"
-              error={errors.tax_pct?.message}
-              {...register('tax_pct', { required: 'Luồng NCC bắt buộc nhập thuế' })} />
-          </FieldRow>
+          <p className="text-[11px] text-warn mb-1.5">
+            Luồng NCC: cần điền đủ <b>Đơn giá</b> + <b>Thuế (%)</b> cho từng dòng trước khi Xác nhận nhận hàng.
+          </p>
         )}
-
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-txt-2">Dòng hàng</span>
           <span className="inline-flex gap-1.5">
@@ -175,8 +177,8 @@ export function InboundForm({ open, onClose, editing }: {
           {fields.map((f, i) => {
             const isTorch = !!splitItem(watched[i]?.item || '').torch
             return (
-            <div key={f.id} className="border border-line/40 rounded-md p-2 min-w-[560px] space-y-1.5">
-              <div className="grid grid-cols-[1.2fr_0.5fr_0.8fr_1fr_auto] gap-2 items-start">
+            <div key={f.id} className="border border-line/40 rounded-md p-2 min-w-[640px] space-y-1.5">
+              <div className="grid grid-cols-[1.1fr_0.45fr_0.7fr_0.55fr_0.9fr_auto] gap-2 items-start">
                 {/* input ẩn giữ nguyên đăng ký react-hook-form (validate required
                     khi submit) — ô hiển thị là SearchableSelect, đồng bộ qua setValue. */}
                 <input type="hidden" {...register(`lines.${i}.item` as const, { required: true })} />
@@ -189,6 +191,9 @@ export function InboundForm({ open, onClose, editing }: {
                   className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 <input type="number" min={0} placeholder="Đơn giá nhập"
                   {...register(`lines.${i}.unit_cost` as const, { valueAsNumber: true })}
+                  className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
+                  {...register(`lines.${i}.tax_pct` as const)}
                   className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 <select {...register(`lines.${i}.target_bin` as const)}
                   className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none">

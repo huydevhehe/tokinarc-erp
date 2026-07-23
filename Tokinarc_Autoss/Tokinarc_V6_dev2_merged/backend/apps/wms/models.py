@@ -261,7 +261,6 @@ class InboundOrder(BaseModel):
     # tự chọn (FE bắt buộc chọn, không để trống theo default).
     flow_type   = models.CharField(max_length=20, choices=InboundFlowType.choices,
                                    default=InboundFlowType.INTERNAL, db_index=True)
-    tax_pct     = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)  # % thuế, áp cho CẢ phiếu
     # Người giao: nhân viên NCC/bên ngoài, không có tài khoản hệ thống → text tự do.
     delivered_by_name = models.CharField(max_length=100, blank=True)
     # Người nhận: tự động điền = người bấm xác nhận (confirm), là user thật trong hệ thống.
@@ -286,6 +285,9 @@ class InboundLine(models.Model):
     lot_no       = models.CharField(max_length=40, blank=True)
     lot_expires  = models.DateField(null=True, blank=True)   # hạn dùng của lô (nếu có)
     unit_cost    = models.DecimalField(max_digits=14, decimal_places=0, default=0)  # đơn giá nhập → WAC
+    # % thuế THEO TỪNG DÒNG (không phải cả phiếu) — mỗi mặt hàng có thể khác thuế suất
+    # (8% hoặc 10%), khớp catalog.Part.tax_pct thay vì gộp chung 1 mức cho cả phiếu.
+    tax_pct      = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     serials_raw  = models.TextField(blank=True)   # serial súng hàn (mỗi dòng 1 serial), tạo lúc nhận
     order_idx    = models.IntegerField(default=0)
 

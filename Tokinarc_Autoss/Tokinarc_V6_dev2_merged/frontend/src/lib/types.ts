@@ -194,6 +194,7 @@ export interface InboundLine {
   target_bin: string | null
   lot_no: string
   unit_cost?: string | number
+  tax_pct?: string | number | null
   serials_raw?: string
   order_idx: number
 }
@@ -214,7 +215,6 @@ export interface InboundOrder {
   lines: InboundLine[]
   notes: string
   flow_type: InboundFlowType
-  tax_pct: string | number | null
   delivered_by_name?: string
   received_by?: string | null
   received_by_username?: string

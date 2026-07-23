@@ -118,7 +118,8 @@ class InboundLineSerializer(serializers.ModelSerializer):
     class Meta:
         model  = InboundLine
         fields = ['id', 'part', 'torch', 'part_name', 'qty_expected', 'qty_received',
-                  'target_bin', 'lot_no', 'lot_expires', 'unit_cost', 'serials_raw', 'order_idx']
+                  'target_bin', 'lot_no', 'lot_expires', 'unit_cost', 'tax_pct',
+                  'serials_raw', 'order_idx']
 
     def get_part_name(self, obj) -> str:
         return _line_item_name(obj)
@@ -133,7 +134,7 @@ class InboundOrderSerializer(serializers.ModelSerializer):
         model  = InboundOrder
         fields = ['id', 'code', 'warehouse', 'asn', 'purchase_order', 'po_code', 'status',
                   'supplier', 'invoice_no', 'shortage_note', 'received_at', 'lines', 'notes',
-                  'flow_type', 'tax_pct', 'delivered_by_name', 'received_by', 'received_by_username',
+                  'flow_type', 'delivered_by_name', 'received_by', 'received_by_username',
                   'created_at', 'updated_at']
         read_only_fields = ['id', 'status', 'received_at', 'received_by', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (IN-YYYY-NNN).

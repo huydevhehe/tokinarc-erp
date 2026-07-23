@@ -359,10 +359,8 @@ def test_inbound_supplier_flow_blocks_confirm_without_price_or_tax(auth, part, w
     assert r.status_code == 400
     assert r.data['code'] == 'MISSING_PRICE_OR_TAX'
     assert not InventoryItem.objects.filter(bin=b, part=part).exists()
-    # Điền đủ giá + thuế → confirm được, và received_by = người xác nhận.
-    io.tax_pct = 8
-    io.save(update_fields=['tax_pct'])
-    io.lines.update(unit_cost=1000)
+    # Điền đủ giá + thuế (theo từng dòng) → confirm được, và received_by = người xác nhận.
+    io.lines.update(unit_cost=1000, tax_pct=8)
     r = auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
     assert r.status_code == 200
     assert r.data['status'] == 'putaway'

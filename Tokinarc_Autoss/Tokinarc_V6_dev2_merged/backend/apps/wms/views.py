@@ -521,11 +521,12 @@ class InboundViewSet(viewsets.ModelViewSet):
         if inbound.status not in ('draft', 'confirmed', 'partial'):
             return Response({'detail': 'Trạng thái không cho xác nhận.', 'code': 'CONFLICT'},
                             status=status.HTTP_409_CONFLICT)
-        # #11 biên bản (2026-07-21): luồng NCC bắt buộc giá (từng dòng) + thuế
-        # (cả phiếu) trước khi xác nhận — chặn cứng, không chỉ cảnh báo.
+        # #11 biên bản: luồng NCC bắt buộc giá + thuế THEO TỪNG DÒNG trước khi xác
+        # nhận — chặn cứng, không chỉ cảnh báo. Thuế theo dòng (không phải cả phiếu)
+        # vì mỗi mặt hàng có thể khác thuế suất (8%/10%), khớp catalog.Part.tax_pct.
         if inbound.flow_type == InboundFlowType.SUPPLIER:
             missing = []
-            if inbound.tax_pct is None:
+            if any(l.tax_pct is None for l in inbound.lines.all()):
                 missing.append('thuế (%)')
             if any(not l.unit_cost for l in inbound.lines.all()):
                 missing.append('đơn giá')
