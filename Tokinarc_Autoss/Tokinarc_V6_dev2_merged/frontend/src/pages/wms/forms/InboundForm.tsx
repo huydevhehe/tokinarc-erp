@@ -174,6 +174,9 @@ export function InboundForm({ open, onClose, editing }: {
           </div>
         )}
         <div className="space-y-2 mb-3 overflow-x-auto">
+          <div className="grid grid-cols-[1.1fr_0.45fr_0.7fr_0.55fr_0.9fr_auto] gap-2 px-0.5 min-w-[640px] text-[10px] uppercase tracking-wide text-txt-2">
+            <span>Mặt hàng</span><span>SL</span><span>Đơn giá nhập</span><span>Thuế %</span><span>Bin đích</span><span></span>
+          </div>
           {fields.map((f, i) => {
             const isTorch = !!splitItem(watched[i]?.item || '').torch
             return (
