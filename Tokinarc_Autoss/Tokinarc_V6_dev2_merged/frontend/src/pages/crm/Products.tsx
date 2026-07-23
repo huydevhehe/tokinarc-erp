@@ -10,8 +10,9 @@
  */
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useForm } from 'react-hook-form'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Wrench, Flame, Coins, Upload, FolderTree } from 'lucide-react'
+import { Wrench, Flame, Coins, Upload, FolderTree, Plus, Pencil, Trash2 } from 'lucide-react'
 import { api, apiError } from '@/lib/api'
 import { toast } from 'sonner'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
@@ -20,6 +21,7 @@ import { formatVnd } from '@/lib/crm'
 import { useAuth, isManager } from '@/lib/auth/store'
 import type { CatalogPart, CatalogTorch, ProductGroupNode } from '@/lib/types'
 import { Modal } from '@/components/Modal'
+import { FieldRow, TextInput, SelectInput } from '@/components/form'
 import { ImportModal } from '@/pages/crm/ImportModal'
 import {
   PageHeader, SearchInput, Tag, TableCard, Th, Td, RowMsg, Pagination, Button,
@@ -42,10 +44,21 @@ export function ProductsPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [groupFilter, setGroupFilter] = useState('')   // id Nhóm ('' = tất cả)
   const [catFilter, setCatFilter] = useState('')        // id Danh mục
+  const [partFormOpen, setPartFormOpen] = useState(false)
+  const [editingPart, setEditingPart] = useState<CatalogPart | null>(null)
+  const [torchFormOpen, setTorchFormOpen] = useState(false)
+  const [editingTorch, setEditingTorch] = useState<CatalogTorch | null>(null)
   const importRole = useAuth((s) => s.user?.role)
   const canImport = isManager(importRole) || importRole === 'warehouse' || importRole === 'wh_manager'
   const canManage = useCanManageTaxonomy()
   const debounced = useDebounced(search, 350, () => setPage(1))
+
+  const openCreate = () => {
+    if (tab === 'parts') { setEditingPart(null); setPartFormOpen(true) }
+    else { setEditingTorch(null); setTorchFormOpen(true) }
+  }
+  const openEditPart = (p: CatalogPart) => { setEditingPart(p); setPartFormOpen(true) }
+  const openEditTorch = (t: CatalogTorch) => { setEditingTorch(t); setTorchFormOpen(true) }
 
   const groups = useQuery({
     queryKey: ['product-groups'],
@@ -73,6 +86,11 @@ export function ProductsPage() {
             )}
             {tab === 'parts' && canImport && (
               <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Import</Button>
+            )}
+            {canManage && (
+              <Button onClick={openCreate}>
+                <Plus size={14} /> Thêm {tab === 'parts' ? 'phụ tùng' : 'súng hàn'}
+              </Button>
             )}
           </>
         }
@@ -116,8 +134,9 @@ export function ProductsPage() {
 
       {tab === 'parts'
         ? <PartsTable search={debounced} page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize}
-            group={groupFilter} category={catFilter} groupList={groupList} canManage={canManage} />
-        : <TorchesTable search={debounced} page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize} />}
+            group={groupFilter} category={catFilter} groupList={groupList} canManage={canManage} onEdit={openEditPart} />
+        : <TorchesTable search={debounced} page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize}
+            canManage={canManage} onEdit={openEditTorch} />}
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} spec={{
         title: 'Import danh mục phụ tùng (Kho)',
@@ -127,6 +146,9 @@ export function ProductsPage() {
         invalidateKey: 'catalog-parts',
         hint: 'Mỗi dòng = 1 phụ tùng. Trùng mã (tokin_part_no) sẽ CẬP NHẬT, không tạo trùng. Có thể tải thẳng file "Báo cáo tổng hợp Nhập Xuất Tồn" từ phần mềm kế toán lên đây — hệ thống tự nhận diện, tự tách tên/mã và lấy giá vốn, không cần chỉnh sửa file trước.',
       }} />
+
+      <PartForm open={partFormOpen} editing={editingPart} onClose={() => { setPartFormOpen(false); setEditingPart(null) }} />
+      <TorchForm open={torchFormOpen} editing={editingTorch} onClose={() => { setTorchFormOpen(false); setEditingTorch(null) }} />
     </div>
   )
 }
@@ -181,11 +203,13 @@ function AssignCell({ part, groupList }: { part: CatalogPart; groupList: Product
   )
 }
 
-function PartsTable({ search, page, setPage, pageSize, setPageSize, group, category, groupList, canManage }: {
+function PartsTable({ search, page, setPage, pageSize, setPageSize, group, category, groupList, canManage, onEdit }: {
   search: string; page: number; setPage: (f: (p: number) => number) => void
   pageSize: number; setPageSize: (n: number) => void
   group?: string; category?: string; groupList: ProductGroupNode[]; canManage: boolean
+  onEdit: (p: CatalogPart) => void
 }) {
+  const qc = useQueryClient()
   const canSeeCost = isManager(useAuth((s) => s.user?.role))
   const [costPart, setCostPart] = useState<string | null>(null)
   const { data, isLoading, isError, error, isFetching } = useQuery({
@@ -198,8 +222,13 @@ function PartsTable({ search, page, setPage, pageSize, setPageSize, group, categ
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
-  // cột: Mã, Tên, Nhóm, Danh mục, [Gắn], Giá bán, Thuế, [Giá vốn]
-  const cols = 6 + (canManage ? 1 : 0) + (canSeeCost ? 1 : 0)
+  const deactivate = useMutation({
+    mutationFn: (code: string) => api.patch(`/catalog/parts/${encodeURIComponent(code)}/`, { is_active: false }),
+    onSuccess: () => { toast.success('Đã xoá phụ tùng'); qc.invalidateQueries({ queryKey: ['catalog-parts'] }) },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  // cột: Mã, Tên, Nhóm, Danh mục, [Gắn], Giá bán, Thuế, [Giá vốn], [Hành động]
+  const cols = 6 + (canManage ? 2 : 0) + (canSeeCost ? 1 : 0)
   return (
     <>
       {data && <p className="text-xs text-txt-2 mb-2">{data.count} phụ tùng</p>}
@@ -210,6 +239,7 @@ function PartsTable({ search, page, setPage, pageSize, setPageSize, group, categ
           <Th className="text-right">Giá bán</Th>
           <Th className="text-right">Thuế</Th>
           {canSeeCost && <Th className="text-right">Giá vốn</Th>}
+          {canManage && <Th className="text-right">Hành động</Th>}
         </tr></thead>
         <tbody>
           {isLoading && <RowMsg colSpan={cols}>Đang tải…</RowMsg>}
@@ -228,6 +258,21 @@ function PartsTable({ search, page, setPage, pageSize, setPageSize, group, categ
                 <Td className="text-right">
                   <Button variant="ghost" size="sm" onClick={() => setCostPart(p.tokin_part_no)}>
                     <Coins size={13} /> Giá vốn
+                  </Button>
+                </Td>
+              )}
+              {canManage && (
+                <Td className="text-right whitespace-nowrap">
+                  <Button variant="ghost" size="sm" className="mr-1.5" onClick={() => onEdit(p)}>
+                    <Pencil size={13} /> Sửa
+                  </Button>
+                  <Button variant="ghost" size="sm" className="!text-danger" disabled={deactivate.isPending}
+                    onClick={() => {
+                      if (confirm(`Xoá phụ tùng "${p.display_name_vi || p.tokin_part_no}"? Sản phẩm sẽ ẩn khỏi danh sách (dữ liệu nhập/xuất/bán cũ vẫn giữ nguyên).`)) {
+                        deactivate.mutate(p.tokin_part_no)
+                      }
+                    }}>
+                    <Trash2 size={13} /> Xoá
                   </Button>
                 </Td>
               )}
@@ -311,27 +356,122 @@ function Box({ label, value, tone }: { label: string; value: string; tone?: 'ok'
   )
 }
 
-function TorchesTable({ search, page, setPage, pageSize, setPageSize }: {
+interface PartFormValues {
+  tokin_part_no: string; category: string; display_name_vi: string; display_name_en: string
+  price_vnd: string; tax_pct: string; is_contact_price: boolean
+}
+const EMPTY_PART_FORM: PartFormValues = {
+  tokin_part_no: '', category: '', display_name_vi: '', display_name_en: '',
+  price_vnd: '', tax_pct: '', is_contact_price: false,
+}
+
+function PartForm({ open, editing, onClose }: {
+  open: boolean; editing: CatalogPart | null; onClose: () => void
+}) {
+  const qc = useQueryClient()
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<PartFormValues>({ defaultValues: EMPTY_PART_FORM })
+
+  useEffect(() => {
+    if (!open) return
+    reset(editing ? {
+      tokin_part_no: editing.tokin_part_no, category: editing.category,
+      display_name_vi: editing.display_name_vi, display_name_en: editing.display_name_en,
+      price_vnd: editing.effective_price_vnd != null ? String(editing.effective_price_vnd) : '',
+      tax_pct: editing.tax_pct != null ? String(editing.tax_pct) : '',
+      is_contact_price: editing.is_contact_price,
+    } : EMPTY_PART_FORM)
+  }, [open, editing, reset])
+
+  const save = useMutation({
+    mutationFn: (d: PartFormValues) => {
+      const payload = {
+        tokin_part_no: d.tokin_part_no, category: d.category,
+        display_name_vi: d.display_name_vi, display_name_en: d.display_name_en,
+        price_vnd: d.price_vnd !== '' ? Number(d.price_vnd) : null,
+        tax_pct: d.tax_pct !== '' ? Number(d.tax_pct) : null,
+        is_contact_price: d.is_contact_price,
+      }
+      return editing
+        ? api.patch(`/catalog/parts/${encodeURIComponent(editing.tokin_part_no)}/`, payload)
+        : api.post('/catalog/parts/', payload)
+    },
+    onSuccess: () => {
+      toast.success(editing ? 'Đã lưu phụ tùng' : 'Đã tạo phụ tùng')
+      qc.invalidateQueries({ queryKey: ['catalog-parts'] })
+      onClose()
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
+  return (
+    <Modal open={open} onClose={onClose} title={editing ? `Sửa phụ tùng ${editing.tokin_part_no}` : 'Thêm phụ tùng'}
+      icon={<Wrench size={18} className="text-flame" />}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Hủy</Button>
+          <Button onClick={handleSubmit((d) => save.mutate(d))} disabled={save.isPending}>
+            {save.isPending ? 'Đang lưu…' : 'Lưu'}
+          </Button>
+        </>
+      }>
+      <form onSubmit={handleSubmit((d) => save.mutate(d))}>
+        <FieldRow>
+          <TextInput label="Mã phụ tùng *" placeholder="VD: 002001" disabled={!!editing}
+            error={errors.tokin_part_no?.message}
+            {...register('tokin_part_no', { required: 'Bắt buộc' })} />
+          <TextInput label="Loại *" placeholder="VD: Tip, Nozzle, Liner…"
+            error={errors.category?.message}
+            {...register('category', { required: 'Bắt buộc' })} />
+        </FieldRow>
+        <FieldRow>
+          <TextInput label="Tên *" placeholder="Tên hiển thị tiếng Việt"
+            error={errors.display_name_vi?.message}
+            {...register('display_name_vi', { required: 'Bắt buộc' })} />
+          <TextInput label="Tên tiếng Anh" placeholder="(tùy chọn)" {...register('display_name_en')} />
+        </FieldRow>
+        <FieldRow>
+          <TextInput label="Giá bán (₫)" type="number" placeholder="0" {...register('price_vnd')} />
+          <TextInput label="Thuế (%)" type="number" placeholder="VD: 8" {...register('tax_pct')} />
+        </FieldRow>
+        <label className="flex items-center gap-2 text-sm text-txt-2">
+          <input type="checkbox" {...register('is_contact_price')} className="accent-flame" />
+          Giá liên hệ (không hiện giá cụ thể)
+        </label>
+      </form>
+    </Modal>
+  )
+}
+
+function TorchesTable({ search, page, setPage, pageSize, setPageSize, canManage, onEdit }: {
   search: string; page: number; setPage: (f: (p: number) => number) => void
   pageSize: number; setPageSize: (n: number) => void
+  canManage: boolean; onEdit: (t: CatalogTorch) => void
 }) {
+  const qc = useQueryClient()
   const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ['catalog-torches', search, page, pageSize],
     queryFn: () => fetchPage<CatalogTorch>('/catalog/torches/', { search: search || undefined, page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
+  const deactivate = useMutation({
+    mutationFn: (code: string) => api.patch(`/catalog/torches/${encodeURIComponent(code)}/`, { is_active: false }),
+    onSuccess: () => { toast.success('Đã xoá súng hàn'); qc.invalidateQueries({ queryKey: ['catalog-torches'] }) },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const cols = 6 + (canManage ? 1 : 0)
   return (
     <>
       {data && <p className="text-xs text-txt-2 mb-2">{data.count} súng hàn</p>}
       <TableCard>
         <thead><tr className="border-b border-line">
           <Th>Model</Th><Th>Tên</Th><Th>Dòng</Th><Th>Làm mát</Th><Th className="text-right">Dòng (A)</Th><Th className="text-right">Giá</Th>
+          {canManage && <Th className="text-right">Hành động</Th>}
         </tr></thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={6} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {data?.results.length === 0 && <RowMsg colSpan={6}>Không tìm thấy súng hàn.</RowMsg>}
+          {isLoading && <RowMsg colSpan={cols}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={cols} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {data?.results.length === 0 && <RowMsg colSpan={cols}>Không tìm thấy súng hàn.</RowMsg>}
           {data?.results.map((t) => (
             <tr key={t.model_code} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{t.model_code}</Td>
@@ -340,6 +480,21 @@ function TorchesTable({ search, page, setPage, pageSize, setPageSize }: {
               <Td className="text-txt-2">{t.cooling === 'water' ? 'Nước' : t.cooling === 'air' ? 'Khí' : (t.cooling || '—')}</Td>
               <Td className="text-right tabular-nums text-txt-2">{t.rated_dc_a ?? '—'}</Td>
               <Td className="text-right"><PriceCell display={t.price_display} contact={t.is_contact_price} /></Td>
+              {canManage && (
+                <Td className="text-right whitespace-nowrap">
+                  <Button variant="ghost" size="sm" className="mr-1.5" onClick={() => onEdit(t)}>
+                    <Pencil size={13} /> Sửa
+                  </Button>
+                  <Button variant="ghost" size="sm" className="!text-danger" disabled={deactivate.isPending}
+                    onClick={() => {
+                      if (confirm(`Xoá súng hàn "${t.display_name_vi || t.model_code}"? Sản phẩm sẽ ẩn khỏi danh sách (dữ liệu nhập/xuất/bán cũ vẫn giữ nguyên).`)) {
+                        deactivate.mutate(t.model_code)
+                      }
+                    }}>
+                    <Trash2 size={13} /> Xoá
+                  </Button>
+                </Td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -350,5 +505,94 @@ function TorchesTable({ search, page, setPage, pageSize, setPageSize }: {
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
     </>
+  )
+}
+
+interface TorchFormValues {
+  model_code: string; display_name_vi: string; display_name_en: string
+  family: string; cooling: string; rated_dc_a: string; price_vnd: string; is_contact_price: boolean
+}
+const EMPTY_TORCH_FORM: TorchFormValues = {
+  model_code: '', display_name_vi: '', display_name_en: '',
+  family: '', cooling: '', rated_dc_a: '', price_vnd: '', is_contact_price: false,
+}
+
+function TorchForm({ open, editing, onClose }: {
+  open: boolean; editing: CatalogTorch | null; onClose: () => void
+}) {
+  const qc = useQueryClient()
+  const { register, handleSubmit, reset, formState: { errors } } = useForm<TorchFormValues>({ defaultValues: EMPTY_TORCH_FORM })
+
+  useEffect(() => {
+    if (!open) return
+    reset(editing ? {
+      model_code: editing.model_code, display_name_vi: editing.display_name_vi,
+      display_name_en: editing.display_name_en, family: editing.family,
+      cooling: editing.cooling, rated_dc_a: editing.rated_dc_a != null ? String(editing.rated_dc_a) : '',
+      price_vnd: editing.effective_price_vnd != null ? String(editing.effective_price_vnd) : '',
+      is_contact_price: editing.is_contact_price,
+    } : EMPTY_TORCH_FORM)
+  }, [open, editing, reset])
+
+  const save = useMutation({
+    mutationFn: (d: TorchFormValues) => {
+      const payload = {
+        model_code: d.model_code, display_name_vi: d.display_name_vi, display_name_en: d.display_name_en,
+        family: d.family, cooling: d.cooling,
+        rated_dc_a: d.rated_dc_a !== '' ? Number(d.rated_dc_a) : null,
+        price_vnd: d.price_vnd !== '' ? Number(d.price_vnd) : null,
+        is_contact_price: d.is_contact_price,
+      }
+      return editing
+        ? api.patch(`/catalog/torches/${encodeURIComponent(editing.model_code)}/`, payload)
+        : api.post('/catalog/torches/', payload)
+    },
+    onSuccess: () => {
+      toast.success(editing ? 'Đã lưu súng hàn' : 'Đã tạo súng hàn')
+      qc.invalidateQueries({ queryKey: ['catalog-torches'] })
+      onClose()
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
+  return (
+    <Modal open={open} onClose={onClose} title={editing ? `Sửa súng hàn ${editing.model_code}` : 'Thêm súng hàn'}
+      icon={<Flame size={18} className="text-flame" />}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Hủy</Button>
+          <Button onClick={handleSubmit((d) => save.mutate(d))} disabled={save.isPending}>
+            {save.isPending ? 'Đang lưu…' : 'Lưu'}
+          </Button>
+        </>
+      }>
+      <form onSubmit={handleSubmit((d) => save.mutate(d))}>
+        <FieldRow>
+          <TextInput label="Model *" placeholder="VD: A-350R" disabled={!!editing}
+            error={errors.model_code?.message}
+            {...register('model_code', { required: 'Bắt buộc' })} />
+          <TextInput label="Tên *" placeholder="Tên hiển thị tiếng Việt"
+            error={errors.display_name_vi?.message}
+            {...register('display_name_vi', { required: 'Bắt buộc' })} />
+        </FieldRow>
+        <FieldRow>
+          <TextInput label="Tên tiếng Anh" placeholder="(tùy chọn)" {...register('display_name_en')} />
+          <TextInput label="Dòng" placeholder="VD: A, ACC…" {...register('family')} />
+        </FieldRow>
+        <FieldRow>
+          <SelectInput label="Làm mát" placeholder="— Chưa xác định —"
+            options={[{ value: 'air', label: 'Khí' }, { value: 'water', label: 'Nước' }]}
+            {...register('cooling')} />
+          <TextInput label="Dòng điện (A)" type="number" placeholder="VD: 350" {...register('rated_dc_a')} />
+        </FieldRow>
+        <FieldRow>
+          <TextInput label="Giá bán (₫)" type="number" placeholder="0" {...register('price_vnd')} />
+        </FieldRow>
+        <label className="flex items-center gap-2 text-sm text-txt-2">
+          <input type="checkbox" {...register('is_contact_price')} className="accent-flame" />
+          Giá liên hệ (không hiện giá cụ thể)
+        </label>
+      </form>
+    </Modal>
   )
 }

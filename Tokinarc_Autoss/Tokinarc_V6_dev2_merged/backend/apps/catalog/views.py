@@ -24,16 +24,31 @@ from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets, mixins, filters
 from rest_framework.decorators import action
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import BasePermission, IsAuthenticated, SAFE_METHODS
 from rest_framework.response import Response
 
 from rest_framework import serializers as drf_serializers
 
 from apps.catalog.models import Part, Torch, ProcedureQA
 from apps.catalog.serializers import (
-    PartDetailSerializer, PartLiteSerializer,
-    TorchDetailSerializer, TorchLiteSerializer,
+    PartDetailSerializer, PartLiteSerializer, PartWriteSerializer,
+    TorchDetailSerializer, TorchLiteSerializer, TorchWriteSerializer,
 )
+
+
+class PartTorchWritePermission(BasePermission):
+    """Đọc: công khai (giữ nguyên AllowAny — trang tra cứu/chatbot phụ thuộc).
+    Ghi (tạo/sửa/"xóa" = is_active=false): chỉ Quản lý kho trở lên."""
+    message = "Chỉ Quản lý kho trở lên được tạo/sửa sản phẩm."
+
+    def has_permission(self, request, view) -> bool:
+        if request.method in SAFE_METHODS:
+            return True
+        u = request.user
+        if not (u and u.is_authenticated):
+            return False
+        from apps.accounts.roles import WMS_CONTROL_ROLES, role_of
+        return role_of(u) in WMS_CONTROL_ROLES
 
 
 # ─── ProcedureQA — tra cứu lắp đặt / sửa chữa (nội bộ) ────────────────────────
@@ -67,11 +82,14 @@ class ProcedureViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 # ─── PartViewSet ─────────────────────────────────────────────────────────────
-class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """Read-only Part. PK = tokin_part_no (string)."""
+class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                  mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    """Part. PK = tokin_part_no (string). Đọc: công khai. Tạo/sửa: Quản lý kho
+    trở lên (xem PartTorchWritePermission). Không có Destroy — "xóa" = PATCH
+    is_active=false (nhiều bảng PROTECT tới Part, không xóa cứng được)."""
 
     queryset = Part.objects.all().order_by('tokin_part_no')
-    permission_classes = [AllowAny]
+    permission_classes = [PartTorchWritePermission]
     lookup_field = 'tokin_part_no'
     lookup_value_regex = r'[^/]+'   # part_no có thể chứa ký tự đặc biệt
 
@@ -81,7 +99,15 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
     search_fields     = ['tokin_part_no', 'display_name_vi', 'display_name_en', 'category', 'barcode']
     ordering_fields   = ['tokin_part_no', 'category', 'price_vnd']
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == 'list':
+            qs = qs.filter(is_active=True)
+        return qs
+
     def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return PartWriteSerializer
         return PartDetailSerializer if self.action == 'retrieve' else PartLiteSerializer
 
     @action(detail=True, methods=['get', 'patch'], permission_classes=[IsAuthenticated])
@@ -207,11 +233,13 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Gen
 
 
 # ─── TorchViewSet ────────────────────────────────────────────────────────────
-class TorchViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
-    """Read-only Torch. PK = model_code (string)."""
+class TorchViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
+                   mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+    """Torch. PK = model_code (string). Đọc: công khai. Tạo/sửa: Quản lý kho
+    trở lên. Không có Destroy — "xóa" = PATCH is_active=false (xem PartViewSet)."""
 
     queryset = Torch.objects.all().order_by('model_code')
-    permission_classes = [AllowAny]
+    permission_classes = [PartTorchWritePermission]
     lookup_field = 'model_code'
     lookup_value_regex = r'[^/]+'
 
@@ -220,7 +248,15 @@ class TorchViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.Ge
     search_fields     = ['model_code', 'display_name_vi', 'display_name_en', 'family']
     ordering_fields   = ['model_code', 'rated_dc_a', 'price_vnd']
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == 'list':
+            qs = qs.filter(is_active=True)
+        return qs
+
     def get_serializer_class(self):
+        if self.action in ('create', 'update', 'partial_update'):
+            return TorchWriteSerializer
         return TorchDetailSerializer if self.action == 'retrieve' else TorchLiteSerializer
 
     @action(detail=False, methods=['get'], url_path='consumable-set', permission_classes=[IsAuthenticated])

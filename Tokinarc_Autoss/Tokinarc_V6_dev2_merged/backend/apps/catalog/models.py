@@ -90,6 +90,11 @@ class Torch(models.Model):
     notes             = models.TextField(blank=True)
     source            = models.CharField(max_length=200, blank=True)
 
+    # "Xóa" sản phẩm = ẩn (is_active=False), KHÔNG xóa cứng — quá nhiều bảng
+    # (InventoryItem/SerialNumber/SalesOrderLine/...) PROTECT tới Torch. Ẩn khỏi
+    # danh sách quản trị + dropdown chọn hàng; dữ liệu nhập/xuất/bán cũ giữ nguyên.
+    is_active         = models.BooleanField(default=True, db_index=True)
+
     class Meta:
         db_table = 'catalog_torch'
         indexes  = [
@@ -166,6 +171,11 @@ class Part(models.Model):
     source           = models.CharField(max_length=200, blank=True)
     confidence       = models.DecimalField(max_digits=3, decimal_places=2, default=1)
     notes            = models.TextField(blank=True)
+
+    # "Xóa" sản phẩm = ẩn (is_active=False), KHÔNG xóa cứng — quá nhiều bảng
+    # (InventoryItem/SerialNumber/SalesOrderLine/...) PROTECT tới Part. Ẩn khỏi
+    # danh sách quản trị + dropdown chọn hàng; dữ liệu nhập/xuất/bán cũ giữ nguyên.
+    is_active        = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         db_table = 'catalog_part'

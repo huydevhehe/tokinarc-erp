@@ -50,6 +50,18 @@ class PartLiteSerializer(serializers.ModelSerializer):
         return format_price_vi(get_effective_price(obj))
 
 
+class PartWriteSerializer(serializers.ModelSerializer):
+    """Tạo/sửa Part qua UI (Sản phẩm > Phụ tùng). Chỉ các trường cơ bản — thông
+    số kỹ thuật sâu (specs, compatibility...) vẫn chỉ sửa qua Import Excel."""
+
+    class Meta:
+        model = Part
+        fields = [
+            'tokin_part_no', 'category', 'display_name_vi', 'display_name_en',
+            'price_vnd', 'tax_pct', 'is_contact_price', 'is_active',
+        ]
+
+
 class TorchLiteSerializer(serializers.ModelSerializer):
     effective_price_vnd = serializers.SerializerMethodField()
     price_display       = serializers.SerializerMethodField()
@@ -72,6 +84,17 @@ class TorchLiteSerializer(serializers.ModelSerializer):
         if obj.is_contact_price:
             return 'Liên hệ'
         return format_price_vi(get_effective_price(obj))
+
+
+class TorchWriteSerializer(serializers.ModelSerializer):
+    """Tạo/sửa Torch qua UI (Sản phẩm > Súng hàn). Chỉ các trường cơ bản."""
+
+    class Meta:
+        model = Torch
+        fields = [
+            'model_code', 'family', 'cooling', 'display_name_vi', 'display_name_en',
+            'rated_dc_a', 'price_vnd', 'is_contact_price', 'is_active',
+        ]
 
 
 # ─── Detail (full) ───────────────────────────────────────────────────────────
