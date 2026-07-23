@@ -4,8 +4,9 @@
  */
 import { useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { History } from 'lucide-react'
+import { History, Download } from 'lucide-react'
 import { apiError } from '@/lib/api'
+import { downloadFile } from '@/lib/download'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
 import { formatDateTime } from '@/lib/crm'
@@ -13,25 +14,61 @@ import { useWarehouseOptions } from '@/lib/useWmsOptions'
 import { MOVE_REASON_LABEL, MOVE_REASON_TONE } from '@/lib/wms'
 import type { StockMovement, MovementReason } from '@/lib/types'
 import {
-  PageHeader, SearchInput, Tag, TableCard, Th, Td, RowMsg, Pagination,
+  PageHeader, SearchInput, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 
 const REASONS: (MovementReason | '')[] = ['', 'inbound', 'outbound', 'adjust', 'transfer', 'return']
+
+/** yyyy-MM-dd theo giờ ĐỊA PHƯƠNG — KHÔNG dùng toISOString() (quy đổi UTC làm
+ * lệch 1 ngày ở múi giờ Việt Nam, VD 01/07 00:00 local -> 30/06 17:00 UTC). */
+function fmtDate(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+/** Khoảng ngày cho nút nhanh Tháng/Quý/Năm — FE tự tính, BE chỉ nhận ts__gte/ts__lte. */
+const QUICK_RANGES: Record<string, () => [string, string]> = {
+  month: () => {
+    const n = new Date()
+    return [fmtDate(new Date(n.getFullYear(), n.getMonth(), 1)), fmtDate(new Date(n.getFullYear(), n.getMonth() + 1, 0))]
+  },
+  quarter: () => {
+    const n = new Date(); const q = Math.floor(n.getMonth() / 3)
+    return [fmtDate(new Date(n.getFullYear(), q * 3, 1)), fmtDate(new Date(n.getFullYear(), q * 3 + 3, 0))]
+  },
+  year: () => {
+    const n = new Date()
+    return [fmtDate(new Date(n.getFullYear(), 0, 1)), fmtDate(new Date(n.getFullYear(), 11, 31))]
+  },
+}
 
 export function MovementsPage() {
   const { options: whs } = useWarehouseOptions()
   const [reason, setReason] = useState<MovementReason | ''>('')
   const [warehouse, setWarehouse] = useState('')
   const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const debounced = useDebounced(search, 350, () => setPage(1))
 
+  const applyQuick = (key: keyof typeof QUICK_RANGES) => {
+    const [from, to] = QUICK_RANGES[key]()
+    setDateFrom(from); setDateTo(to); setPage(1)
+  }
+
+  const filterParams = {
+    search: debounced || undefined, reason: reason || undefined,
+    warehouse: warehouse || undefined,
+    ts__gte: dateFrom || undefined, ts__lte: dateTo ? `${dateTo}T23:59:59` : undefined,
+  }
+
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-moves', debounced, reason, warehouse, page, pageSize],
+    queryKey: ['wms-moves', debounced, reason, warehouse, dateFrom, dateTo, page, pageSize],
     queryFn: () => fetchPage<StockMovement>('/wms/stock-movements/', {
-      search: debounced || undefined, reason: reason || undefined,
-      warehouse: warehouse || undefined, page, page_size: pageSize,
+      ...filterParams, page, page_size: pageSize,
     }),
     placeholderData: keepPreviousData,
   })
@@ -56,6 +93,27 @@ export function MovementsPage() {
               className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
               {REASONS.map((r) => <option key={r} value={r}>{r ? MOVE_REASON_LABEL[r] : 'Tất cả loại'}</option>)}
             </select>
+            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
+            <span className="text-txt-2 text-sm">–</span>
+            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
+            <Button variant="ghost" size="sm" onClick={() => applyQuick('month')}>Tháng này</Button>
+            <Button variant="ghost" size="sm" onClick={() => applyQuick('quarter')}>Quý này</Button>
+            <Button variant="ghost" size="sm" onClick={() => applyQuick('year')}>Năm nay</Button>
+            {(dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}>
+                Bỏ lọc ngày
+              </Button>
+            )}
+            <Button variant="ghost"
+              onClick={() => downloadFile(
+                `/wms/stock-movements/export-xlsx/?${new URLSearchParams(
+                  Object.fromEntries(Object.entries(filterParams).filter(([, v]) => v !== undefined)) as Record<string, string>,
+                ).toString()}`,
+                'lich_su_kho.xlsx')}>
+              <Download size={14} /> Xuất Excel
+            </Button>
           </>
         }
       />

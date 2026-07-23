@@ -458,11 +458,41 @@ class StockMovementViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = StockMovementSerializer
     permission_classes = [WMSPermission]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['reason', 'warehouse', 'part', 'bin']
+    # ts__gte/ts__lte cho phép lọc theo khoảng thời gian (tháng/quý/năm tự
+    # tính ở FE thành 1 khoảng ngày rồi gửi xuống, không cần logic riêng ở BE).
+    filterset_fields = {
+        'reason': ['exact'], 'warehouse': ['exact'], 'part': ['exact'], 'bin': ['exact'],
+        'ts': ['gte', 'lte'],
+    }
     search_fields = ['part__tokin_part_no', 'torch__model_code', 'bin__full_code', 'ref_id']
 
     def get_queryset(self):
         return StockMovement.objects.select_related('by_user').order_by('-ts')
+
+    @action(detail=False, methods=['get'], url_path='export-xlsx')
+    def export_xlsx(self, request):
+        """Xuất Excel Lịch sử kho — đúng theo bộ lọc đang áp dụng (loại/kho/
+        mã hàng/khoảng thời gian). Giới hạn 5000 dòng để tránh xuất quá nặng."""
+        from apps.common.excel import xlsx_response
+        from openpyxl import Workbook
+        qs = self.filter_queryset(self.get_queryset())[:5000]
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'LichSuKho'
+        ws.append(['Thời gian', 'Mặt hàng', 'Vị trí', 'Thay đổi', 'Loại', 'Tham chiếu', 'Người'])
+        for m in qs.select_related('part', 'torch', 'bin'):
+            ws.append([
+                m.ts.strftime('%d/%m/%Y %H:%M:%S'),
+                m.part_id or m.torch_id or '',
+                m.bin.full_code,
+                m.delta,
+                m.get_reason_display(),
+                m.ref_id,
+                m.by_user.username if m.by_user_id else '',
+            ])
+        buf = io.BytesIO()
+        wb.save(buf)
+        return xlsx_response(buf.getvalue(), 'lich_su_kho.xlsx')
 
 
 class ASNViewSet(viewsets.ModelViewSet):
@@ -498,6 +528,12 @@ class InboundViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status', 'warehouse']
     search_fields = ['code', 'supplier', 'purchase_order__code']
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == 'list':
+            qs = qs.filter(is_active=True)
+        return qs
+
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)
 
@@ -510,8 +546,10 @@ class InboundViewSet(viewsets.ModelViewSet):
                      link='/wms/inbound', exclude_user=self.request.user)
 
     def destroy(self, request, *args, **kwargs):
-        """Chỉ xoá được phiếu Nháp (chưa nhận hàng) — phiếu đã nhận/cất kho đã ghi
-        StockMovement, xoá phiếu sẽ mất chứng từ gốc trong khi tồn vẫn còn hiệu lực."""
+        """Hard-delete endpoint (dùng qua API/admin, KHÔNG phải nút "Xóa" trên FE —
+        FE dùng PATCH is_active=false, xem InboundOrderSerializer.update()). Chỉ
+        xoá cứng được phiếu Nháp — phiếu đã nhận/cất kho đã ghi StockMovement,
+        xoá phiếu sẽ mất chứng từ gốc trong khi tồn vẫn còn hiệu lực."""
         inbound = self.get_object()
         if inbound.status != 'draft':
             return Response({'detail': 'Chỉ xoá được phiếu Nháp (chưa nhận hàng).',
@@ -773,13 +811,21 @@ class OutboundViewSet(viewsets.ModelViewSet):
     filterset_fields = ['status', 'purpose', 'warehouse']
     search_fields = ['code', 'sales_order_code', 'customer__name']
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == 'list':
+            qs = qs.filter(is_active=True)
+        return qs
+
     def perform_create(self, serializer):
         code = serializer.validated_data.get('code') or _next_doc_code(OutboundOrder, 'OUT')
         serializer.save(created_by=self.request.user, updated_by=self.request.user, code=code)
 
     def destroy(self, request, *args, **kwargs):
-        """Chỉ xoá được phiếu Nháp (chưa soạn hàng/giữ tồn) — phiếu đã soạn/giao
-        đã ảnh hưởng tồn kho thật, xoá sẽ mất chứng từ gốc đối chiếu."""
+        """Hard-delete endpoint (dùng qua API/admin, KHÔNG phải nút "Xóa" trên FE —
+        FE dùng PATCH is_active=false, xem OutboundOrderSerializer.update()). Chỉ
+        xoá cứng được phiếu Nháp — phiếu đã soạn/giao đã ảnh hưởng tồn kho thật,
+        xoá sẽ mất chứng từ gốc đối chiếu."""
         outbound = self.get_object()
         if outbound.status != 'draft':
             return Response({'detail': 'Chỉ xoá được phiếu Nháp (chưa soạn hàng).',
