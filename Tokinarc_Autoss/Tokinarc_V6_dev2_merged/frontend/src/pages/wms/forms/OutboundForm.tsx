@@ -15,17 +15,17 @@ import { RULE_LABEL, OUTBOUND_PURPOSE_LABEL } from '@/lib/wms'
 import { CameraScanner } from '@/components/CameraScanner'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
-import { FieldRow, TextInput, SelectInput } from '@/components/form'
+import { FieldRow, SelectInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
 
 interface LineForm { item: string; qty_ordered: number }
 interface Form {
-  code: string; warehouse: string; customer: string
+  warehouse: string; customer: string
   sales_order_code: string; rule: string; purpose: string; lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_ordered: 1 }
 const EMPTY: Form = {
-  code: '', warehouse: '', customer: '', sales_order_code: '', rule: 'FIFO', purpose: 'sale',
+  warehouse: '', customer: '', sales_order_code: '', rule: 'FIFO', purpose: 'sale',
   lines: [{ ...EMPTY_LINE }],
 }
 
@@ -61,8 +61,8 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
   useEffect(() => { if (open) reset(EMPTY) }, [open, reset])
 
   const save = useMutation({
+    // KHÔNG gửi code — backend tự sinh OUT-YYYY-NNN (xem OutboundViewSet.perform_create).
     mutationFn: (d: Form) => api.post('/wms/outbound/', {
-      code: d.code,
       warehouse: d.warehouse,
       customer: d.customer || null,
       sales_order_code: d.sales_order_code,
@@ -80,7 +80,7 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
   })
 
   return (
-    <Modal open={open} onClose={onClose} wide title="Tạo đơn xuất kho"
+    <Modal open={open} onClose={onClose} xwide title="Tạo đơn xuất kho"
       icon={<PackageCheck size={18} className="text-flame" />}
       footer={
         <>
@@ -92,8 +92,10 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
       }>
       <form onSubmit={handleSubmit((d) => save.mutate(d))}>
         <FieldRow>
-          <TextInput label="Mã đơn *" placeholder="OUT-2026-001" error={errors.code?.message}
-            {...register('code', { required: 'Bắt buộc' })} />
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Mã đơn</label>
+            <p className="text-sm text-txt-2 py-2">Tự động tạo khi lưu (OUT-{new Date().getFullYear()}-xxx)</p>
+          </div>
           <SelectInput label="Kho *" error={errors.warehouse?.message}
             placeholder="— Chọn kho —" options={whs}
             {...register('warehouse', { required: 'Chọn kho' })} />
@@ -135,23 +137,31 @@ export function OutboundForm({ open, onClose }: { open: boolean; onClose: () => 
             <p className="text-[11px] text-txt-2 mt-1">Quét tem hàng → tự thêm dòng; quét lại cùng mã → +1 SL.</p>
           </div>
         )}
-        <div className="space-y-2 mb-3 overflow-x-auto">
+        <div className="space-y-2 mb-3">
           {fields.map((f, i) => (
-            <div key={f.id} className="grid grid-cols-[1fr_0.5fr_auto] gap-2 items-start min-w-[420px]">
-              {/* input ẩn giữ nguyên đăng ký react-hook-form (validate required
-                  khi submit) — ô hiển thị là SearchableSelect, đồng bộ qua setValue. */}
-              <input type="hidden" {...register(`lines.${i}.item` as const, { required: true })} />
-              <SearchableSelect
-                value={watched[i]?.item ?? ''}
-                onChange={(v) => setValue(`lines.${i}.item` as const, v, { shouldValidate: true })}
-                options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
-              <input type="number" min={1} placeholder="SL"
-                {...register(`lines.${i}.qty_ordered` as const, { valueAsNumber: true })}
-                className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
-              <button type="button" onClick={() => fields.length > 1 && remove(i)}
-                className="text-txt-2 hover:text-danger p-1.5 disabled:opacity-30" disabled={fields.length <= 1} aria-label="Xóa">
-                <Trash2 size={15} />
-              </button>
+            <div key={f.id} className="border border-line/40 rounded-md p-2">
+              <div className="flex items-end gap-2">
+                {/* input ẩn giữ nguyên đăng ký react-hook-form (validate required
+                    khi submit) — ô hiển thị là SearchableSelect, đồng bộ qua setValue. */}
+                <input type="hidden" {...register(`lines.${i}.item` as const, { required: true })} />
+                <div className="flex-1">
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Mặt hàng</label>
+                  <SearchableSelect
+                    value={watched[i]?.item ?? ''}
+                    onChange={(v) => setValue(`lines.${i}.item` as const, v, { shouldValidate: true })}
+                    options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
+                </div>
+                <div className="w-28 shrink-0">
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">SL</label>
+                  <input type="number" min={1} placeholder="SL"
+                    {...register(`lines.${i}.qty_ordered` as const, { valueAsNumber: true })}
+                    className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                </div>
+                <button type="button" onClick={() => fields.length > 1 && remove(i)}
+                  className="text-txt-2 hover:text-danger p-1.5 shrink-0 disabled:opacity-30" disabled={fields.length <= 1} aria-label="Xóa">
+                  <Trash2 size={15} />
+                </button>
+              </div>
             </div>
           ))}
         </div>

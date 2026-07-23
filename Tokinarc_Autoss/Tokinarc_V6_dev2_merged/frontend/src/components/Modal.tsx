@@ -6,7 +6,7 @@ import { useEffect, type ReactNode } from 'react'
 import { X } from 'lucide-react'
 
 export function Modal({
-  open, onClose, title, icon, children, footer, wide,
+  open, onClose, title, icon, children, footer, wide, xwide,
 }: {
   open: boolean
   onClose: () => void
@@ -15,6 +15,8 @@ export function Modal({
   children: ReactNode
   footer?: ReactNode
   wide?: boolean
+  /** Rộng hơn cả `wide` — dùng cho form nhiều cột/thông tin dễ bị chật. */
+  xwide?: boolean
 }) {
   useEffect(() => {
     if (!open) return
@@ -30,7 +32,7 @@ export function Modal({
       className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
       onMouseDown={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className={`bg-ink-2 border border-line rounded-xl flex flex-col max-h-[88vh] w-full ${wide ? 'max-w-3xl' : 'max-w-xl'}`}>
+      <div className={`bg-ink-2 border border-line rounded-xl flex flex-col max-h-[88vh] w-full ${xwide ? 'max-w-4xl' : wide ? 'max-w-3xl' : 'max-w-xl'}`}>
         <div className="flex items-center gap-2.5 px-5 py-4 border-b border-line shrink-0">
           {icon}
           <h2 className="text-[15px] font-bold">{title}</h2>
