@@ -13,8 +13,10 @@ import { downloadFile } from '@/lib/download'
 import { compactVnd, formatVnd } from '@/lib/crm'
 import { isManager, useAuth } from '@/lib/auth/store'
 import { useCan } from '@/lib/auth/capabilities'
+import { usePartOptions } from '@/lib/useWmsOptions'
 import { Modal } from '@/components/Modal'
 import { PageHeader, Button, StatCard, Tag, TableCard, Th, Td, RowMsg } from '@/components/ui'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import { PODetailModal, type PODetail } from '@/pages/purchasing/PODetailModal'
 
 interface POLine { id?: string; part: string; part_name?: string; description?: string; qty: number; unit_cost: number; qty_received?: number }
@@ -54,6 +56,7 @@ export function PurchaseOrdersPage() {
   const [notes, setNotes] = useState('')
   const [lines, setLines] = useState<POLine[]>([{ part: '', qty: 1, unit_cost: 0 }])
   const [payAmt, setPayAmt] = useState('')
+  const { options: partOptions, isLoading: partsLoading } = usePartOptions()
 
   const [view, setView] = useState<'all' | 'incoming'>('all')
   const orders = useQuery({ queryKey: ['po'], queryFn: async () => (await api.get<{ results: PO[] }>('/purchasing/orders/')).data.results ?? [] })
@@ -279,8 +282,12 @@ export function PurchaseOrdersPage() {
           <div className="text-xs text-txt-2">Dòng hàng (mã part + SL + đơn giá):</div>
           {lines.map((l, i) => (
             <div key={i} className="flex gap-2 items-center">
-              <input placeholder="Mã part" value={l.part} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, part: e.target.value } : x))}
-                className="flex-1 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
+              <div className="flex-1">
+                <SearchableSelect
+                  value={l.part}
+                  onChange={(v) => setLines((a) => a.map((x, j) => j === i ? { ...x, part: v } : x))}
+                  options={partOptions} loading={partsLoading} placeholder="Gõ mã/tên để tìm phụ tùng…" />
+              </div>
               <input placeholder="SL" type="number" value={l.qty} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, qty: Number(e.target.value) } : x))}
                 className="w-20 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
               <input placeholder="Đơn giá" type="number" value={l.unit_cost} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, unit_cost: Number(e.target.value) } : x))}

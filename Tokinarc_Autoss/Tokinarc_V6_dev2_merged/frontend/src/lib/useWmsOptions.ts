@@ -43,6 +43,19 @@ export function useItemOptions() {
   return { options, isLoading: parts.isLoading || torches.isLoading }
 }
 
+/** Chỉ Phụ tùng (Part) — dùng cho dòng hàng PO (PurchaseOrderLine không có torch). */
+export function usePartOptions() {
+  const parts = useQuery({
+    queryKey: ['catalog-parts-opt'],
+    queryFn: () => fetchAll<PartLite>('/catalog/parts/'),
+    staleTime: 5 * 60 * 1000,
+  })
+  const options: Option[] = (parts.data?.items ?? []).map((p) => ({
+    value: p.tokin_part_no, label: `${p.tokin_part_no} — ${p.display_name_vi}`,
+  }))
+  return { options, isLoading: parts.isLoading }
+}
+
 /** Tách 'part:XXX' / 'torch:YYY' → { part?, torch? } cho payload. */
 export function splitItem(encoded: string): { part?: string; torch?: string } {
   if (encoded.startsWith('torch:')) return { torch: encoded.slice(6) }
