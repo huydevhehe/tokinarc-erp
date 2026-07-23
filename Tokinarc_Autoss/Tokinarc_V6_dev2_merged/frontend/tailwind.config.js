@@ -5,11 +5,25 @@ export default {
     extend: {
       colors: {
         // Bảng màu công nghiệp Tokinarc — nền thép, accent lửa hàn.
-        ink:    { DEFAULT: '#0d1117', 2: '#161b22', 3: '#21262d' },
-        line:   '#30363d',
-        flame:  { DEFAULT: '#e05c1b', hi: '#f97316' },  // cam lửa hàn
-        txt:    { DEFAULT: '#e6edf3', 2: '#8b949e' },
-        ok:     '#2ea043', warn: '#d29922', danger: '#f85149',
+        // Giá trị thật nằm ở CSS custom properties (src/styles/index.css),
+        // đổi theo `data-theme` trên <html> — xem ThemeToggle/useTheme.
+        ink: {
+          DEFAULT: 'rgb(var(--ink) / <alpha-value>)',
+          2: 'rgb(var(--ink-2) / <alpha-value>)',
+          3: 'rgb(var(--ink-3) / <alpha-value>)',
+        },
+        line: 'rgb(var(--line) / <alpha-value>)',
+        flame: {
+          DEFAULT: 'rgb(var(--flame) / <alpha-value>)',
+          hi: 'rgb(var(--flame-hi) / <alpha-value>)',
+        },
+        txt: {
+          DEFAULT: 'rgb(var(--txt) / <alpha-value>)',
+          2: 'rgb(var(--txt-2) / <alpha-value>)',
+        },
+        ok: 'rgb(var(--ok) / <alpha-value>)',
+        warn: 'rgb(var(--warn) / <alpha-value>)',
+        danger: 'rgb(var(--danger) / <alpha-value>)',
       },
       fontFamily: {
         mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
