@@ -107,18 +107,17 @@ export function OutboundPage() {
       <TableCard>
         <thead>
           <tr className="border-b border-line">
-            <Th>Mã đơn</Th><Th>Đơn bán</Th><Th>Rule</Th><Th>Mục đích</Th><Th className="text-right">Số dòng</Th>
+            <Th>Mã đơn</Th><Th>Rule</Th><Th>Mục đích</Th><Th className="text-right">Số dòng</Th>
             <Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={7}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={7} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {data && items.length === 0 && <RowMsg colSpan={7}>Chưa có đơn xuất.</RowMsg>}
+          {isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={6} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {data && items.length === 0 && <RowMsg colSpan={6}>Chưa có đơn xuất.</RowMsg>}
           {items.map((o) => (
             <tr key={o.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{o.code}</Td>
-              <Td className="text-txt-2 font-mono text-[11px]">{o.sales_order_code || '—'}</Td>
               <Td className="text-txt-2">{o.rule}</Td>
               <Td><Tag tone={OUTBOUND_PURPOSE_TONE[o.purpose]}>{OUTBOUND_PURPOSE_LABEL[o.purpose]}</Tag></Td>
               <Td className="text-right tabular-nums">{o.lines?.length ?? 0}</Td>
