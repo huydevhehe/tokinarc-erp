@@ -3,22 +3,26 @@
  * Tồn kho cấp điều hành: giá trị tồn, theo chi nhánh kho, hàng sắp hết.
  * Số liệu THẬT: /analytics/inventory/value (toàn + theo kho) + /wms/inventory.
  */
-import { useQuery, useQueries } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useQuery, useQueries, keepPreviousData } from '@tanstack/react-query'
 import { Package } from 'lucide-react'
 import { getInventoryValue } from '@/lib/analytics'
-import { fetchAll, fetchPage } from '@/lib/list'
+import { fetchAll, fetchPage, PAGE_SIZE } from '@/lib/list'
 import { apiError } from '@/lib/api'
 import { compactVnd } from '@/lib/crm'
 import type { Warehouse, InventoryItem } from '@/lib/types'
-import { Card, SectionTitle, StatCard, PageHeader, Tag, TableCard, Th, Td, RowMsg } from '@/components/ui'
+import { Card, SectionTitle, StatCard, PageHeader, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 
 export function CeoInventoryPage() {
+  const [lowPage, setLowPage] = useState(1)
   const total = useQuery({ queryKey: ['ceo', 'invv', 'all'], queryFn: () => getInventoryValue() })
   const whs = useQuery({ queryKey: ['ceo', 'whs'], queryFn: () => fetchAll<Warehouse>('/wms/warehouses/') })
   const low = useQuery({
-    queryKey: ['ceo', 'low'],
-    queryFn: () => fetchPage<InventoryItem>('/wms/inventory/', { low_stock: 'true', page: 1 }),
+    queryKey: ['ceo', 'low', lowPage],
+    queryFn: () => fetchPage<InventoryItem>('/wms/inventory/', { low_stock: 'true', page: lowPage }),
+    placeholderData: keepPreviousData,
   })
+  const lowTotalPages = low.data ? Math.max(1, Math.ceil(low.data.count / PAGE_SIZE)) : 1
 
   // Giá trị tồn theo từng kho (gọi inventory/value?warehouse= cho mỗi kho)
   const warehouses = whs.data?.items ?? []
@@ -91,6 +95,10 @@ export function CeoInventoryPage() {
             ))}
           </tbody>
         </TableCard>
+        {low.data && low.data.count > PAGE_SIZE && (
+          <Pagination page={lowPage} totalPages={lowTotalPages} fetching={low.isFetching}
+            onPrev={() => setLowPage((p) => p - 1)} onNext={() => setLowPage((p) => p + 1)} />
+        )}
       </Card>
     </div>
   )

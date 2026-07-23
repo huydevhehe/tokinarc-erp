@@ -179,7 +179,7 @@ class OpportunityViewSet(viewsets.ModelViewSet):
     serializer_class   = OpportunitySerializer
     permission_classes = [CustomerPermission]
     filter_backends    = [DjangoFilterBackend]
-    filterset_fields    = ['stage']
+    filterset_fields    = ['stage', 'customer']
 
     def get_queryset(self):
         qs = Opportunity.objects.all()
@@ -276,7 +276,7 @@ class QuoteViewSet(viewsets.ModelViewSet):
     serializer_class   = QuoteSerializer
     permission_classes = [CustomerPermission]
     filter_backends    = [DjangoFilterBackend]
-    filterset_fields    = ['status']
+    filterset_fields    = ['status', 'customer']
 
     def get_queryset(self):
         qs = Quote.objects.all()

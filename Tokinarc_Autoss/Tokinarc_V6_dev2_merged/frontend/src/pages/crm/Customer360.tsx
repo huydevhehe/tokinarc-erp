@@ -1,7 +1,9 @@
 /**
  * Tokinarc frontend — src/pages/crm/Customer360.tsx
  * Customer 360: GET /crm/customers/{id}/360/ (KPI tổng hợp + thông tin + contacts)
- * và làm giàu bằng cơ hội/báo giá của KH (lọc client-side từ list endpoint).
+ * và làm giàu bằng cơ hội/báo giá của KH (lọc bằng ?customer=id ở server —
+ * KHÔNG lấy hết toàn hệ thống rồi lọc client-side, vì fetchAll có trần 500
+ * bản ghi toàn cục sẽ âm thầm thiếu dữ liệu khi hệ thống lớn dần).
  */
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
@@ -50,12 +52,12 @@ export function Customer360Page() {
   })
   const opps = useQuery({
     queryKey: ['customer-360', id, 'opps'],
-    queryFn: () => fetchAll<Opportunity>('/crm/opportunities/'),
+    queryFn: () => fetchAll<Opportunity>('/crm/opportunities/', { customer: id }),
     enabled: !!id,
   })
   const quotes = useQuery({
     queryKey: ['customer-360', id, 'quotes'],
-    queryFn: () => fetchAll<Quote>('/crm/quotes/'),
+    queryFn: () => fetchAll<Quote>('/crm/quotes/', { customer: id }),
     enabled: !!id,
   })
   const timeline = useQuery({
@@ -70,8 +72,8 @@ export function Customer360Page() {
 
   const d = c360.data!
   const cust = d.customer
-  const myOpps = (opps.data?.items ?? []).filter((o) => o.customer === id)
-  const myQuotes = (quotes.data?.items ?? []).filter((q) => q.customer === id)
+  const myOpps = opps.data?.items ?? []
+  const myQuotes = quotes.data?.items ?? []
 
   return (
     <Wrap>
