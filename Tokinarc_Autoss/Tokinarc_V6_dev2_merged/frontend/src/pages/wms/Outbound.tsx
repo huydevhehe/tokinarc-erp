@@ -90,7 +90,7 @@ export function OutboundPage() {
         subtitle={data ? `${data.count} đơn xuất` : undefined}
         actions={
           <>
-            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã đơn, đơn bán, khách hàng…" />
+            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã đơn, khách hàng…" />
             <select value={purpose} onChange={(e) => { setPurpose(e.target.value as OutboundPurpose | ''); setPage(1) }}
               className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
               <option value="">Tất cả mục đích</option>
