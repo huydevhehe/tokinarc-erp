@@ -151,6 +151,18 @@ function BinManager({ warehouse, zone, onClose, onChanged }: {
   const { register, handleSubmit, reset, formState: { errors } } = useForm<{ rack: string; bin_code: string }>({
     defaultValues: { rack: '', bin_code: '' },
   })
+  // Chỉ số + dấu "-" nối (VD: 1-1 = kệ 1 tầng 1) — chặn chữ, chặn số âm (bỏ "-" đầu).
+  const rackReg = register('rack', {
+    required: 'Bắt buộc',
+    pattern: { value: /^\d+(-\d+)?$/, message: 'Chỉ nhập số, dạng "kệ-tầng" (VD: 1-1)' },
+  })
+  const sanitizeRack = (v: string) => v.replace(/[^0-9-]/g, '').replace(/^-+/, '').replace(/-{2,}/g, '-')
+  // Mã ô: chỉ số nguyên dương — chặn chữ, chặn số âm.
+  const binCodeReg = register('bin_code', {
+    required: 'Bắt buộc',
+    pattern: { value: /^\d+$/, message: 'Chỉ nhập số nguyên dương' },
+  })
+  const sanitizeBinCode = (v: string) => v.replace(/[^0-9]/g, '')
   const add = useMutation({
     mutationFn: (d: { rack: string; bin_code: string }) => api.post('/wms/bins/', { zone: zone.id, ...d }),
     onSuccess: () => { toast.success('Đã thêm ô'); reset({ rack: '', bin_code: '' }); refresh() },
@@ -165,7 +177,11 @@ function BinManager({ warehouse, zone, onClose, onChanged }: {
   // Nhóm theo kệ → tầng
   const grouped: Record<string, Record<string, BinRow[]>> = {}
   for (const b of bins.data?.items ?? []) {
-    const [ke, t = '-'] = b.rack.split('-T')
+    // Định dạng "kệ-tầng" (VD: 1-1) — tách theo dấu "-" đầu tiên; giá trị cũ
+    // không có "-" (VD: "R01") vẫn đọc được, chỉ không nhóm theo tầng.
+    const dash = b.rack.indexOf('-')
+    const ke = dash === -1 ? b.rack : b.rack.slice(0, dash)
+    const t = dash === -1 ? '-' : b.rack.slice(dash + 1)
     ;((grouped[ke] ??= {})[t] ??= []).push(b)
   }
 
@@ -174,10 +190,12 @@ function BinManager({ warehouse, zone, onClose, onChanged }: {
       icon={<Boxes size={18} className="text-flame" />}
       footer={<Button variant="ghost" onClick={onClose}>Đóng</Button>}>
       <form onSubmit={handleSubmit((d) => add.mutate(d))} className="flex items-end gap-2 mb-3 pb-3 border-b border-line">
-        <TextInput label="Kệ-Tầng *" placeholder="K06-T1" error={errors.rack?.message}
-          {...register('rack', { required: 'Bắt buộc' })} />
+        <TextInput label="Kệ-Tầng *" placeholder="1-1" error={errors.rack?.message}
+          {...rackReg}
+          onChange={(e) => { e.target.value = sanitizeRack(e.target.value); rackReg.onChange(e) }} />
         <TextInput label="Mã ô *" placeholder="09" error={errors.bin_code?.message}
-          {...register('bin_code', { required: 'Bắt buộc' })} />
+          {...binCodeReg}
+          onChange={(e) => { e.target.value = sanitizeBinCode(e.target.value); binCodeReg.onChange(e) }} />
         <Button onClick={handleSubmit((d) => add.mutate(d))} disabled={add.isPending}><Plus size={14} /> Thêm ô</Button>
       </form>
 
