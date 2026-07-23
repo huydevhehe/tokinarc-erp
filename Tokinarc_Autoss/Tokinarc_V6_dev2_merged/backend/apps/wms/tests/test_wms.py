@@ -672,3 +672,35 @@ def test_outbound_delete_only_allowed_when_draft(auth, wh_user):
     r = auth.delete(f'/api/v1/wms/outbound/{draft.id}/')
     assert r.status_code == 204
     assert not OutboundOrder.objects.filter(pk=draft.id).exists()
+
+
+# ─── "Xóa" thật = ẩn (is_active=false), giống Supplier/Part/Torch ───────────
+@pytest.mark.django_db
+def test_inbound_hide_via_is_active_works_at_any_status(auth, wh_user):
+    from apps.wms.models import InboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    putaway = InboundOrder.objects.create(code='IN-HIDE1', warehouse=wh, status='putaway',
+                                          created_by=wh_user, updated_by=wh_user)
+    r = auth.patch(f'/api/v1/wms/inbound/{putaway.id}/', {'is_active': False}, format='json')
+    assert r.status_code == 200, r.data
+    putaway.refresh_from_db()
+    assert putaway.is_active is False
+    # Ẩn khỏi list nhưng vẫn còn nguyên trong DB (chưa xoá) — retrieve vẫn thấy.
+    codes = [o['code'] for o in auth.get('/api/v1/wms/inbound/').data['results']]
+    assert 'IN-HIDE1' not in codes
+    assert auth.get(f'/api/v1/wms/inbound/{putaway.id}/').status_code == 200
+
+
+@pytest.mark.django_db
+def test_outbound_hide_via_is_active_works_at_any_status(auth, wh_user):
+    from apps.wms.models import OutboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    shipped = OutboundOrder.objects.create(code='OUT-HIDE1', warehouse=wh, status='shipped',
+                                           created_by=wh_user, updated_by=wh_user)
+    r = auth.patch(f'/api/v1/wms/outbound/{shipped.id}/', {'is_active': False}, format='json')
+    assert r.status_code == 200
+    shipped.refresh_from_db()
+    assert shipped.is_active is False
+    codes = [o['code'] for o in auth.get('/api/v1/wms/outbound/').data['results']]
+    assert 'OUT-HIDE1' not in codes
+    assert auth.get(f'/api/v1/wms/outbound/{shipped.id}/').status_code == 200

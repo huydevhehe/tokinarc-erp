@@ -61,7 +61,9 @@ export function InboundPage() {
   })
 
   const remove = useMutation({
-    mutationFn: (id: string) => api.delete(`/wms/inbound/${id}/`),
+    // "Xóa" = ẩn (is_active=false), giống NCC/Sản phẩm — không xóa cứng phiếu
+    // vì đây là chứng từ đối chiếu tồn kho.
+    mutationFn: (id: string) => api.patch(`/wms/inbound/${id}/`, { is_active: false }),
     onSuccess: () => {
       toast.success('Đã xóa phiếu nhập')
       qc.invalidateQueries({ queryKey: ['wms-inbound-list'] })
@@ -123,15 +125,13 @@ export function InboundPage() {
                     <Pencil size={13} /> Sửa
                   </Button>
                 )}
-                {o.status === 'draft' && (
-                  <Button variant="ghost" size="sm" className="!text-danger"
-                    disabled={remove.isPending && remove.variables === o.id}
-                    onClick={() => {
-                      if (window.confirm(`Xóa phiếu nhập "${o.code}"? Không thể hoàn tác.`)) remove.mutate(o.id)
-                    }}>
-                    <Trash2 size={13} /> Xóa
-                  </Button>
-                )}
+                <Button variant="ghost" size="sm" className="!text-danger"
+                  disabled={remove.isPending && remove.variables === o.id}
+                  onClick={() => {
+                    if (window.confirm(`Xóa phiếu nhập "${o.code}"? Phiếu sẽ ẩn khỏi danh sách (tồn kho/lịch sử vẫn giữ nguyên).`)) remove.mutate(o.id)
+                  }}>
+                  <Trash2 size={13} /> Xóa
+                </Button>
                 {(o.status === 'draft' || o.status === 'confirmed' || o.status === 'partial') ? (
                   <span className="inline-flex gap-1.5">
                     <Button variant="ghost" size="sm" onClick={() => setScanId(o.id)}>

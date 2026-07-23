@@ -78,7 +78,9 @@ export function OutboundPage() {
   })
 
   const remove = useMutation({
-    mutationFn: (id: string) => api.delete(`/wms/outbound/${id}/`),
+    // "Xóa" = ẩn (is_active=false), giống NCC/Sản phẩm — không xóa cứng phiếu
+    // vì đây là chứng từ đối chiếu tồn kho.
+    mutationFn: (id: string) => api.patch(`/wms/outbound/${id}/`, { is_active: false }),
     onSuccess: () => {
       toast.success('Đã xóa phiếu xuất')
       qc.invalidateQueries({ queryKey: ['wms-outbound-list'] })
@@ -150,15 +152,13 @@ export function OutboundPage() {
                     <Pencil size={13} /> Sửa
                   </Button>
                 )}
-                {o.status === 'draft' && (
-                  <Button variant="ghost" size="sm" className="mr-1.5 !text-danger"
-                    disabled={remove.isPending && remove.variables === o.id}
-                    onClick={() => {
-                      if (confirm(`Xóa phiếu xuất "${o.code}"? Không thể hoàn tác.`)) remove.mutate(o.id)
-                    }}>
-                    <Trash2 size={13} /> Xóa
-                  </Button>
-                )}
+                <Button variant="ghost" size="sm" className="mr-1.5 !text-danger"
+                  disabled={remove.isPending && remove.variables === o.id}
+                  onClick={() => {
+                    if (window.confirm(`Xóa phiếu xuất "${o.code}"? Phiếu sẽ ẩn khỏi danh sách (tồn kho/lịch sử vẫn giữ nguyên).`)) remove.mutate(o.id)
+                  }}>
+                  <Trash2 size={13} /> Xóa
+                </Button>
                 {o.status !== 'shipped' && o.status !== 'cancelled' && (
                   <Button variant="ghost" size="sm" className="mr-1.5" onClick={() => setScanId(o.id)}>
                     <ScanLine size={13} /> Quét

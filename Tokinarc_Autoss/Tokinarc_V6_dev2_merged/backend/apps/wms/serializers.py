@@ -135,7 +135,7 @@ class InboundOrderSerializer(serializers.ModelSerializer):
         fields = ['id', 'code', 'warehouse', 'asn', 'purchase_order', 'po_code', 'status',
                   'supplier', 'invoice_no', 'shortage_note', 'received_at', 'lines', 'notes',
                   'flow_type', 'delivered_by_name', 'received_by', 'received_by_username',
-                  'created_at', 'updated_at']
+                  'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'status', 'received_at', 'received_by', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (IN-YYYY-NNN).
         extra_kwargs = {'code': {'required': False}}
@@ -147,12 +147,20 @@ class InboundOrderSerializer(serializers.ModelSerializer):
         return order
 
     def update(self, instance, validated_data):
-        # Chỉ sửa phiếu NHÁP (chưa nhận) — phiếu đã nhận khóa để tránh lệch tồn.
-        if instance.status != 'draft':
-            raise serializers.ValidationError('Chỉ sửa được phiếu Nháp (chưa nhận hàng).')
+        is_active = validated_data.pop('is_active', None)
+        # "Xóa" (is_active=false) chỉ đổi hiển thị, không đụng nội dung/tồn kho →
+        # cho phép ở MỌI trạng thái (giống Supplier/Part/Torch). Sửa NỘI DUNG
+        # (kho/dòng hàng/...) vẫn chỉ cho phiếu Nháp (chưa nhận) để tránh lệch tồn.
+        # 'updated_by' loại khỏi check vì perform_update() luôn tự thêm (không phải
+        # nội dung client gửi) — nếu không loại, is_active-only PATCH sẽ bị chặn oan.
+        content = {k: v for k, v in validated_data.items() if k != 'updated_by'}
+        if content and instance.status != 'draft':
+            raise serializers.ValidationError('Chỉ sửa nội dung được phiếu Nháp (chưa nhận hàng).')
         lines = validated_data.pop('lines', None)
         for k, v in validated_data.items():
             setattr(instance, k, v)
+        if is_active is not None:
+            instance.is_active = is_active
         instance.save()
         if lines is not None:   # thay toàn bộ dòng (draft chưa nhận nên an toàn)
             instance.lines.all().delete()
@@ -179,7 +187,7 @@ class OutboundOrderSerializer(serializers.ModelSerializer):
         model  = OutboundOrder
         fields = ['id', 'code', 'warehouse', 'sales_order_code', 'customer',
                   'rule', 'status', 'purpose', 'shipped_at', 'lines', 'notes',
-                  'created_at', 'updated_at']
+                  'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'status', 'shipped_at', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (OUT-YYYY-NNN).
         extra_kwargs = {'code': {'required': False}}
@@ -191,12 +199,20 @@ class OutboundOrderSerializer(serializers.ModelSerializer):
         return order
 
     def update(self, instance, validated_data):
-        # Chỉ sửa phiếu NHÁP (chưa soạn/giữ tồn) — phiếu đã soạn/giao khóa để tránh lệch tồn.
-        if instance.status != 'draft':
-            raise serializers.ValidationError('Chỉ sửa được phiếu Nháp (chưa soạn hàng).')
+        is_active = validated_data.pop('is_active', None)
+        # "Xóa" (is_active=false) chỉ đổi hiển thị, không đụng nội dung/tồn kho →
+        # cho phép ở MỌI trạng thái (giống Supplier/Part/Torch). Sửa NỘI DUNG
+        # (kho/dòng hàng/...) vẫn chỉ cho phiếu Nháp (chưa soạn) để tránh lệch tồn.
+        # 'updated_by' loại khỏi check vì được tự thêm khi save() (không phải nội
+        # dung client gửi) — nếu không loại, is_active-only PATCH sẽ bị chặn oan.
+        content = {k: v for k, v in validated_data.items() if k != 'updated_by'}
+        if content and instance.status != 'draft':
+            raise serializers.ValidationError('Chỉ sửa nội dung được phiếu Nháp (chưa soạn hàng).')
         lines = validated_data.pop('lines', None)
         for k, v in validated_data.items():
             setattr(instance, k, v)
+        if is_active is not None:
+            instance.is_active = is_active
         instance.save()
         if lines is not None:   # thay toàn bộ dòng (draft chưa soạn nên an toàn)
             instance.lines.all().delete()

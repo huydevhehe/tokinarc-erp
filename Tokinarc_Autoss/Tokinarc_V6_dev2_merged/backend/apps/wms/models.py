@@ -269,6 +269,10 @@ class InboundOrder(BaseModel):
     # Người nhận: tự động điền = người bấm xác nhận (confirm), là user thật trong hệ thống.
     received_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                                     on_delete=models.SET_NULL, related_name='inbounds_received')
+    # "Xóa" = is_active=false (ẩn khỏi danh sách, giống Supplier/Part/Torch) — KHÔNG
+    # xóa cứng phiếu vì đây là chứng từ đối chiếu tồn kho (StockMovement tham chiếu
+    # theo code, không phải FK — xóa row sẽ mất ngữ cảnh dù tồn vẫn đúng).
+    is_active = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         db_table = 'wms_inbound_order'
@@ -322,6 +326,9 @@ class OutboundOrder(BaseModel):
                                   default=OutboundPurpose.SALE, db_index=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
     notes      = models.TextField(blank=True)
+    # "Xóa" = is_active=false (ẩn khỏi danh sách, giống Supplier/Part/Torch) — KHÔNG
+    # xóa cứng phiếu vì đây là chứng từ đối chiếu tồn kho.
+    is_active  = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         db_table = 'wms_outbound_order'

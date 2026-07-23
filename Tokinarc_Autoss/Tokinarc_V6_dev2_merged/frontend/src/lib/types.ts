@@ -217,6 +217,7 @@ export interface InboundOrder {
   flow_type: InboundFlowType
   delivered_by_name?: string
   received_by?: string | null
+  is_active: boolean
   received_by_username?: string
   created_at: string
   updated_at: string
@@ -250,6 +251,7 @@ export interface OutboundOrder {
   shipped_at: string | null
   lines: OutboundLine[]
   notes: string
+  is_active: boolean
   created_at: string
   updated_at: string
 }
