@@ -11,7 +11,7 @@ import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE } from '@/lib/wms'
-import type { InboundOrder } from '@/lib/types'
+import type { InboundOrder, InboundStatus } from '@/lib/types'
 import {
   PageHeader, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
@@ -19,6 +19,8 @@ import { InboundForm } from '@/pages/wms/forms/InboundForm'
 import { ScanOrderModal } from '@/pages/wms/ScanOrderModal'
 import { OrderLinesModal } from '@/pages/wms/OrderLinesModal'
 import { Modal } from '@/components/Modal'
+
+const INBOUND_STATUSES: (InboundStatus | '')[] = ['', 'draft', 'confirmed', 'partial', 'putaway', 'cancelled']
 
 export function InboundPage() {
   const qc = useQueryClient()
@@ -29,11 +31,12 @@ export function InboundPage() {
   const [reason, setReason] = useState('')
   const [fullFor, setFullFor] = useState<InboundOrder | null>(null)   // xác nhận nhận đủ khi chưa quét
   const [editOrder, setEditOrder] = useState<InboundOrder | null>(null)   // sửa phiếu Nháp
+  const [status, setStatus] = useState<InboundStatus | ''>('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-inbound-list', page, pageSize],
-    queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', { page, page_size: pageSize }),
+    queryKey: ['wms-inbound-list', status, page, pageSize],
+    queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', { status: status || undefined, page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
@@ -58,7 +61,15 @@ export function InboundPage() {
     <div className="max-w-5xl">
       <PageHeader icon={<PackageCheck size={20} className="text-flame" />} title="Nhập kho"
         subtitle={data ? `${data.count} đơn nhập` : undefined}
-        actions={<Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn nhập</Button>} />
+        actions={
+          <>
+            <select value={status} onChange={(e) => { setStatus(e.target.value as InboundStatus | ''); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+              {INBOUND_STATUSES.map((s) => <option key={s} value={s}>{s ? INBOUND_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}
+            </select>
+            <Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn nhập</Button>
+          </>
+        } />
 
       <TableCard>
         <thead>

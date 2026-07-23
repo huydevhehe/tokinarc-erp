@@ -14,7 +14,7 @@ import {
   OUTBOUND_STATUS_LABEL, OUTBOUND_STATUS_TONE, RULE_LABEL,
   OUTBOUND_PURPOSE_LABEL, OUTBOUND_PURPOSE_TONE,
 } from '@/lib/wms'
-import type { OutboundOrder } from '@/lib/types'
+import type { OutboundOrder, OutboundStatus } from '@/lib/types'
 import {
   PageHeader, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
@@ -25,6 +25,8 @@ import { OrderLinesModal } from '@/pages/wms/OrderLinesModal'
 
 interface Pick { id: string; bin_code: string; qty: number; is_picked: boolean; serial: string | null }
 
+const OUTBOUND_STATUSES: (OutboundStatus | '')[] = ['', 'draft', 'picking', 'picked', 'partial', 'shipped', 'cancelled']
+
 export function OutboundPage() {
   const qc = useQueryClient()
   const [formOpen, setFormOpen] = useState(false)
@@ -34,12 +36,13 @@ export function OutboundPage() {
   const [viewOrder, setViewOrder] = useState<OutboundOrder | null>(null)
   const [rejectFor, setRejectFor] = useState<OutboundOrder | null>(null)   // phiếu đang từ chối
   const [reason, setReason] = useState('')
+  const [status, setStatus] = useState<OutboundStatus | ''>('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-outbound-list', page, pageSize],
-    queryFn: () => fetchPage<OutboundOrder>('/wms/outbound/', { page, page_size: pageSize }),
+    queryKey: ['wms-outbound-list', status, page, pageSize],
+    queryFn: () => fetchPage<OutboundOrder>('/wms/outbound/', { status: status || undefined, page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
@@ -77,7 +80,15 @@ export function OutboundPage() {
     <div className="max-w-5xl">
       <PageHeader icon={<PackageCheck size={20} className="text-flame" />} title="Xuất kho"
         subtitle={data ? `${data.count} đơn xuất` : undefined}
-        actions={<Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn xuất</Button>} />
+        actions={
+          <>
+            <select value={status} onChange={(e) => { setStatus(e.target.value as OutboundStatus | ''); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+              {OUTBOUND_STATUSES.map((s) => <option key={s} value={s}>{s ? OUTBOUND_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}
+            </select>
+            <Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn xuất</Button>
+          </>
+        } />
 
       <TableCard>
         <thead>

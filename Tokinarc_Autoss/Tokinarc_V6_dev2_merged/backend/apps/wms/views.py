@@ -474,6 +474,8 @@ class InboundViewSet(viewsets.ModelViewSet):
     serializer_class = InboundOrderSerializer
     permission_classes = [WMSPermission]
     queryset = InboundOrder.objects.prefetch_related('lines')
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status', 'warehouse']
 
     def perform_update(self, serializer):
         serializer.save(updated_by=self.request.user)

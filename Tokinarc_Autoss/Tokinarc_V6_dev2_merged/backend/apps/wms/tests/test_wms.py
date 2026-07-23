@@ -597,3 +597,30 @@ def test_sales_cannot_adjust(part):
     r = c.post('/api/v1/wms/inventory/adjust/',
                {'bin': b.id, 'part': part.pk, 'new_qty': 5}, format='json')
     assert r.status_code == 403
+
+
+# ─── Biên bản #5: filter theo trạng thái cho Nhập/Xuất kho ──────────────────
+@pytest.mark.django_db
+def test_inbound_filtered_by_status(auth, wh_user):
+    from apps.wms.models import InboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    InboundOrder.objects.create(code='IN-D1', warehouse=wh, status='draft',
+                                created_by=wh_user, updated_by=wh_user)
+    InboundOrder.objects.create(code='IN-C1', warehouse=wh, status='confirmed',
+                                created_by=wh_user, updated_by=wh_user)
+    r = auth.get('/api/v1/wms/inbound/', {'status': 'confirmed'})
+    codes = [o['code'] for o in r.data['results']]
+    assert codes == ['IN-C1']
+
+
+@pytest.mark.django_db
+def test_outbound_filtered_by_status(auth, wh_user):
+    from apps.wms.models import OutboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    OutboundOrder.objects.create(code='OUT-D1', warehouse=wh, status='draft',
+                                 created_by=wh_user, updated_by=wh_user)
+    OutboundOrder.objects.create(code='OUT-S1', warehouse=wh, status='shipped',
+                                 created_by=wh_user, updated_by=wh_user)
+    r = auth.get('/api/v1/wms/outbound/', {'status': 'shipped'})
+    codes = [o['code'] for o in r.data['results']]
+    assert codes == ['OUT-S1']
