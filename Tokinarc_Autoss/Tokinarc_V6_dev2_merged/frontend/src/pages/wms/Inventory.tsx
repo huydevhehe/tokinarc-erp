@@ -26,6 +26,7 @@ const KIND_LABEL: Record<CategoryRow['kind'], string> = { part: 'Phụ tùng', t
 export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boolean }) {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [lowStock, setLowStock] = useState(initialLow)
   const [groupView, setGroupView] = useState(false)
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null)
@@ -46,15 +47,15 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
   })
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-inventory', lowStock, debounced, page],
+    queryKey: ['wms-inventory', lowStock, debounced, page, pageSize],
     queryFn: () => fetchPage<InventoryItem>('/wms/inventory/', {
-      search: debounced || undefined, page,
+      search: debounced || undefined, page, page_size: pageSize,
       low_stock: lowStock ? 'true' : undefined,
     }),
     placeholderData: keepPreviousData,
   })
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   return (
     <div className="max-w-6xl">
@@ -158,8 +159,9 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
       </TableCard>
       )}
 
-      {!groupView && data && data.count > PAGE_SIZE && (
+      {!groupView && data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

@@ -21,12 +21,13 @@ export function ASNPage() {
   const qc = useQueryClient()
   const [formOpen, setFormOpen] = useState(false)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-asn-list', page],
-    queryFn: () => fetchPage<ASN>('/wms/asn/', { page }),
+    queryKey: ['wms-asn-list', page, pageSize],
+    queryFn: () => fetchPage<ASN>('/wms/asn/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   const arrive = useMutation({
     mutationFn: (id: string) => api.post(`/wms/asn/${id}/arrive/`),
@@ -78,8 +79,9 @@ export function ASNPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

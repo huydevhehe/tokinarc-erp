@@ -28,6 +28,7 @@ export function LeadsPage() {
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState<LeadStatus | ''>('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   // #3 biên bản (2026-07-22): mở thêm cho Sale — Lead là dữ liệu Sale sở hữu.
@@ -48,9 +49,9 @@ export function LeadsPage() {
   const openEdit = (l: Lead) => { setEditing(l); setFormOpen(true) }
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['leads', debounced, status, page],
+    queryKey: ['leads', debounced, status, page, pageSize],
     queryFn: () => fetchPage<Lead>('/crm/leads/', {
-      search: debounced || undefined, status: status || undefined, page,
+      search: debounced || undefined, status: status || undefined, page, page_size: pageSize,
     }),
     placeholderData: keepPreviousData,
   })
@@ -87,7 +88,7 @@ export function LeadsPage() {
     if (window.confirm(`Xoá lead "${l.name}"? Có thể khôi phục qua quản trị nếu cần.`)) remove.mutate(l.id)
   }
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   return (
     <div className="max-w-7xl">
@@ -177,9 +178,10 @@ export function LeadsPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination
           page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)}
         />
       )}

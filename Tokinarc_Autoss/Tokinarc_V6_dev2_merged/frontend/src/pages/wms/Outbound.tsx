@@ -35,13 +35,14 @@ export function OutboundPage() {
   const [rejectFor, setRejectFor] = useState<OutboundOrder | null>(null)   // phiếu đang từ chối
   const [reason, setReason] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-outbound-list', page],
-    queryFn: () => fetchPage<OutboundOrder>('/wms/outbound/', { page }),
+    queryKey: ['wms-outbound-list', page, pageSize],
+    queryFn: () => fetchPage<OutboundOrder>('/wms/outbound/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   const ship = useMutation({
     mutationFn: (id: string) => api.post(`/wms/outbound/${id}/ship/`),
@@ -133,8 +134,9 @@ export function OutboundPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

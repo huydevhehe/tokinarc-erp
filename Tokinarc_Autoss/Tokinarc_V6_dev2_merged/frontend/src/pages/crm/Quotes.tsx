@@ -36,6 +36,7 @@ export function QuotesPage() {
   const canDeleteAny = useCan('crm.quote.delete')
   const [status, setStatus] = useState<QuoteStatus | ''>('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Quote | null>(null)
   const [detail, setDetail] = useState<Quote | null>(null)
@@ -45,8 +46,8 @@ export function QuotesPage() {
   const openEdit = (q: Quote) => { if (EDITABLE.includes(q.status)) { setEditing(q); setFormOpen(true) } }
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['quotes', status, page],
-    queryFn: () => fetchPage<Quote>('/crm/quotes/', { status: status || undefined, page }),
+    queryKey: ['quotes', status, page, pageSize],
+    queryFn: () => fetchPage<Quote>('/crm/quotes/', { status: status || undefined, page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
 
@@ -94,7 +95,7 @@ export function QuotesPage() {
     if (window.confirm(`Xoá báo giá ${q.code}? Có thể khôi phục qua quản trị nếu cần.`)) remove.mutate(q.id)
   }
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   return (
     <div className="max-w-6xl">
@@ -216,9 +217,10 @@ export function QuotesPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination
           page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)}
         />
       )}

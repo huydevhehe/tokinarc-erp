@@ -14,15 +14,16 @@ import { VisitForm } from '@/pages/crm/forms/VisitForm'
 
 export function VisitsPage() {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [formOpen, setFormOpen] = useState(false)
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['visits', page],
-    queryFn: () => fetchPage<Visit>('/crm/visits/', { page }),
+    queryKey: ['visits', page, pageSize],
+    queryFn: () => fetchPage<Visit>('/crm/visits/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
   const hasGps = (v: Visit) => v.gps && Object.keys(v.gps).length > 0
 
   return (
@@ -62,9 +63,10 @@ export function VisitsPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination
           page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)}
         />
       )}

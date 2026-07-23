@@ -26,6 +26,7 @@ export function TicketsPage() {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Ticket | null>(null)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const openCreate = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (t: Ticket) => { setEditing(t); setFormOpen(true) }
 
@@ -38,11 +39,11 @@ export function TicketsPage() {
   const count = (s: Ticket['status']) => statItems.filter((t) => t.status === s).length
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['tickets', page],
-    queryFn: () => fetchPage<Ticket>('/crm/tickets/', { page }),
+    queryKey: ['tickets', page, pageSize],
+    queryFn: () => fetchPage<Ticket>('/crm/tickets/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   const inval = () => {
     qc.invalidateQueries({ queryKey: ['tickets'] })
@@ -126,8 +127,9 @@ export function TicketsPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

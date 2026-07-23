@@ -15,14 +15,15 @@ import { Card, SectionTitle, StatCard, PageHeader, Tag, TableCard, Th, Td, RowMs
 
 export function CeoInventoryPage() {
   const [lowPage, setLowPage] = useState(1)
+  const [lowPageSize, setLowPageSize] = useState<number>(PAGE_SIZE)
   const total = useQuery({ queryKey: ['ceo', 'invv', 'all'], queryFn: () => getInventoryValue() })
   const whs = useQuery({ queryKey: ['ceo', 'whs'], queryFn: () => fetchAll<Warehouse>('/wms/warehouses/') })
   const low = useQuery({
-    queryKey: ['ceo', 'low', lowPage],
-    queryFn: () => fetchPage<InventoryItem>('/wms/inventory/', { low_stock: 'true', page: lowPage }),
+    queryKey: ['ceo', 'low', lowPage, lowPageSize],
+    queryFn: () => fetchPage<InventoryItem>('/wms/inventory/', { low_stock: 'true', page: lowPage, page_size: lowPageSize }),
     placeholderData: keepPreviousData,
   })
-  const lowTotalPages = low.data ? Math.max(1, Math.ceil(low.data.count / PAGE_SIZE)) : 1
+  const lowTotalPages = low.data ? Math.max(1, Math.ceil(low.data.count / lowPageSize)) : 1
 
   // Giá trị tồn theo từng kho (gọi inventory/value?warehouse= cho mỗi kho)
   const warehouses = whs.data?.items ?? []
@@ -95,8 +96,9 @@ export function CeoInventoryPage() {
             ))}
           </tbody>
         </TableCard>
-        {low.data && low.data.count > PAGE_SIZE && (
+        {low.data && low.data.count > 0 && (
           <Pagination page={lowPage} totalPages={lowTotalPages} fetching={low.isFetching}
+            pageSize={lowPageSize} onPageSizeChange={(n) => { setLowPageSize(n); setLowPage(1) }}
             onPrev={() => setLowPage((p) => p - 1)} onNext={() => setLowPage((p) => p + 1)} />
         )}
       </Card>

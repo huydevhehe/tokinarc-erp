@@ -36,14 +36,15 @@ export function OrdersPage() {
   const [amendFor, setAmendFor] = useState<Order | null>(null)
   const [addr, setAddr] = useState(''); const [amNotes, setAmNotes] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [detail, setDetail] = useState<Order | null>(null)
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['orders', page],
-    queryFn: () => fetchPage<Order>('/sales/orders/', { page }),
+    queryKey: ['orders', page, pageSize],
+    queryFn: () => fetchPage<Order>('/sales/orders/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
   const inval = () => { qc.invalidateQueries({ queryKey: ['orders'] }); qc.invalidateQueries({ queryKey: ['invoices'] }) }
 
   const act = useMutation({
@@ -115,8 +116,9 @@ export function OrdersPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

@@ -174,17 +174,37 @@ export function Gauge({ pct, tone = 'flame' }: { pct: number; tone?: TagTone }) 
 }
 
 // ── Pagination ────────────────────────────────────────────────────────────
+export const PAGE_SIZE_OPTIONS = [10, 20, 30] as const
+
 export function Pagination({
   page, totalPages, fetching, onPrev, onNext,
+  pageSize, onPageSizeChange, pageSizeOptions = PAGE_SIZE_OPTIONS,
 }: {
   page: number; totalPages: number; fetching?: boolean
   onPrev: () => void; onNext: () => void
+  /** Khi truyền pageSize + onPageSizeChange sẽ hiện thêm ô chọn số dòng/trang. */
+  pageSize?: number; onPageSizeChange?: (size: number) => void
+  pageSizeOptions?: readonly number[]
 }) {
   return (
     <div className="flex items-center justify-between mt-3 text-sm">
-      <span className="text-txt-2 text-xs">
-        Trang {page}/{totalPages} {fetching && '· đang tải…'}
-      </span>
+      <div className="flex items-center gap-3">
+        <span className="text-txt-2 text-xs">
+          Trang {page}/{totalPages} {fetching && '· đang tải…'}
+        </span>
+        {onPageSizeChange && (
+          <label className="flex items-center gap-1.5 text-xs text-txt-2">
+            Số dòng/trang
+            <select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value))}
+              className="bg-ink-3 border border-line rounded-md px-1.5 py-0.5 text-xs focus:outline-none focus:border-flame"
+            >
+              {pageSizeOptions.map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+        )}
+      </div>
       <div className="flex gap-2">
         <Button variant="ghost" size="sm" disabled={page <= 1} onClick={onPrev}>Trước</Button>
         <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={onNext}>Sau</Button>

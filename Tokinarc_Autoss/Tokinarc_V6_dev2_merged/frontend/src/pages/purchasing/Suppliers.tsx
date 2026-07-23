@@ -23,16 +23,17 @@ export function SuppliersPage() {
   const [open, setOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   // Import NCC: Quản lý kho trở lên (khớp backend PO_WRITE_ROLES).
   const role = useAuth((s) => s.user?.role)
   const canImport = role === 'wh_manager' || role === 'manager' || role === 'ceo'
   const { register, handleSubmit, reset } = useForm<Form>()
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['suppliers', page],
-    queryFn: () => fetchPage<Supplier>('/purchasing/suppliers/', { page }),
+    queryKey: ['suppliers', page, pageSize],
+    queryFn: () => fetchPage<Supplier>('/purchasing/suppliers/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
   const save = useMutation({
     mutationFn: (d: Form) => api.post('/purchasing/suppliers/', d),
     onSuccess: () => { toast.success('Đã thêm NCC'); qc.invalidateQueries({ queryKey: ['suppliers'] }); setOpen(false); reset() },
@@ -64,8 +65,9 @@ export function SuppliersPage() {
           ))}
         </tbody>
       </TableCard>
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

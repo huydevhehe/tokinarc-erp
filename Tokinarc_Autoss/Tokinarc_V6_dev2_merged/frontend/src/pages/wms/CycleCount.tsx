@@ -27,6 +27,7 @@ export function WmsCycleCountPage() {
   const [assigning, setAssigning] = useState(false)   // quét-gán: mã lạ → gán cho 1 SP
   const [assignPick, setAssignPick] = useState('')
   const [listPage, setListPage] = useState(1)
+  const [listPageSize, setListPageSize] = useState<number>(PAGE_SIZE)
 
   // Tra cứu: quét/nhập mã → tìm phụ tùng (catalog, có cả barcode) + serial (WMS).
   const lookup = useQuery({
@@ -58,11 +59,11 @@ export function WmsCycleCountPage() {
   })
 
   const list = useQuery({
-    queryKey: ['cycle-counts', listPage],
-    queryFn: () => fetchPage<CC>('/wms/cycle-counts/', { page: listPage }),
+    queryKey: ['cycle-counts', listPage, listPageSize],
+    queryFn: () => fetchPage<CC>('/wms/cycle-counts/', { page: listPage, page_size: listPageSize }),
     placeholderData: keepPreviousData,
   })
-  const listTotalPages = list.data ? Math.max(1, Math.ceil(list.data.count / PAGE_SIZE)) : 1
+  const listTotalPages = list.data ? Math.max(1, Math.ceil(list.data.count / listPageSize)) : 1
   const detail = useQuery({
     queryKey: ['cycle-count', openId],
     queryFn: async () => (await api.get<CC>(`/wms/cycle-counts/${openId}/`)).data,
@@ -192,8 +193,9 @@ export function WmsCycleCountPage() {
         </TableCard>
       )}
 
-      {!openId && list.data && list.data.count > PAGE_SIZE && (
+      {!openId && list.data && list.data.count > 0 && (
         <Pagination page={listPage} totalPages={listTotalPages} fetching={list.isFetching}
+          pageSize={listPageSize} onPageSizeChange={(n) => { setListPageSize(n); setListPage(1) }}
           onPrev={() => setListPage((p) => p - 1)} onNext={() => setListPage((p) => p + 1)} />
       )}
 

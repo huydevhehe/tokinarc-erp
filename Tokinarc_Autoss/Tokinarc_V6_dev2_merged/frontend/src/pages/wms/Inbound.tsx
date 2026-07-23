@@ -30,12 +30,13 @@ export function InboundPage() {
   const [fullFor, setFullFor] = useState<InboundOrder | null>(null)   // xác nhận nhận đủ khi chưa quét
   const [editOrder, setEditOrder] = useState<InboundOrder | null>(null)   // sửa phiếu Nháp
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-inbound-list', page],
-    queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', { page }),
+    queryKey: ['wms-inbound-list', page, pageSize],
+    queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   const confirm = useMutation({
     mutationFn: (v: { id: string; partial?: boolean; shortage_note?: string }) =>
@@ -123,8 +124,9 @@ export function InboundPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

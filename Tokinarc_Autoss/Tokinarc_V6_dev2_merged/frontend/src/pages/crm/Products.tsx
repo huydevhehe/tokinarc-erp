@@ -35,6 +35,7 @@ export function ProductsPage() {
   const [tab, setTab] = useState<TabKey>('parts')
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [importOpen, setImportOpen] = useState(false)
   const [taxOpen, setTaxOpen] = useState(false)
   const [groupFilter, setGroupFilter] = useState('')   // id Nhóm ('' = tất cả)
@@ -112,9 +113,9 @@ export function ProductsPage() {
       )}
 
       {tab === 'parts'
-        ? <PartsTable search={debounced} page={page} setPage={setPage}
+        ? <PartsTable search={debounced} page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize}
             group={groupFilter} category={catFilter} groupList={groupList} canManage={canManage} />
-        : <TorchesTable search={debounced} page={page} setPage={setPage} />}
+        : <TorchesTable search={debounced} page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize} />}
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} spec={{
         title: 'Import danh mục phụ tùng (Kho)',
@@ -179,22 +180,23 @@ function AssignCell({ part, groupList }: { part: CatalogPart; groupList: Product
   )
 }
 
-function PartsTable({ search, page, setPage, group, category, groupList, canManage }: {
+function PartsTable({ search, page, setPage, pageSize, setPageSize, group, category, groupList, canManage }: {
   search: string; page: number; setPage: (f: (p: number) => number) => void
+  pageSize: number; setPageSize: (n: number) => void
   group?: string; category?: string; groupList: ProductGroupNode[]; canManage: boolean
 }) {
   const canSeeCost = isManager(useAuth((s) => s.user?.role))
   const [costPart, setCostPart] = useState<string | null>(null)
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['catalog-parts', search, page, group, category],
+    queryKey: ['catalog-parts', search, page, pageSize, group, category],
     queryFn: () => fetchPage<CatalogPart>('/catalog/parts/', {
-      search: search || undefined, page,
+      search: search || undefined, page, page_size: pageSize,
       product_category__group: group || undefined,
       product_category: category || undefined,
     }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
   // cột: Mã, Tên, Nhóm, Danh mục, [Gắn], Giá bán, Thuế, [Giá vốn]
   const cols = 6 + (canManage ? 1 : 0) + (canSeeCost ? 1 : 0)
   return (
@@ -232,8 +234,9 @@ function PartsTable({ search, page, setPage, group, category, groupList, canMana
           ))}
         </tbody>
       </TableCard>
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(() => 1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
       <CostModal partNo={costPart} open={!!costPart} onClose={() => setCostPart(null)} />
@@ -422,13 +425,16 @@ function Box({ label, value, tone }: { label: string; value: string; tone?: 'ok'
   )
 }
 
-function TorchesTable({ search, page, setPage }: { search: string; page: number; setPage: (f: (p: number) => number) => void }) {
+function TorchesTable({ search, page, setPage, pageSize, setPageSize }: {
+  search: string; page: number; setPage: (f: (p: number) => number) => void
+  pageSize: number; setPageSize: (n: number) => void
+}) {
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['catalog-torches', search, page],
-    queryFn: () => fetchPage<CatalogTorch>('/catalog/torches/', { search: search || undefined, page }),
+    queryKey: ['catalog-torches', search, page, pageSize],
+    queryFn: () => fetchPage<CatalogTorch>('/catalog/torches/', { search: search || undefined, page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
   return (
     <>
       {data && <p className="text-xs text-txt-2 mb-2">{data.count} súng hàn</p>}
@@ -452,8 +458,9 @@ function TorchesTable({ search, page, setPage }: { search: string; page: number;
           ))}
         </tbody>
       </TableCard>
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(() => 1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
     </>

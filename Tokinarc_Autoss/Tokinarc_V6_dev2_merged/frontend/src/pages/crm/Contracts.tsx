@@ -36,6 +36,7 @@ export function ContractsPage() {
   const [editing, setEditing] = useState<Contract | null>(null)
   const [detail, setDetail] = useState<Contract | null>(null)
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
 
   // KPI (đếm/tổng giá trị) cần TOÀN BỘ dữ liệu, tách khỏi bảng có phân trang riêng.
   const { data: stats, isLoading: statsLoading } = useQuery({
@@ -47,12 +48,12 @@ export function ContractsPage() {
   const totalValue = statItems.reduce((s, c) => s + Number(c.value_vnd || 0), 0)
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['contracts', page],
-    queryFn: () => fetchPage<Contract>('/crm/contracts/', { page }),
+    queryKey: ['contracts', page, pageSize],
+    queryFn: () => fetchPage<Contract>('/crm/contracts/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
   const items = data?.results ?? []
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['contracts'] })
     qc.invalidateQueries({ queryKey: ['contracts-all'] })
@@ -191,8 +192,9 @@ export function ContractsPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

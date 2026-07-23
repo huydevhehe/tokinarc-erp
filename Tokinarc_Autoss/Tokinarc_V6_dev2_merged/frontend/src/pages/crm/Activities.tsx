@@ -16,14 +16,15 @@ import { ActivityForm } from '@/pages/crm/forms/ActivityForm'
 
 export function ActivitiesPage() {
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [formOpen, setFormOpen] = useState(false)
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['activities', page],
-    queryFn: () => fetchPage<Activity>('/crm/activities/', { page }),
+    queryKey: ['activities', page, pageSize],
+    queryFn: () => fetchPage<Activity>('/crm/activities/', { page, page_size: pageSize }),
     placeholderData: keepPreviousData,
   })
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   return (
     <div className="max-w-5xl">
@@ -51,8 +52,9 @@ export function ActivitiesPage() {
         </tbody>
       </TableCard>
 
-      {data && data.count > PAGE_SIZE && (
+      {data && data.count > 0 && (
         <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 

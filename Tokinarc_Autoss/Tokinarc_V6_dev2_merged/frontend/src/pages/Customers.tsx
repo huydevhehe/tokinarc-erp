@@ -8,19 +8,20 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Search, Users, Plus, Upload } from 'lucide-react'
 import { api, apiError } from '@/lib/api'
+import { PAGE_SIZE } from '@/lib/list'
 import {
   SEGMENT_LABEL, CUSTOMER_STATUS_LABEL, CUSTOMER_STATUS_TONE, formatDate,
 } from '@/lib/crm'
 import { TAG_CLASS } from '@/lib/crm'
 import type { Customer, Paginated } from '@/lib/types'
-import { Button } from '@/components/ui'
+import { Button, Pagination } from '@/components/ui'
 import { useAuth, isManager } from '@/lib/auth/store'
 import { CustomerForm } from '@/pages/crm/forms/CustomerForm'
 import { ImportModal } from '@/pages/crm/ImportModal'
 
-async function fetchCustomers(search: string, page: number) {
+async function fetchCustomers(search: string, page: number, pageSize: number) {
   const res = await api.get<Paginated<Customer>>('/crm/customers/', {
-    params: { search: search || undefined, page },
+    params: { search: search || undefined, page, page_size: pageSize },
   })
   return res.data
 }
@@ -30,6 +31,7 @@ export function CustomersPage() {
   const [search, setSearch] = useState('')
   const [debounced, setDebounced] = useState('')
   const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const [formOpen, setFormOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
   // #3 biên bản (2026-07-22): mở thêm cho Sale — KH là dữ liệu Sale sở hữu.
@@ -40,12 +42,12 @@ export function CustomersPage() {
   useDebounce(search, 350, (v) => { setDebounced(v); setPage(1) })
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['customers', debounced, page],
-    queryFn: () => fetchCustomers(debounced, page),
+    queryKey: ['customers', debounced, page, pageSize],
+    queryFn: () => fetchCustomers(debounced, page, pageSize),
     placeholderData: keepPreviousData,
   })
 
-  const totalPages = data ? Math.max(1, Math.ceil(data.count / 20)) : 1
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   return (
     <div className="max-w-7xl">
@@ -123,17 +125,10 @@ export function CustomersPage() {
         </table>
       </div>
 
-      {/* Pagination */}
-      {data && data.count > 20 && (
-        <div className="flex items-center justify-between mt-3 text-sm">
-          <span className="text-txt-2 text-xs">
-            Trang {page}/{totalPages} {isFetching && '· đang tải…'}
-          </span>
-          <div className="flex gap-2">
-            <PgBtn disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Trước</PgBtn>
-            <PgBtn disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Sau</PgBtn>
-          </div>
-        </div>
+      {data && data.count > 0 && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 
       <CustomerForm open={formOpen} onClose={() => setFormOpen(false)} />
@@ -158,20 +153,6 @@ function RowMsg({ children, colSpan, danger }: {
         {children}
       </td>
     </tr>
-  )
-}
-
-function PgBtn({ children, disabled, onClick }: {
-  children: React.ReactNode; disabled?: boolean; onClick: () => void
-}) {
-  return (
-    <button
-      disabled={disabled} onClick={onClick}
-      className="border border-line rounded-md px-3 py-1.5 text-xs disabled:opacity-40
-                 disabled:cursor-not-allowed hover:bg-ink-3 transition-colors"
-    >
-      {children}
-    </button>
   )
 }
 
