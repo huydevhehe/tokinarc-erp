@@ -113,12 +113,14 @@ class Command(BaseCommand):
         if actor is None:
             raise CommandError("Không tìm thấy user để gán người thao tác (thử --user <username>).")
 
-        wh = Warehouse.objects.filter(is_active=True).first()
-        if wh is None:
-            raise CommandError("Không có kho active nào.")
+        # Chọn ngẫu nhiên trong các kho active THỰC SỰ có ô (bin) — nhiều server
+        # có kho mới tạo chưa xếp ô (VD "HANOI"), .first() theo mã dễ trúng kho rỗng.
+        candidate_whs = [w for w in Warehouse.objects.filter(is_active=True)
+                         if Bin.objects.filter(zone__warehouse=w).exists()]
+        if not candidate_whs:
+            raise CommandError("Không có kho active nào có ô (bin) để nạp dữ liệu.")
+        wh = random.choice(candidate_whs)
         bins = list(Bin.objects.filter(zone__warehouse=wh))
-        if not bins:
-            raise CommandError(f"Kho {wh.code} chưa có ô (bin) nào.")
         supplier_names = list(Supplier.objects.filter(is_active=True).values_list('name', flat=True)) or ['NCC (chưa rõ)']
 
         with transaction.atomic():
@@ -183,7 +185,7 @@ class Command(BaseCommand):
                 out.delete()
 
         self.stdout.write(self.style.SUCCESS(
-            f"Đã nạp xong: {len(to_create)} Part mới, phiếu nhập {inb.code} ({idx_in} dòng), "
+            f"Đã nạp xong vào kho {wh.code}: {len(to_create)} Part mới, phiếu nhập {inb.code} ({idx_in} dòng), "
             + (f"phiếu xuất {out.code} ({idx_out} dòng)." if idx_out else "không có dòng xuất.")))
         self.stdout.write("Chạy `python manage.py reconcile_stock` để xác nhận Tồn kho khớp Ledger.")
 
