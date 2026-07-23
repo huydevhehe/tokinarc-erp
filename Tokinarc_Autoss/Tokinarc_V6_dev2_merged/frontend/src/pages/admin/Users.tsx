@@ -7,15 +7,15 @@
  *   POST   /accounts/users/{id}/set-role/  đổi role (ghi AuditLog)
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { UserCog, Plus, Lock, Unlock, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
-import { fetchAll } from '@/lib/list'
+import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useAuth } from '@/lib/auth/store'
 import type { User, Role } from '@/lib/types'
 import {
-  PageHeader, Button, Tag, TableCard, Th, Td, RowMsg,
+  PageHeader, Button, Tag, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { UserForm } from '@/pages/admin/UserForm'
 
@@ -36,11 +36,14 @@ export function AdminUsersPage() {
   const meId = useAuth((s) => s.user?.id)
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<User | null>(null)
+  const [page, setPage] = useState(1)
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['admin-users'],
-    queryFn: () => fetchAll<User>('/accounts/users/'),
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ['admin-users', page],
+    queryFn: () => fetchPage<User>('/accounts/users/', { page }),
+    placeholderData: keepPreviousData,
   })
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
 
   const invalidate = () => qc.invalidateQueries({ queryKey: ['admin-users'] })
 
@@ -60,7 +63,7 @@ export function AdminUsersPage() {
   const openCreate = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (u: User) => { setEditing(u); setFormOpen(true) }
 
-  const users = data?.items ?? []
+  const users = data?.results ?? []
 
   return (
     <div className="max-w-5xl">
@@ -127,6 +130,11 @@ export function AdminUsersPage() {
           })}
         </tbody>
       </TableCard>
+
+      {data && data.count > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      )}
 
       <UserForm open={formOpen} onClose={() => setFormOpen(false)} editing={editing} />
     </div>

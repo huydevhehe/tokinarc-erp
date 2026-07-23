@@ -1,21 +1,23 @@
 /**
  * Tokinarc frontend — src/pages/crm/Tickets.tsx
  * Danh sách service ticket THẬT (GET /crm/tickets/) + KPI nhanh + hành động
- * resolve (POST /crm/tickets/{id}/resolve/). Gom toàn bộ để đếm theo trạng thái.
+ * resolve (POST /crm/tickets/{id}/resolve/).
+ * KPI đếm theo trạng thái cần TOÀN BỘ dữ liệu, tách khỏi bảng có phân trang riêng
+ * (giống Contracts.tsx) — bảng phân trang không được dùng để đếm KPI.
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { Ticket as TicketIcon, Check, Plus, PlayCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
-import { fetchAll } from '@/lib/list'
+import { fetchAll, fetchPage, PAGE_SIZE } from '@/lib/list'
 import {
   TICKET_STATUS_LABEL, TICKET_STATUS_TONE,
   TICKET_PRIORITY_LABEL, TICKET_PRIORITY_TONE,
 } from '@/lib/crm'
 import type { Ticket } from '@/lib/types'
 import {
-  PageHeader, StatCard, Tag, Button, TableCard, Th, Td, RowMsg,
+  PageHeader, StatCard, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { TicketForm } from '@/pages/crm/forms/TicketForm'
 
@@ -23,16 +25,28 @@ export function TicketsPage() {
   const qc = useQueryClient()
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Ticket | null>(null)
+  const [page, setPage] = useState(1)
   const openCreate = () => { setEditing(null); setFormOpen(true) }
   const openEdit = (t: Ticket) => { setEditing(t); setFormOpen(true) }
 
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['tickets'],
+  // KPI đếm theo trạng thái — cần TOÀN BỘ ticket, tách khỏi bảng có phân trang riêng.
+  const { data: stats, isLoading: statsLoading } = useQuery({
+    queryKey: ['tickets-all'],
     queryFn: () => fetchAll<Ticket>('/crm/tickets/'),
   })
+  const statItems = stats?.items ?? []
+  const count = (s: Ticket['status']) => statItems.filter((t) => t.status === s).length
+
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ['tickets', page],
+    queryFn: () => fetchPage<Ticket>('/crm/tickets/', { page }),
+    placeholderData: keepPreviousData,
+  })
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
 
   const inval = () => {
     qc.invalidateQueries({ queryKey: ['tickets'] })
+    qc.invalidateQueries({ queryKey: ['tickets-all'] })
     qc.invalidateQueries({ queryKey: ['dash'] })
   }
   const accept = useMutation({
@@ -51,8 +65,7 @@ export function TicketsPage() {
     if (resolution !== null) resolve.mutate({ id, resolution })
   }
 
-  const items = data?.items ?? []
-  const count = (s: Ticket['status']) => items.filter((t) => t.status === s).length
+  const items = data?.results ?? []
 
   return (
     <div className="max-w-6xl">
@@ -64,10 +77,10 @@ export function TicketsPage() {
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        <StatCard label="Mở" tone="blue" value={isLoading ? '…' : count('open')} />
-        <StatCard label="Đang xử lý" tone="warn" value={isLoading ? '…' : count('in_progress')} />
-        <StatCard label="Đã giải quyết" tone="ok" value={isLoading ? '…' : count('resolved')} />
-        <StatCard label="Đóng" tone="gray" value={isLoading ? '…' : count('closed')} />
+        <StatCard label="Mở" tone="blue" value={statsLoading ? '…' : count('open')} />
+        <StatCard label="Đang xử lý" tone="warn" value={statsLoading ? '…' : count('in_progress')} />
+        <StatCard label="Đã giải quyết" tone="ok" value={statsLoading ? '…' : count('resolved')} />
+        <StatCard label="Đóng" tone="gray" value={statsLoading ? '…' : count('closed')} />
       </div>
 
       <TableCard>
@@ -112,6 +125,11 @@ export function TicketsPage() {
           ))}
         </tbody>
       </TableCard>
+
+      {data && data.count > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      )}
 
       <TicketForm open={formOpen} onClose={() => setFormOpen(false)} editing={editing} />
     </div>

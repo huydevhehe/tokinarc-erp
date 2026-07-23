@@ -4,26 +4,29 @@
  * (POST /wms/asn/{id}/arrive/ → tạo đơn nhập kho).
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { Inbox, Check, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
-import { fetchAll } from '@/lib/list'
+import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { formatDate } from '@/lib/crm'
 import { Tag } from '@/components/ui'
 import type { ASN } from '@/lib/types'
 import {
-  PageHeader, Button, TableCard, Th, Td, RowMsg,
+  PageHeader, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { ASNForm } from '@/pages/wms/forms/ASNForm'
 
 export function ASNPage() {
   const qc = useQueryClient()
   const [formOpen, setFormOpen] = useState(false)
-  const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['wms-asn-list'],
-    queryFn: () => fetchAll<ASN>('/wms/asn/'),
+  const [page, setPage] = useState(1)
+  const { data, isLoading, isError, error, isFetching } = useQuery({
+    queryKey: ['wms-asn-list', page],
+    queryFn: () => fetchPage<ASN>('/wms/asn/', { page }),
+    placeholderData: keepPreviousData,
   })
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
 
   const arrive = useMutation({
     mutationFn: (id: string) => api.post(`/wms/asn/${id}/arrive/`),
@@ -36,7 +39,7 @@ export function ASNPage() {
     onError: (e) => toast.error(apiError(e)),
   })
 
-  const items = data?.items ?? []
+  const items = data?.results ?? []
 
   return (
     <div className="max-w-5xl">
@@ -74,6 +77,11 @@ export function ASNPage() {
           ))}
         </tbody>
       </TableCard>
+
+      {data && data.count > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      )}
 
       <ASNForm open={formOpen} onClose={() => setFormOpen(false)} />
     </div>
