@@ -18,6 +18,7 @@ bằng shared secret. Production B.5 §4.2 dùng RS256.
 from __future__ import annotations
 
 from django.conf import settings
+from django.db.models import ProtectedError
 from rest_framework import status, viewsets
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import ValidationError
@@ -235,17 +236,35 @@ class MyCapabilitiesView(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all().order_by('username')
     permission_classes = [IsSystemAdmin]
+
+    def get_queryset(self):
+        qs = User.objects.order_by('username')
+        # "Xóa" tài khoản = is_active=False (đổi trạng thái, KHÔNG xóa row — data cũ
+        # vẫn giữ nguyên created_by/updated_by). Ẩn khỏi danh sách quản trị sau khi xóa.
+        if self.action == 'list':
+            qs = qs.filter(is_active=True)
+        return qs
 
     def get_serializer_class(self):
         return UserSerializer if self.action in ('list', 'retrieve') else UserWriteSerializer
 
-    def perform_destroy(self, instance):
-        # Tránh tự xóa mình → mất quyền quản trị; FE nên dùng "khóa" (is_active) thay vì xóa.
-        if instance.id == self.request.user.id:
+    def destroy(self, request, *args, **kwargs):
+        """Hard-delete endpoint (dùng qua API/admin, KHÔNG phải nút "Xóa" trên FE —
+        FE dùng PATCH is_active=false, xem get_queryset() ở trên)."""
+        instance = self.get_object()
+        if instance.id == request.user.id:
             raise ValidationError('Không thể xóa tài khoản của chính bạn.')
-        instance.delete()
+        try:
+            instance.delete()
+        except ProtectedError:
+            # created_by/updated_by (BaseModel) trỏ PROTECT — user đã tạo/sửa dữ liệu
+            # trong hệ thống thì không xóa cứng được (tránh mất liên kết lịch sử).
+            return Response(
+                {'detail': f'Tài khoản "{instance.username}" đã tạo/sửa dữ liệu trong hệ thống — '
+                           'không xóa cứng được. Dùng PATCH is_active=false để vô hiệu hóa.',
+                 'code': 'CONFLICT'}, status=status.HTTP_409_CONFLICT)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True, methods=['post'], url_path='set-role')
     def set_role(self, request, pk=None):

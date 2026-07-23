@@ -1,21 +1,22 @@
 /**
  * Tokinarc frontend — src/pages/admin/Users.tsx
  * Quản trị người dùng (chỉ admin/superuser). Dùng API có sẵn:
- *   GET    /accounts/users/                list
+ *   GET    /accounts/users/                list (chỉ is_active=true — xem apps/accounts/views.py)
  *   POST   /accounts/users/                tạo
- *   PATCH  /accounts/users/{id}/           sửa / khóa (is_active)
+ *   PATCH  /accounts/users/{id}/           sửa / "xóa" (is_active=false — đổi trạng thái,
+ *                                          KHÔNG xóa row, chỉ ẩn khỏi danh sách này)
  *   POST   /accounts/users/{id}/set-role/  đổi role (ghi AuditLog)
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { UserCog, Plus, Lock, Unlock, Pencil, Trash2 } from 'lucide-react'
+import { UserCog, Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useAuth } from '@/lib/auth/store'
 import type { User, Role } from '@/lib/types'
 import {
-  PageHeader, Button, Tag, TableCard, Th, Td, RowMsg, Pagination,
+  PageHeader, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { UserForm } from '@/pages/admin/UserForm'
 
@@ -54,14 +55,8 @@ export function AdminUsersPage() {
     onSuccess: () => { toast.success('Đã đổi vai trò'); invalidate() },
     onError: (e) => toast.error(apiError(e)),
   })
-  const toggleActive = useMutation({
-    mutationFn: (v: { id: string; is_active: boolean }) =>
-      api.patch(`/accounts/users/${v.id}/`, { is_active: v.is_active }),
-    onSuccess: (_r, v) => { toast.success(v.is_active ? 'Đã mở khóa' : 'Đã khóa'); invalidate() },
-    onError: (e) => toast.error(apiError(e)),
-  })
-  const del = useMutation({
-    mutationFn: (id: string) => api.delete(`/accounts/users/${id}/`),
+  const deactivate = useMutation({
+    mutationFn: (id: string) => api.patch(`/accounts/users/${id}/`, { is_active: false }),
     onSuccess: () => { toast.success('Đã xoá tài khoản'); invalidate() },
     onError: (e) => toast.error(apiError(e)),
   })
@@ -84,13 +79,13 @@ export function AdminUsersPage() {
         <thead>
           <tr className="border-b border-line">
             <Th>Tài khoản</Th><Th>Họ tên</Th><Th>Email</Th>
-            <Th>Vai trò</Th><Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
+            <Th>Vai trò</Th><Th className="text-right">Hành động</Th>
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={6} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {users.length === 0 && !isLoading && <RowMsg colSpan={6}>Chưa có tài khoản nào.</RowMsg>}
+          {isLoading && <RowMsg colSpan={5}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={5} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {users.length === 0 && !isLoading && <RowMsg colSpan={5}>Chưa có tài khoản nào.</RowMsg>}
           {users.map((u) => {
             const isSelf = u.id === meId
             return (
@@ -109,33 +104,18 @@ export function AdminUsersPage() {
                     {ROLE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
                 </Td>
-                <Td>
-                  {u.is_active
-                    ? <Tag tone="ok">Hoạt động</Tag>
-                    : <Tag tone="danger">Đã khóa</Tag>}
-                </Td>
                 <Td className="text-right">
                   <span className="inline-flex gap-1.5 justify-end">
                     <Button variant="ghost" size="sm" onClick={() => openEdit(u)}>
                       <Pencil size={13} /> Sửa
                     </Button>
-                    {u.is_active
-                      ? <Button variant="ghost" size="sm" disabled={isSelf || toggleActive.isPending}
-                          title={isSelf ? 'Không thể tự khóa mình' : 'Khóa tài khoản'}
-                          onClick={() => toggleActive.mutate({ id: u.id, is_active: false })}>
-                          <Lock size={13} /> Khóa
-                        </Button>
-                      : <Button variant="ghost" size="sm" disabled={toggleActive.isPending}
-                          onClick={() => toggleActive.mutate({ id: u.id, is_active: true })}>
-                          <Unlock size={13} /> Mở
-                        </Button>}
-                    <Button variant="ghost" size="sm" disabled={isSelf || del.isPending}
+                    <Button variant="ghost" size="sm" disabled={isSelf || deactivate.isPending}
                       title={isSelf ? 'Không thể tự xoá tài khoản của mình' : 'Xoá tài khoản'}
                       className="!text-danger"
                       onClick={() => {
                         if (isSelf) return
-                        if (confirm(`Xoá vĩnh viễn tài khoản "${u.username}"? Không khôi phục được.`)) {
-                          del.mutate(u.id)
+                        if (confirm(`Xoá tài khoản "${u.username}"? Tài khoản sẽ ngừng hoạt động (dữ liệu cũ vẫn giữ nguyên).`)) {
+                          deactivate.mutate(u.id)
                         }
                       }}>
                       <Trash2 size={13} /> Xoá
