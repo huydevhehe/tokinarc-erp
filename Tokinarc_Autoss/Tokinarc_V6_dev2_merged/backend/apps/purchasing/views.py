@@ -87,6 +87,14 @@ class SupplierViewSet(viewsets.ModelViewSet):
         'phone': ['icontains'],
     }
 
+    def get_queryset(self):
+        qs = super().get_queryset()
+        # "Xóa" NCC = is_active=False (đổi trạng thái, KHÔNG xóa row — đơn mua cũ vẫn
+        # giữ nguyên tên NCC). Ẩn khỏi danh sách + dropdown chọn NCC (PO/Nhập kho).
+        if self.action == 'list':
+            qs = qs.filter(is_active=True)
+        return qs
+
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user, updated_by=self.request.user)
 

@@ -200,3 +200,34 @@ def test_supplier_filter_by_code_name_tax_code_phone(manager):
 
     r = c.get('/api/v1/purchasing/suppliers/', {'phone__icontains': '0901'})
     assert [s['code'] for s in r.data['results']] == ['NCC-F01']
+
+
+@pytest.mark.django_db
+def test_supplier_edit(manager):
+    sup = Supplier.objects.create(code='NCC-E01', name='Cu', created_by=manager, updated_by=manager)
+    c = APIClient(); c.force_authenticate(manager)
+    r = c.patch(f'/api/v1/purchasing/suppliers/{sup.id}/', {'name': 'Moi', 'phone': '0909'}, format='json')
+    assert r.status_code == 200
+    sup.refresh_from_db()
+    assert sup.name == 'Moi' and sup.phone == '0909'
+
+
+@pytest.mark.django_db
+def test_supplier_delete_is_deactivate_not_hard_delete(manager):
+    """"Xóa" NCC = is_active=False: biến mất khỏi list nhưng row vẫn còn trong DB
+    (để đơn mua cũ vẫn tham chiếu được, khớp pattern deactivate-user)."""
+    sup = Supplier.objects.create(code='NCC-E02', name='X', created_by=manager, updated_by=manager)
+    c = APIClient(); c.force_authenticate(manager)
+    r = c.patch(f'/api/v1/purchasing/suppliers/{sup.id}/', {'is_active': False}, format='json')
+    assert r.status_code == 200
+    assert Supplier.objects.filter(pk=sup.id).exists()
+    r = c.get('/api/v1/purchasing/suppliers/')
+    assert sup.code not in [s['code'] for s in r.data['results']]
+
+
+@pytest.mark.django_db
+def test_supplier_edit_delete_forbidden_for_plain_warehouse_role(warehouse_user):
+    sup = Supplier.objects.create(code='NCC-E03', name='Y')
+    c = APIClient(); c.force_authenticate(warehouse_user)
+    assert c.patch(f'/api/v1/purchasing/suppliers/{sup.id}/', {'name': 'Z'}, format='json').status_code == 403
+    assert c.patch(f'/api/v1/purchasing/suppliers/{sup.id}/', {'is_active': False}, format='json').status_code == 403
