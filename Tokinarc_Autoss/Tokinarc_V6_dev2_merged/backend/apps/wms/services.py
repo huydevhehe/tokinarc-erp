@@ -11,12 +11,22 @@ Quy tắc concurrency:
 from __future__ import annotations
 
 from django.db import transaction
-from django.db.models import F, Sum
+from django.db.models import F, Q, QuerySet, Sum
 
 from .models import (
     Bin, InventoryItem, MovementReason, OutboundLine, OutboundOrder,
     OutboundRule, PickListItem, SerialNumber, StockMovement, Lot,
 )
+
+
+def exclude_hidden_products(qs: QuerySet) -> QuerySet:
+    """Loại tồn kho của Part/Torch đã "ẩn" (is_active=False) khỏi mọi số liệu
+    tổng hợp (dashboard kho, KPI, dashboard CEO/analytics) — theo yêu cầu:
+    sản phẩm ẩn thì không được tính vào dữ liệu hiển thị, dù lịch sử giao
+    dịch/tồn vật lý vẫn còn nguyên trong DB. Dùng cho bất kỳ queryset nào có
+    quan hệ `part`/`torch` (InventoryItem, StockMovement, SerialNumber...)."""
+    return (qs.filter(Q(part__isnull=True) | Q(part__is_active=True))
+              .filter(Q(torch__isnull=True) | Q(torch__is_active=True)))
 
 
 class InsufficientStock(Exception):

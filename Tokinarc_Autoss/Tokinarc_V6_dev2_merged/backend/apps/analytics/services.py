@@ -125,7 +125,7 @@ def inventory_value(warehouse_code: str | None = None) -> dict:
     (đếm riêng) để con số không bị thổi phồng theo giá bán."""
     from apps.wms.models import InventoryItem
 
-    qs = InventoryItem.objects.filter(part__isnull=False).select_related('part')
+    qs = InventoryItem.objects.filter(part__isnull=False, part__is_active=True).select_related('part')
     if warehouse_code:
         qs = qs.filter(bin__zone__warehouse__code=warehouse_code)
     total = 0
@@ -152,7 +152,8 @@ def inventory_aging() -> dict:
     today = date.today()
     order = ['0-30', '31-90', '91-180', '180+', 'unknown']
     buckets = {k: {'lines': 0, 'qty': 0, 'value_vnd': 0} for k in order}
-    qs = InventoryItem.objects.filter(part__isnull=False, qty_on_hand__gt=0).select_related('part')
+    qs = (InventoryItem.objects.filter(part__isnull=False, part__is_active=True, qty_on_hand__gt=0)
+          .select_related('part'))
     for i in qs:
         cost = int(i.part.cost_vnd or 0)
         if not i.received_at:
@@ -184,7 +185,7 @@ def dead_stock(days: int = 90) -> dict:
         .values_list('part').annotate(last=Max('ts')).values_list('part', 'last'))
 
     rows: dict = {}
-    for i in (InventoryItem.objects.filter(part__isnull=False, qty_on_hand__gt=0)
+    for i in (InventoryItem.objects.filter(part__isnull=False, part__is_active=True, qty_on_hand__gt=0)
               .select_related('part')):
         r = rows.setdefault(i.part_id, {
             'part_no': i.part_id,
@@ -224,7 +225,7 @@ def reorder_suggestions(days: int = 60, lead_time_days: int = 14, target_days: i
         sold[r['part']] = -int(r['q'] or 0)   # delta âm → đảo dấu thành SL bán
 
     rows: dict = {}
-    for i in InventoryItem.objects.filter(part__isnull=False).select_related('part'):
+    for i in InventoryItem.objects.filter(part__isnull=False, part__is_active=True).select_related('part'):
         r = rows.setdefault(i.part_id, {
             'part_no': i.part_id,
             'name': getattr(i.part, 'display_name_vi', '') or str(i.part_id),
@@ -342,6 +343,7 @@ def executive_metrics() -> dict:
     from apps.crm.models import Customer, Lead, Opportunity, Ticket
     from apps.sales.models import SalesOrder
     from apps.wms.models import InventoryItem
+    from apps.wms.services import exclude_hidden_products
 
     today = date.today()
     active = SalesOrder.objects.filter(status__in=_ACTIVE_ORDER)
@@ -374,7 +376,8 @@ def executive_metrics() -> dict:
         'urgent_tickets':       Ticket.objects.filter(status__in=['open', 'in_progress'], priority='urgent').count(),
         'inventory_value':      int(inv['inventory_value_vnd']),
         'sku_count':            inv['sku_count'],
-        'low_stock':            InventoryItem.objects.filter(qty_on_hand__lte=F('min_level')).count(),
+        'low_stock':            exclude_hidden_products(
+                                    InventoryItem.objects.filter(qty_on_hand__lte=F('min_level'))).count(),
     }
     m['hoat_dong'] = _executive_activities()
     return m

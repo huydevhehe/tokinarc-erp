@@ -216,6 +216,7 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
         qs = (InventoryItem.objects
               .select_related('bin', 'bin__zone', 'bin__zone__warehouse', 'part', 'torch')
               .annotate(qty_available=F('qty_on_hand') - F('qty_reserved')))
+        qs = services.exclude_hidden_products(qs)   # sản phẩm đã ẩn không tính vào số liệu
         wh = self.request.query_params.get('warehouse')
         if wh:
             qs = qs.filter(bin__zone__warehouse__code=wh)
@@ -389,7 +390,8 @@ class SerialNumberViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['serial']
 
     def get_queryset(self):
-        return SerialNumber.objects.select_related('torch', 'bin', 'sold_to_customer')
+        return (SerialNumber.objects.select_related('torch', 'bin', 'sold_to_customer')
+                .filter(torch__is_active=True))   # torch đã ẩn không tính vào số liệu
 
     @action(detail=True, methods=['get'])
     def history(self, request, pk=None):
@@ -948,7 +950,7 @@ class OpsKpiView(APIView):
         accuracy = round((1 - mismatch / counted_lines) * 100, 1) if counted_lines else 100.0
 
         # Tồn theo zone
-        inv = InventoryItem.objects.all()
+        inv = services.exclude_hidden_products(InventoryItem.objects.all())
         if wh:
             inv = inv.filter(bin__zone__warehouse__code=wh)
         by_zone = list(inv.values('bin__zone__code', 'bin__zone__name')
