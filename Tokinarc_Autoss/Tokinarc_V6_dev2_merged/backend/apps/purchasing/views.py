@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -78,6 +79,13 @@ class SupplierViewSet(viewsets.ModelViewSet):
     serializer_class = SupplierSerializer
     permission_classes = [SupplierPermission]
     queryset = Supplier.objects.all()
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = {
+        'code': ['icontains'],
+        'name': ['icontains'],
+        'tax_code': ['icontains'],
+        'phone': ['icontains'],
+    }
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user, updated_by=self.request.user)

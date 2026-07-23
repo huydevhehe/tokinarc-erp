@@ -8,8 +8,9 @@ import { Building, Plus, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
+import { useDebounced } from '@/lib/useDebounced'
 import { Modal } from '@/components/Modal'
-import { PageHeader, Button, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
+import { PageHeader, Button, SearchInput, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 import { FieldRow, TextInput } from '@/components/form'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '@/lib/auth/store'
@@ -24,13 +25,27 @@ export function SuppliersPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
+  const [code, setCode] = useState('')
+  const [name, setName] = useState('')
+  const [taxCode, setTaxCode] = useState('')
+  const [phone, setPhone] = useState('')
+  const dCode = useDebounced(code, 350, () => setPage(1))
+  const dName = useDebounced(name, 350, () => setPage(1))
+  const dTaxCode = useDebounced(taxCode, 350, () => setPage(1))
+  const dPhone = useDebounced(phone, 350, () => setPage(1))
   // Import NCC: Quản lý kho trở lên (khớp backend PO_WRITE_ROLES).
   const role = useAuth((s) => s.user?.role)
   const canImport = role === 'wh_manager' || role === 'manager' || role === 'ceo'
   const { register, handleSubmit, reset } = useForm<Form>()
   const { data, isLoading, isFetching } = useQuery({
-    queryKey: ['suppliers', page, pageSize],
-    queryFn: () => fetchPage<Supplier>('/purchasing/suppliers/', { page, page_size: pageSize }),
+    queryKey: ['suppliers', dCode, dName, dTaxCode, dPhone, page, pageSize],
+    queryFn: () => fetchPage<Supplier>('/purchasing/suppliers/', {
+      code__icontains: dCode || undefined,
+      name__icontains: dName || undefined,
+      tax_code__icontains: dTaxCode || undefined,
+      phone__icontains: dPhone || undefined,
+      page, page_size: pageSize,
+    }),
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
@@ -52,6 +67,12 @@ export function SuppliersPage() {
             <Button onClick={() => setOpen(true)}><Plus size={14} /> Thêm NCC</Button>
           </>
         } />
+      <div className="flex flex-wrap gap-2 mb-3">
+        <SearchInput value={code} onChange={setCode} placeholder="Lọc theo mã…" />
+        <SearchInput value={name} onChange={setName} placeholder="Lọc theo tên…" />
+        <SearchInput value={taxCode} onChange={setTaxCode} placeholder="Lọc theo MST…" />
+        <SearchInput value={phone} onChange={setPhone} placeholder="Lọc theo điện thoại…" />
+      </div>
       <TableCard>
         <thead><tr className="border-b border-line"><Th>Mã</Th><Th>Tên</Th><Th>MST</Th><Th>Điện thoại</Th></tr></thead>
         <tbody>

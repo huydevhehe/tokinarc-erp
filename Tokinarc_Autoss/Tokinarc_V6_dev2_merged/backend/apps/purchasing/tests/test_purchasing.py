@@ -179,3 +179,24 @@ def test_po_approve_l2_endpoint_removed():
     from django.urls import NoReverseMatch, reverse
     with pytest.raises(NoReverseMatch):
         reverse('purchaseorder-approve-l2', args=['x'])
+
+
+@pytest.mark.django_db
+def test_supplier_filter_by_code_name_tax_code_phone(manager):
+    Supplier.objects.create(code='NCC-F01', name='Cong ty A', tax_code='0311111111',
+                            phone='0901111111', created_by=manager, updated_by=manager)
+    Supplier.objects.create(code='NCC-F02', name='Cty Thep Viet', tax_code='0322222222',
+                            phone='0902222222', created_by=manager, updated_by=manager)
+    c = APIClient(); c.force_authenticate(manager)
+
+    r = c.get('/api/v1/purchasing/suppliers/', {'code__icontains': 'f01'})
+    assert [s['code'] for s in r.data['results']] == ['NCC-F01']
+
+    r = c.get('/api/v1/purchasing/suppliers/', {'name__icontains': 'thep'})
+    assert [s['code'] for s in r.data['results']] == ['NCC-F02']
+
+    r = c.get('/api/v1/purchasing/suppliers/', {'tax_code__icontains': '03222'})
+    assert [s['code'] for s in r.data['results']] == ['NCC-F02']
+
+    r = c.get('/api/v1/purchasing/suppliers/', {'phone__icontains': '0901'})
+    assert [s['code'] for s in r.data['results']] == ['NCC-F01']
