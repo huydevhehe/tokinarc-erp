@@ -191,15 +191,15 @@ export function InboundForm({ open, onClose, editing }: {
                   options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
                 <input type="number" min={1} placeholder="SL"
                   {...register(`lines.${i}.qty_expected` as const, { valueAsNumber: true })}
-                  className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 <input type="number" min={0} placeholder="Đơn giá nhập"
                   {...register(`lines.${i}.unit_cost` as const, { valueAsNumber: true })}
-                  className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
                   {...register(`lines.${i}.tax_pct` as const)}
-                  className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 <select {...register(`lines.${i}.target_bin` as const)}
-                  className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none">
+                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none">
                   <option value="">— Bin đích —</option>
                   {binItems.map((b) => <option key={b.id} value={b.id}>{b.full_code}</option>)}
                 </select>
