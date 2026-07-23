@@ -51,6 +51,7 @@ export function PurchaseOrdersPage() {
   const [supplier, setSupplier] = useState(''); const [warehouse, setWarehouse] = useState('')
   const [expectedDate, setExpectedDate] = useState(''); const [paymentTerms, setPaymentTerms] = useState('')
   const [carrier, setCarrier] = useState(''); const [trackingNo, setTrackingNo] = useState('')
+  const [notes, setNotes] = useState('')
   const [lines, setLines] = useState<POLine[]>([{ part: '', qty: 1, unit_cost: 0 }])
   const [payAmt, setPayAmt] = useState('')
 
@@ -66,10 +67,10 @@ export function PurchaseOrdersPage() {
     mutationFn: () => api.post('/purchasing/orders/', {
       supplier, warehouse,
       expected_date: expectedDate || null, payment_terms_note: paymentTerms,
-      carrier, tracking_no: trackingNo,
+      carrier, tracking_no: trackingNo, notes,
       lines: lines.filter((l) => l.part).map((l) => ({ part: l.part.trim(), qty: Number(l.qty), unit_cost: Number(l.unit_cost) })),
     }),
-    onSuccess: (r) => { toast.success(`Đã tạo ${r.data.code}`); invalidate(); setOpen(false); setLines([{ part: '', qty: 1, unit_cost: 0 }]); setSupplier(''); setExpectedDate(''); setPaymentTerms(''); setCarrier(''); setTrackingNo('') },
+    onSuccess: (r) => { toast.success(`Đã tạo ${r.data.code}`); invalidate(); setOpen(false); setLines([{ part: '', qty: 1, unit_cost: 0 }]); setSupplier(''); setExpectedDate(''); setPaymentTerms(''); setCarrier(''); setTrackingNo(''); setNotes('') },
     onError: (e) => toast.error(apiError(e)),
   })
   const ACT_MSG: Record<string, string> = {
@@ -267,6 +268,12 @@ export function PurchaseOrdersPage() {
             <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">Điều kiện thanh toán (NCC)</label>
             <textarea value={paymentTerms} onChange={(e) => setPaymentTerms(e.target.value)} rows={2}
               placeholder="VD: Trả trước 30%, còn lại sau 30 ngày / 100% khi nhận hàng…"
+              className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
+          </div>
+          <div>
+            <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">Ghi chú chính sách / giao hàng</label>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
+              placeholder="VD: Giao theo 2 đợt, đợt 1 trong tuần này / chính sách đổi trả…"
               className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
           </div>
           <div className="text-xs text-txt-2">Dòng hàng (mã part + SL + đơn giá):</div>

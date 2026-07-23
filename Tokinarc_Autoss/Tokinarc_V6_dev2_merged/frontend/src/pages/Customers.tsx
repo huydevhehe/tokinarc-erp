@@ -5,8 +5,9 @@
  */
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQuery, keepPreviousData } from '@tanstack/react-query'
-import { Search, Users, Plus, Upload } from 'lucide-react'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { Search, Users, Plus, Upload, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { PAGE_SIZE } from '@/lib/list'
 import {
@@ -16,6 +17,7 @@ import { TAG_CLASS } from '@/lib/crm'
 import type { Customer, Paginated } from '@/lib/types'
 import { Button, Pagination } from '@/components/ui'
 import { useAuth, isManager } from '@/lib/auth/store'
+import { useCan } from '@/lib/auth/capabilities'
 import { CustomerForm } from '@/pages/crm/forms/CustomerForm'
 import { ImportModal } from '@/pages/crm/ImportModal'
 
@@ -37,15 +39,28 @@ export function CustomersPage() {
   // #3 biên bản (2026-07-22): mở thêm cho Sale — KH là dữ liệu Sale sở hữu.
   const importRole = useAuth((s) => s.user?.role)
   const canImport = isManager(importRole) || importRole === 'sales'
+  const myId = useAuth((s) => s.user?.id)
+  const canDeleteAny = useCan('crm.customer.view_all')
 
   // debounce search 350ms
   useDebounce(search, 350, (v) => { setDebounced(v); setPage(1) })
 
+  const qc = useQueryClient()
   const { data, isLoading, isError, error, isFetching } = useQuery({
     queryKey: ['customers', debounced, page, pageSize],
     queryFn: () => fetchCustomers(debounced, page, pageSize),
     placeholderData: keepPreviousData,
   })
+
+  const del = useMutation({
+    mutationFn: (id: string) => api.delete(`/crm/customers/${id}/`),
+    onSuccess: () => { toast.success('Đã xoá khách hàng'); qc.invalidateQueries({ queryKey: ['customers'] }) },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const onDelete = (c: Customer, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (window.confirm(`Xoá khách hàng "${c.name}"? Có thể khôi phục qua quản trị nếu cần.`)) del.mutate(c.id)
+  }
 
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
@@ -92,13 +107,14 @@ export function CustomersPage() {
               <th className="px-4 py-2.5 font-medium">Ngày tạo</th>
               <th className="px-4 py-2.5 font-medium">Nội dung</th>
               <th className="px-4 py-2.5 font-medium">Trạng thái</th>
+              <th className="px-4 py-2.5 font-medium text-right">Thao tác</th>
             </tr>
           </thead>
           <tbody>
-            {isLoading && <RowMsg colSpan={10}>Đang tải…</RowMsg>}
-            {isError && <RowMsg colSpan={10} danger>Lỗi: {apiError(error)}</RowMsg>}
+            {isLoading && <RowMsg colSpan={11}>Đang tải…</RowMsg>}
+            {isError && <RowMsg colSpan={11} danger>Lỗi: {apiError(error)}</RowMsg>}
             {data?.results.length === 0 && (
-              <RowMsg colSpan={10}>Không có khách hàng nào khớp.</RowMsg>
+              <RowMsg colSpan={11}>Không có khách hàng nào khớp.</RowMsg>
             )}
             {data?.results.map((c) => (
               <tr key={c.id} onClick={() => nav(`/customers/${c.id}`)}
@@ -118,6 +134,15 @@ export function CustomersPage() {
                   <span className={`text-xs border rounded-full px-2 py-0.5 ${TAG_CLASS[CUSTOMER_STATUS_TONE[c.status] ?? 'gray']}`}>
                     {CUSTOMER_STATUS_LABEL[c.status] ?? c.status}
                   </span>
+                </td>
+                <td className="px-4 py-2.5 text-right" onClick={(e) => e.stopPropagation()}>
+                  {(canDeleteAny || c.owner === myId) && (
+                    <Button size="sm" variant="ghost"
+                      disabled={del.isPending && del.variables === c.id}
+                      onClick={(e) => onDelete(c, e)}>
+                      <Trash2 size={13} /> Xóa
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}
