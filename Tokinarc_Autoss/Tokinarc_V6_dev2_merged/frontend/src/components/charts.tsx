@@ -9,7 +9,10 @@ import { compactVnd } from '@/lib/crm'
 
 interface Row { label: string; value: number }
 
-const PALETTE = ['#e05c1b', '#58a6ff', '#3fb950', '#bc8cff', '#d29922', '#2dd4bf']
+const PALETTE = [
+  'rgb(var(--chart-1))', 'rgb(var(--chart-2))', 'rgb(var(--chart-3))',
+  'rgb(var(--chart-4))', 'rgb(var(--chart-5))', 'rgb(var(--chart-6))',
+]
 
 function MoneyTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null
@@ -30,14 +33,14 @@ export function MoneyBarChart({ data, height = 240, multicolor = false }: {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: 8, bottom: 4 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#30363d" vertical={false} />
-        <XAxis dataKey="label" stroke="#8b949e" fontSize={11} tickLine={false} axisLine={{ stroke: '#30363d' }} />
-        <YAxis stroke="#8b949e" fontSize={11} tickLine={false} axisLine={false}
+        <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--line))" vertical={false} />
+        <XAxis dataKey="label" stroke="rgb(var(--txt-2))" fontSize={11} tickLine={false} axisLine={{ stroke: 'rgb(var(--line))' }} />
+        <YAxis stroke="rgb(var(--txt-2))" fontSize={11} tickLine={false} axisLine={false}
           tickFormatter={(v) => compactVnd(v).replace('₫ ', '')} width={56} />
         <Tooltip content={<MoneyTooltip />} cursor={{ fill: 'rgba(224,92,27,0.08)' }} />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={64}>
           {data.map((_, i) => (
-            <Cell key={i} fill={multicolor ? PALETTE[i % PALETTE.length] : '#e05c1b'} />
+            <Cell key={i} fill={multicolor ? PALETTE[i % PALETTE.length] : 'rgb(var(--flame))'} />
           ))}
         </Bar>
       </BarChart>
