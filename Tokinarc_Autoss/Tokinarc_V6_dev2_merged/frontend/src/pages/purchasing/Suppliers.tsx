@@ -3,12 +3,13 @@
  * Nhà cung cấp: danh sách + thêm mới. GET/POST /purchasing/suppliers/.
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { Building, Plus, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
+import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { Modal } from '@/components/Modal'
-import { PageHeader, Button, TableCard, Th, Td, RowMsg } from '@/components/ui'
+import { PageHeader, Button, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 import { FieldRow, TextInput } from '@/components/form'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '@/lib/auth/store'
@@ -21,14 +22,17 @@ export function SuppliersPage() {
   const qc = useQueryClient()
   const [open, setOpen] = useState(false)
   const [importOpen, setImportOpen] = useState(false)
+  const [page, setPage] = useState(1)
   // Import NCC: Quản lý kho trở lên (khớp backend PO_WRITE_ROLES).
   const role = useAuth((s) => s.user?.role)
   const canImport = role === 'wh_manager' || role === 'manager' || role === 'ceo'
   const { register, handleSubmit, reset } = useForm<Form>()
-  const { data, isLoading } = useQuery({
-    queryKey: ['suppliers'],
-    queryFn: async () => (await api.get<{ results: Supplier[] }>('/purchasing/suppliers/')).data.results ?? [],
+  const { data, isLoading, isFetching } = useQuery({
+    queryKey: ['suppliers', page],
+    queryFn: () => fetchPage<Supplier>('/purchasing/suppliers/', { page }),
+    placeholderData: keepPreviousData,
   })
+  const totalPages = data ? Math.max(1, Math.ceil(data.count / PAGE_SIZE)) : 1
   const save = useMutation({
     mutationFn: (d: Form) => api.post('/purchasing/suppliers/', d),
     onSuccess: () => { toast.success('Đã thêm NCC'); qc.invalidateQueries({ queryKey: ['suppliers'] }); setOpen(false); reset() },
@@ -38,7 +42,7 @@ export function SuppliersPage() {
   return (
     <div className="max-w-4xl">
       <PageHeader icon={<Building size={20} className="text-flame" />} title="Nhà cung cấp"
-        subtitle={data ? `${data.length} NCC` : undefined}
+        subtitle={data ? `${data.count} NCC` : undefined}
         actions={
           <>
             {canImport && (
@@ -51,8 +55,8 @@ export function SuppliersPage() {
         <thead><tr className="border-b border-line"><Th>Mã</Th><Th>Tên</Th><Th>MST</Th><Th>Điện thoại</Th></tr></thead>
         <tbody>
           {isLoading && <RowMsg colSpan={4}>Đang tải…</RowMsg>}
-          {data?.length === 0 && <RowMsg colSpan={4}>Chưa có NCC.</RowMsg>}
-          {data?.map((s) => (
+          {data?.results.length === 0 && <RowMsg colSpan={4}>Chưa có NCC.</RowMsg>}
+          {data?.results.map((s) => (
             <tr key={s.id} className="border-b border-line/50 last:border-0">
               <Td className="font-mono text-flame">{s.code}</Td><Td className="font-medium">{s.name}</Td>
               <Td className="text-txt-2">{s.tax_code || '—'}</Td><Td className="text-txt-2">{s.phone || '—'}</Td>
@@ -60,6 +64,10 @@ export function SuppliersPage() {
           ))}
         </tbody>
       </TableCard>
+      {data && data.count > PAGE_SIZE && (
+        <Pagination page={page} totalPages={totalPages} fetching={isFetching}
+          onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+      )}
 
       <Modal open={open} onClose={() => setOpen(false)} title="Thêm nhà cung cấp"
         icon={<Building size={18} className="text-flame" />}
