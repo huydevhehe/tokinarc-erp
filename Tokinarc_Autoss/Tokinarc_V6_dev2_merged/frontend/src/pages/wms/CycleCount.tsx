@@ -4,14 +4,15 @@
  * Áp dụng (điều chỉnh tồn). POST /wms/cycle-counts/ + /{id}/scan/ + /{id}/apply/.
  */
 import { useState } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { ClipboardCheck, Plus, ScanLine, CheckCheck, Search, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
+import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useAuth, isWmsControl } from '@/lib/auth/store'
 import { CameraScanner } from '@/components/CameraScanner'
 import type { CatalogPart, SerialNumber } from '@/lib/types'
-import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg } from '@/components/ui'
+import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 
 interface CCLine { id: string; bin_code: string; part_name: string; system_qty: number; counted_qty: number; diff: number }
 interface CC { id: string; code: string; warehouse_code: string; status: string; lines: CCLine[] }
@@ -25,6 +26,7 @@ export function WmsCycleCountPage() {
   const [lookupQ, setLookupQ] = useState('')
   const [assigning, setAssigning] = useState(false)   // quét-gán: mã lạ → gán cho 1 SP
   const [assignPick, setAssignPick] = useState('')
+  const [listPage, setListPage] = useState(1)
 
   // Tra cứu: quét/nhập mã → tìm phụ tùng (catalog, có cả barcode) + serial (WMS).
   const lookup = useQuery({
@@ -56,9 +58,11 @@ export function WmsCycleCountPage() {
   })
 
   const list = useQuery({
-    queryKey: ['cycle-counts'],
-    queryFn: async () => (await api.get<{ results: CC[] }>('/wms/cycle-counts/')).data.results ?? [],
+    queryKey: ['cycle-counts', listPage],
+    queryFn: () => fetchPage<CC>('/wms/cycle-counts/', { page: listPage }),
+    placeholderData: keepPreviousData,
   })
+  const listTotalPages = list.data ? Math.max(1, Math.ceil(list.data.count / PAGE_SIZE)) : 1
   const detail = useQuery({
     queryKey: ['cycle-count', openId],
     queryFn: async () => (await api.get<CC>(`/wms/cycle-counts/${openId}/`)).data,
@@ -175,8 +179,8 @@ export function WmsCycleCountPage() {
           <thead><tr className="border-b border-line"><Th>Mã phiên</Th><Th>Kho</Th><Th>Trạng thái</Th><Th /></tr></thead>
           <tbody>
             {list.isLoading && <RowMsg colSpan={4}>Đang tải…</RowMsg>}
-            {list.data?.length === 0 && <RowMsg colSpan={4}>Chưa có phiên kiểm kê.</RowMsg>}
-            {list.data?.map((s) => (
+            {list.data && list.data.results.length === 0 && <RowMsg colSpan={4}>Chưa có phiên kiểm kê.</RowMsg>}
+            {list.data?.results.map((s) => (
               <tr key={s.id} className="border-b border-line/50 hover:bg-ink-3/40 cursor-pointer" onClick={() => setOpenId(s.id)}>
                 <Td className="font-mono text-flame">{s.code}</Td>
                 <Td>{s.warehouse_code}</Td>
@@ -186,6 +190,11 @@ export function WmsCycleCountPage() {
             ))}
           </tbody>
         </TableCard>
+      )}
+
+      {!openId && list.data && list.data.count > PAGE_SIZE && (
+        <Pagination page={listPage} totalPages={listTotalPages} fetching={list.isFetching}
+          onPrev={() => setListPage((p) => p - 1)} onNext={() => setListPage((p) => p + 1)} />
       )}
 
       {openId && cc && (
