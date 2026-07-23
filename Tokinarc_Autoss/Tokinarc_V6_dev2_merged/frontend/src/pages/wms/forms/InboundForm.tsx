@@ -198,11 +198,12 @@ export function InboundForm({ open, onClose, editing }: {
                 <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
                   {...register(`lines.${i}.tax_pct` as const)}
                   className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
-                <select {...register(`lines.${i}.target_bin` as const)}
-                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none">
-                  <option value="">— Bin đích —</option>
-                  {binItems.map((b) => <option key={b.id} value={b.id}>{b.full_code}</option>)}
-                </select>
+                <input type="hidden" {...register(`lines.${i}.target_bin` as const)} />
+                <SearchableSelect
+                  value={watched[i]?.target_bin ?? ''}
+                  onChange={(v) => setValue(`lines.${i}.target_bin` as const, v)}
+                  options={binItems.map((b) => ({ value: b.id, label: b.full_code }))}
+                  loading={bins.isLoading} placeholder="— Bin đích —" />
                 <button type="button" onClick={() => fields.length > 1 && remove(i)}
                   className="text-txt-2 hover:text-danger p-1.5 disabled:opacity-30" disabled={fields.length <= 1} aria-label="Xóa">
                   <Trash2 size={15} />
