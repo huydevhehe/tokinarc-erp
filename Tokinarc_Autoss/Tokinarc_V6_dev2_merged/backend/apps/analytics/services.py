@@ -172,8 +172,10 @@ def inventory_aging() -> dict:
 
 
 def dead_stock(days: int = 90) -> dict:
-    """Hàng CHẬM/CHẾT: còn tồn nhưng KHÔNG xuất trong `days` ngày (hoặc chưa từng xuất).
-    Trả về danh sách theo vốn chôn giảm dần (tiền chết nhiều nhất lên đầu)."""
+    """Hàng CHẬM/CHẾT: đã nhập kho ĐỦ LÂU (lô gần nhất cũng ≥ `days` ngày) mà vẫn
+    KHÔNG xuất trong `days` ngày (hoặc chưa từng xuất). Hàng vừa nhập gần đây
+    (< `days` ngày) không tính là chết dù chưa bán — chưa đủ thời gian để đánh
+    giá, không phải "ế". Trả về danh sách theo vốn chôn giảm dần."""
     from django.db.models import Max
 
     from apps.wms.models import InventoryItem, StockMovement
@@ -190,11 +192,18 @@ def dead_stock(days: int = 90) -> dict:
         r = rows.setdefault(i.part_id, {
             'part_no': i.part_id,
             'name': getattr(i.part, 'display_name_vi', '') or str(i.part_id),
-            'qty': 0, 'cost_vnd': int(i.part.cost_vnd or 0)})
+            'qty': 0, 'cost_vnd': int(i.part.cost_vnd or 0), 'last_received': None})
         r['qty'] += i.qty_on_hand
+        # Nhập gần nhất (lô mới nhất, ở bin bất kỳ) — hàng vừa nhập chưa đủ
+        # thời gian để đánh giá "ế", dù chưa từng xuất cũng không tính là chết.
+        if i.received_at and (r['last_received'] is None or i.received_at > r['last_received']):
+            r['last_received'] = i.received_at
 
     out = []
     for pid, r in rows.items():
+        last_received_d = r['last_received'].date() if r['last_received'] else None
+        if last_received_d and last_received_d > cutoff:
+            continue   # còn lô mới nhập trong hạn `days` ngày → chưa đủ thời gian để tính chết
         last = last_out.get(pid)
         last_d = last.date() if last else None
         if last_d is None or last_d < cutoff:

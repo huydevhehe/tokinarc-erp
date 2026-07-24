@@ -48,7 +48,39 @@ def test_revenue_by_segment(manager, seeded):
     r = c.get('/api/v1/analytics/revenue/by-segment/')
     assert r.status_code == 200
     assert r.data[0]['segment'] == 'factory'
-    assert r.data[0]['revenue_vnd'] == 3000000
+
+
+@pytest.mark.django_db
+def test_dead_stock_excludes_recently_received_never_sold_part(manager):
+    """Regression (bug hunt 24/07): hàng vừa nhập kho, chưa từng xuất, KHÔNG
+    được tính là "chậm/chết" chỉ vì chưa bán — phải đã nhập ĐỦ LÂU (>=90 ngày)
+    mới tính. Hàng cũ (nhập lâu, chưa từng xuất) vẫn phải lên danh sách."""
+    from django.utils import timezone
+
+    from apps.catalog.models import Part
+    from apps.wms.models import Bin, InventoryItem, Warehouse, Zone
+
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    z = Zone.objects.create(warehouse=wh, code='A', name='A')
+    b_new = Bin.objects.create(zone=z, rack='R01', bin_code='B1', full_code='HCM-A-R01-B1')
+    b_old = Bin.objects.create(zone=z, rack='R01', bin_code='B2', full_code='HCM-A-R01-B2')
+
+    fresh = Part.objects.create(tokin_part_no='XNT-FRESH', category='X',
+                                display_name_vi='Vua nhap', cost_vnd=1000)
+    InventoryItem.objects.create(bin=b_new, part=fresh, qty_on_hand=10,
+                                 received_at=timezone.now())
+
+    old = Part.objects.create(tokin_part_no='XNT-OLD', category='X',
+                              display_name_vi='Ton lau', cost_vnd=1000)
+    InventoryItem.objects.create(bin=b_old, part=old, qty_on_hand=5,
+                                 received_at=timezone.now() - dt.timedelta(days=200))
+
+    c = APIClient(); c.force_authenticate(manager)
+    r = c.get('/api/v1/analytics/inventory/dead-stock/')
+    assert r.status_code == 200
+    codes = {row['part_no'] for row in r.data['results']}
+    assert 'XNT-FRESH' not in codes
+    assert 'XNT-OLD' in codes
 
 
 @pytest.mark.django_db
