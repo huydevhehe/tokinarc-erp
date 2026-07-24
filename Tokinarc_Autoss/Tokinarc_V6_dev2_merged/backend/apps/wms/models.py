@@ -127,6 +127,12 @@ class InventoryItem(models.Model):
     Tồn theo (bin, part) HOẶC (bin, torch) — đúng MỘT trong hai not-null.
     Warehouse suy ra qua bin.zone.warehouse.
     """
+    # Ngưỡng "sắp hết" mặc định khi CHƯA cấu hình min_level (=0, giá trị mặc định
+    # của field và không có UI/API nào set khác trước đây) — nếu không có fallback
+    # này, "sắp hết" chỉ bắt được tồn = 0 tuyệt đối, bỏ sót toàn bộ dữ liệu nhập
+    # thật (Excel import, v.v.) chưa từng cấu hình mức tối thiểu.
+    LOW_STOCK_DEFAULT_THRESHOLD = 5
+
     bin         = models.ForeignKey(Bin, on_delete=models.PROTECT, related_name='items')
     part        = models.ForeignKey('catalog.Part', null=True, blank=True,
                                     on_delete=models.PROTECT, related_name='inventory',
@@ -173,6 +179,16 @@ class InventoryItem(models.Model):
         """Tồn khả dụng. LƯU Ý: viewset annotate alias 'qty_available' cho API —
         không đặt property tên 'qty_available' để tránh xung đột annotation setter."""
         return self.qty_on_hand - self.qty_reserved
+
+    @property
+    def effective_min_level(self) -> int:
+        """min_level đã cấu hình (>0), hoặc LOW_STOCK_DEFAULT_THRESHOLD nếu chưa
+        (=0) — xem ghi chú ở LOW_STOCK_DEFAULT_THRESHOLD."""
+        return self.min_level if self.min_level > 0 else self.LOW_STOCK_DEFAULT_THRESHOLD
+
+    @property
+    def is_low(self) -> bool:
+        return self.qty_on_hand <= self.effective_min_level
 
     def __str__(self) -> str:
         what = self.part_id or self.torch_id

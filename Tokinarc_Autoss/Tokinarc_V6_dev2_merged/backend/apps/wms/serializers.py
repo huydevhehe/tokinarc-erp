@@ -55,12 +55,15 @@ class InventoryItemSerializer(serializers.ModelSerializer):
     qty_available  = serializers.IntegerField(read_only=True)
     item_name      = serializers.SerializerMethodField()
     category       = serializers.SerializerMethodField()
+    unit           = serializers.SerializerMethodField()
+    cost_vnd       = serializers.SerializerMethodField()
+    is_low         = serializers.BooleanField(read_only=True)
 
     class Meta:
         model  = InventoryItem
         fields = ['id', 'bin', 'bin_code', 'warehouse_code', 'part', 'torch',
-                  'item_name', 'category', 'qty_on_hand', 'qty_reserved', 'qty_available',
-                  'min_level', 'updated_at']
+                  'item_name', 'category', 'unit', 'cost_vnd', 'qty_on_hand', 'qty_reserved',
+                  'qty_available', 'min_level', 'is_low', 'updated_at']
         read_only_fields = ['id', 'updated_at']
 
     def get_item_name(self, obj) -> str:
@@ -73,6 +76,14 @@ class InventoryItemSerializer(serializers.ModelSerializer):
         if obj.part_id:
             return getattr(obj.part, 'category', '') or ''
         return getattr(obj.torch, 'family', '') or ''
+
+    def get_unit(self, obj) -> str:
+        o = obj.part or obj.torch
+        return getattr(o, 'price_unit', '') if o else ''
+
+    def get_cost_vnd(self, obj):
+        o = obj.part or obj.torch
+        return getattr(o, 'cost_vnd', None) if o else None
 
     def validate(self, attrs):
         if bool(attrs.get('part')) == bool(attrs.get('torch')):
@@ -112,14 +123,24 @@ def _line_item_name(obj):
     return (getattr(o, 'display_name_vi', '') or str(o.pk)) if o else ''
 
 
+def _line_unit(obj) -> str:
+    """Đơn vị tính (Part/Torch.price_unit, mặc định 'cái') cho 1 dòng phiếu kho."""
+    o = obj.part or obj.torch
+    return getattr(o, 'price_unit', '') if o else ''
+
+
 class InboundLineSerializer(serializers.ModelSerializer):
     part_name = serializers.SerializerMethodField()
+    unit = serializers.SerializerMethodField()
 
     class Meta:
         model  = InboundLine
-        fields = ['id', 'part', 'torch', 'part_name', 'qty_expected', 'qty_received',
+        fields = ['id', 'part', 'torch', 'part_name', 'unit', 'qty_expected', 'qty_received',
                   'target_bin', 'lot_no', 'lot_expires', 'unit_cost', 'tax_pct',
                   'serials_raw', 'order_idx']
+
+    def get_unit(self, obj) -> str:
+        return _line_unit(obj)
 
     def get_part_name(self, obj) -> str:
         return _line_item_name(obj)
@@ -170,11 +191,15 @@ class InboundOrderSerializer(serializers.ModelSerializer):
 
 class OutboundLineSerializer(serializers.ModelSerializer):
     part_name = serializers.SerializerMethodField()
+    unit = serializers.SerializerMethodField()
 
     class Meta:
         model  = OutboundLine
-        fields = ['id', 'part', 'torch', 'part_name', 'qty_ordered', 'qty_picked', 'order_idx',
+        fields = ['id', 'part', 'torch', 'part_name', 'unit', 'qty_ordered', 'qty_picked', 'order_idx',
                   'unit_price', 'line_total']
+
+    def get_unit(self, obj) -> str:
+        return _line_unit(obj)
 
     def get_part_name(self, obj) -> str:
         return _line_item_name(obj)

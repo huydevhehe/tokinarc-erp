@@ -190,10 +190,12 @@ export function InboundPage() {
             )}
           </div>
         )}
-        q1Label="SL dự kiến" q2Label="Đã nhận"
+        q1Label="SL dự kiến" q2Label="Đã nhận" showPrice
         lines={(viewOrder?.lines ?? []).map((l, i) => ({
           key: l.id ?? String(i), name: l.part_name ?? '', code: l.part ?? l.torch ?? '—',
-          q1: l.qty_expected, q2: l.qty_received,
+          unit: l.unit, q1: l.qty_expected, q2: l.qty_received,
+          unitPrice: l.unit_cost != null ? String(l.unit_cost) : null,
+          lineTotal: l.unit_cost != null ? String(Number(l.unit_cost) * l.qty_received) : null,
         }))}
       />
 

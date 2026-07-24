@@ -204,7 +204,7 @@ export function OutboundPage() {
         q1Label="SL đặt" q2Label="Đã soạn" showPrice
         lines={(viewOrder?.lines ?? []).map((l, i) => ({
           key: l.id ?? String(i), name: l.part_name ?? '', code: l.part ?? l.torch ?? '—',
-          q1: l.qty_ordered, q2: l.qty_picked,
+          unit: l.unit, q1: l.qty_ordered, q2: l.qty_picked,
           unitPrice: l.unit_price, lineTotal: l.line_total,
         }))}
       />

@@ -573,6 +573,42 @@ def test_low_stock_filter(auth, part):
     assert len(r.data['results']) == 1
 
 
+@pytest.mark.django_db
+def test_low_stock_falls_back_to_default_threshold_when_min_level_unset(auth, part):
+    """min_level=0 (chưa cấu hình, mặc định của field) — vẫn phải bắt được hàng
+    tồn thấp (vd còn 1) thay vì chỉ bắt tồn=0 tuyệt đối."""
+    from apps.wms.models import InventoryItem as _InventoryItem
+    b1, b2 = BinFactory(), BinFactory()
+    almost_out = InventoryItem.objects.create(bin=b1, part=part, qty_on_hand=1, min_level=0)
+    plenty = InventoryItem.objects.create(bin=b2, part=part, qty_on_hand=999, min_level=0)
+    r = auth.get('/api/v1/wms/inventory/?low_stock=true')
+    ids = {row['id'] for row in r.data['results']}
+    assert almost_out.id in ids
+    assert plenty.id not in ids
+    assert almost_out.is_low is True
+    assert plenty.is_low is False
+    assert _InventoryItem.LOW_STOCK_DEFAULT_THRESHOLD == 5
+
+
+@pytest.mark.django_db
+def test_min_level_editable_by_wh_manager_not_by_warehouse_staff(auth, auth_mgr, part):
+    b = BinFactory()
+    item = InventoryItem.objects.create(bin=b, part=part, qty_on_hand=10, min_level=0)
+
+    r = auth.patch(f'/api/v1/wms/inventory/{item.id}/min-level/', {'min_level': 3}, format='json')
+    assert r.status_code == 403
+    item.refresh_from_db()
+    assert item.min_level == 0
+
+    r = auth_mgr.patch(f'/api/v1/wms/inventory/{item.id}/min-level/', {'min_level': 3}, format='json')
+    assert r.status_code == 200, r.data
+    item.refresh_from_db()
+    assert item.min_level == 3
+
+    r = auth_mgr.patch(f'/api/v1/wms/inventory/{item.id}/min-level/', {'min_level': -1}, format='json')
+    assert r.status_code == 400
+
+
 # ─── Permission: customer bị chặn, warehouse ghi được ────────────────────────
 @pytest.mark.django_db
 def test_customer_blocked_from_wms(customer_user, part):

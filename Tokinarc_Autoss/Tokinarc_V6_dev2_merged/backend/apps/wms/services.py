@@ -29,6 +29,15 @@ def exclude_hidden_products(qs: QuerySet) -> QuerySet:
               .filter(Q(torch__isnull=True) | Q(torch__is_active=True)))
 
 
+def low_stock_q() -> Q:
+    """Điều kiện "sắp hết" ở mức DB — khớp InventoryItem.is_low: dùng min_level
+    đã cấu hình (>0), hoặc LOW_STOCK_DEFAULT_THRESHOLD nếu chưa (=0). Dùng chung
+    cho filter ?low_stock=true và đếm KPI, để 2 nơi không lệch định nghĩa."""
+    t = InventoryItem.LOW_STOCK_DEFAULT_THRESHOLD
+    return (Q(min_level__gt=0, qty_on_hand__lte=F('min_level')) |
+            Q(min_level=0, qty_on_hand__lte=t))
+
+
 class InsufficientStock(Exception):
     pass
 

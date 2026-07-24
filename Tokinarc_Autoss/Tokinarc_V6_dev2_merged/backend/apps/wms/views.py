@@ -225,7 +225,7 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
         if self.request.query_params.get('zone'):
             qs = qs.filter(bin__zone__code=self.request.query_params['zone'])
         if self.request.query_params.get('low_stock') == 'true':
-            qs = qs.filter(qty_on_hand__lte=F('min_level'))
+            qs = qs.filter(services.low_stock_q())
         return qs
 
     def _category_rows(self, group_id=None):
@@ -312,6 +312,24 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
                          f"Điều chỉnh tồn {sku} tại {d['bin'].full_code}: {delta:+d} "
                          f"(còn {item.qty_on_hand}). {d.get('note') or d['reason']}",
                          link='/wms/movements', exclude_user=request.user)
+        return Response(InventoryItemSerializer(item).data)
+
+    @action(detail=True, methods=['patch'], url_path='min-level')
+    def min_level(self, request, pk=None):
+        """Sửa mức tồn tối thiểu (ngưỡng "sắp hết") của 1 dòng tồn — Quản lý kho
+        trở lên. InventoryItem là ReadOnly ở các field khác (part/torch/bin cố
+        định theo dòng thật), chỉ mở PATCH riêng cho min_level qua action này."""
+        if not is_wms_control(request.user):
+            return Response({'detail': 'Chỉ Quản lý kho trở lên được sửa mức tối thiểu.'}, status=403)
+        item = self.get_object()
+        try:
+            val = int(request.data.get('min_level'))
+        except (TypeError, ValueError):
+            return Response({'detail': 'Mức tối thiểu không hợp lệ.'}, status=400)
+        if val < 0:
+            return Response({'detail': 'Mức tối thiểu không được âm.'}, status=400)
+        item.min_level = val
+        item.save(update_fields=['min_level'])
         return Response(InventoryItemSerializer(item).data)
 
     @action(detail=False, methods=['post'], url_path='scan-entry')
@@ -1043,7 +1061,7 @@ class OpsKpiView(APIView):
         by_zone = list(inv.values('bin__zone__code', 'bin__zone__name')
                        .annotate(sku=Count('id'), qty=Sum('qty_on_hand'))
                        .order_by('bin__zone__code'))
-        low_stock = inv.filter(qty_on_hand__lte=F('min_level')).count()
+        low_stock = inv.filter(services.low_stock_q()).count()
 
         # Vòng quay hàng hóa (xấp xỉ): tổng SL xuất trong kỳ / tồn hiện tại,
         # quy về năm. turnover_year = (out_qty/tồn) × (365/days).

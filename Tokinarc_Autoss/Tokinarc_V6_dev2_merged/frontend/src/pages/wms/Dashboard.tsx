@@ -30,7 +30,7 @@ export function WmsDashboardPage() {
   })
 
   const items = inv.data?.items ?? []
-  const lowStock = items.filter((i) => i.qty_on_hand <= i.min_level)
+  const lowStock = items.filter((i) => i.is_low)
   const totalQty = items.reduce((s, i) => s + i.qty_on_hand, 0)
   const serialInStock = (serials.data?.items ?? []).filter((s) => s.status === 'in_stock').length
   const inboundPending = (inbound.data?.items ?? []).filter((o) => o.status === 'draft' || o.status === 'confirmed').length

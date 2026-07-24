@@ -144,10 +144,13 @@ export interface InventoryItem {
   torch: string | null
   item_name: string
   category?: string
+  unit?: string
+  cost_vnd?: string | number | null
   qty_on_hand: number
   qty_reserved: number
   qty_available: number
   min_level: number
+  is_low: boolean
   updated_at: string
 }
 
@@ -189,6 +192,7 @@ export interface InboundLine {
   part: string | null
   torch: string | null
   part_name?: string
+  unit?: string
   qty_expected: number
   qty_received: number
   target_bin: string | null
@@ -232,6 +236,7 @@ export interface OutboundLine {
   part: string | null
   torch: string | null
   part_name?: string
+  unit?: string
   qty_ordered: number
   qty_picked: number
   order_idx: number

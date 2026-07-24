@@ -10,7 +10,7 @@ import { Button } from '@/components/ui'
 import { formatVnd } from '@/lib/crm'
 
 export interface DocLine {
-  key: string; name: string; code: string; q1: number; q2: number
+  key: string; name: string; code: string; unit?: string; q1: number; q2: number
   unitPrice?: string | null; lineTotal?: string | null
 }
 
@@ -21,7 +21,7 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
   const totalQ1 = lines.reduce((s, l) => s + (l.q1 || 0), 0)
   const totalQ2 = lines.reduce((s, l) => s + (l.q2 || 0), 0)
   const totalValue = lines.reduce((s, l) => s + Number(l.lineTotal || 0), 0)
-  const cols = 5 + (showPrice ? 2 : 0)
+  const cols = 6 + (showPrice ? 2 : 0)
   return (
     <Modal open={open} onClose={onClose} wide title={title}
       icon={<PackageCheck size={18} className="text-flame" />}
@@ -32,6 +32,7 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
           <tr className="border-b border-line text-txt-2 text-[11px] uppercase tracking-wide">
             <th className="text-left py-1.5">Mã</th>
             <th className="text-left">Mặt hàng</th>
+            <th className="text-left">ĐVT</th>
             <th className="text-right">{q1Label}</th>
             <th className="text-right">{q2Label}</th>
             <th className="text-right">Lệch</th>
@@ -47,6 +48,7 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
             <tr key={l.key} className={`border-b border-line/40 last:border-0 ${short ? 'bg-danger/5' : ''}`}>
               <td className="py-1.5 font-mono text-flame">{l.code}</td>
               <td>{l.name || '—'}</td>
+              <td className="text-txt-2">{l.unit || '—'}</td>
               <td className="text-right tabular-nums">{l.q1}</td>
               <td className="text-right tabular-nums">{l.q2}</td>
               <td className="text-right tabular-nums">
@@ -65,7 +67,7 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
         {lines.length > 0 && (
           <tfoot>
             <tr className="border-t border-line font-semibold">
-              <td className="py-1.5" colSpan={2}>Tổng ({lines.length} dòng)</td>
+              <td className="py-1.5" colSpan={3}>Tổng ({lines.length} dòng)</td>
               <td className="text-right tabular-nums">{totalQ1}</td>
               <td className="text-right tabular-nums">{totalQ2}</td>
               <td className="text-right tabular-nums">
