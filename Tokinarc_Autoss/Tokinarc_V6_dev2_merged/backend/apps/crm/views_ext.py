@@ -59,17 +59,25 @@ def _own_filter(qs, user, field='owner_id', cap_key='crm.lead.view_all'):
 
 
 def _next_code(model, prefix):
-    """Sinh code tăng dần: prefix-0001. Lấy theo MÃ LỚN NHẤT (không theo created_at,
-    tránh trùng khi thứ tự tạo ≠ thứ tự mã). Đủ cho dev; prod nên dùng sequence."""
+    """Sinh code tăng dần: prefix-0001. Lấy SỐ LỚN NHẤT trong toàn bộ mã đúng
+    định dạng "prefix-NNNN" (không theo created_at, tránh trùng khi thứ tự tạo
+    ≠ thứ tự mã). Đủ cho dev; prod nên dùng sequence.
+
+    KHÔNG dùng order_by('-code').first() — đó là so sánh CHUỖI: 1 mã có chữ
+    (VD "KH-E2E12345", tạo tay/import) luôn "lớn hơn" mã số theo ASCII (chữ
+    cái > chữ số), nên .first() trả về đúng mã đó, parse số thất bại → âm
+    thầm rơi về mặc định 1 → sinh trùng mã đã có, sập 500 (IntegrityError)
+    khi convert Lead/tạo Quote. Duyệt toàn bộ mã khớp prefix, bỏ qua mã
+    không phải "prefix-<số>", lấy max thật sự."""
     mgr = model.all_objects if hasattr(model, 'all_objects') else model.objects
-    last = mgr.filter(code__startswith=f'{prefix}-').order_by('-code').first()
-    n = 1
-    if last:
+    codes = mgr.filter(code__startswith=f'{prefix}-').values_list('code', flat=True)
+    n = 0
+    for code in codes:
         try:
-            n = int(last.code.rsplit('-', 1)[1]) + 1
+            n = max(n, int(code.rsplit('-', 1)[1]))
         except (IndexError, ValueError):
-            n = 1
-    return f"{prefix}-{n:04d}"
+            continue
+    return f"{prefix}-{n + 1:04d}"
 
 
 class LeadViewSet(viewsets.ModelViewSet):
@@ -532,16 +540,22 @@ class QuoteViewSet(viewsets.ModelViewSet):
                 owner=quote.owner, created_by=request.user, updated_by=request.user,
                 status='draft', payment_terms_note=quote.payment_terms_note,
             )
+            from apps.catalog.pricing import compute_line_total
             for idx, ql in enumerate(quote.lines.all()):
                 # part_no là loose-key: thử bảng Part trước, không có thì thử Torch
                 # (mã súng hàn) — để dòng đơn giữ được FK cho WMS soạn hàng.
                 part = Part.objects.filter(pk=ql.part_no).first()
                 torch = None if part else Torch.objects.filter(pk=ql.part_no).first()
+                # Mang chiết khấu CẢ BÁO GIÁ (quote.discount_pct) sang từng dòng đơn —
+                # trước đây bỏ sót, khiến đơn hàng lên giá GỐC dù báo giá đã duyệt có
+                # chiết khấu (KH bị ghi nợ sai, cao hơn giá đã thỏa thuận/duyệt).
                 SalesOrderLine.objects.create(
                     order=order, part=part, torch=torch,
                     description=ql.part_name or ql.part_no,
                     qty=ql.qty, unit_price=ql.unit_price_vnd,
-                    line_total=ql.qty * ql.unit_price_vnd, order_idx=idx,
+                    discount_pct=quote.discount_pct,
+                    line_total=compute_line_total(ql.qty, ql.unit_price_vnd, quote.discount_pct),
+                    order_idx=idx,
                 )
             sales_services.recompute_order_total(order)
             quote.contract_order_code = code

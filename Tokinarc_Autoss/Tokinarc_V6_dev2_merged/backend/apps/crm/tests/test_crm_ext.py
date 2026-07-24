@@ -75,6 +75,22 @@ def test_lead_convert_creates_customer(api):
 
 
 @pytest.mark.django_db
+def test_lead_convert_code_ignores_non_numeric_existing_codes(api, sale):
+    """Regression (bug hunt 25/07): _next_code từng sắp mã theo CHUỖI
+    (order_by('-code')) — 1 KH có mã kiểu chữ (VD tạo tay/import, "KH-E2E1")
+    luôn "lớn hơn" mã số theo ASCII, khiến parse số thất bại và rơi về mặc
+    định 1 -> sinh trùng "KH-0001" đã có, sập 500 (IntegrityError) khi convert
+    Lead thứ 2."""
+    from apps.crm.models import Customer
+    Customer.objects.create(code='KH-0001', name='KH so 1', owner=sale)
+    Customer.objects.create(code='KH-E2E999', name='KH ma chu, tao tay/import', owner=sale)
+    lead = api.post('/api/v1/crm/leads/', {'name': 'KH thu 2'}, format='json').data
+    r = api.post(f"/api/v1/crm/leads/{lead['id']}/convert/")
+    assert r.status_code == 200
+    assert r.data['customer_code'] == 'KH-0002'
+
+
+@pytest.mark.django_db
 def test_lead_convert_carries_phone_into_contact(api):
     """Convert phải mang SĐT/email/ghi chú sang KH (tạo Contact chính)."""
     from apps.crm.models import Contact, Customer
@@ -434,6 +450,28 @@ def test_quote_to_order_creates_salesorder(sale):
     assert order.customer_id == cust.id and int(order.total_vnd) == 30000
     assert order.lines.count() == 1
     q.refresh_from_db(); assert q.status == 'converted'
+
+
+@pytest.mark.django_db
+def test_quote_to_order_carries_discount(sale):
+    """Regression (bug hunt 25/07): to-order từng bỏ sót quote.discount_pct khi
+    tạo SalesOrderLine -> đơn hàng lên GIÁ GỐC dù báo giá đã duyệt có chiết
+    khấu (KH bị ghi nợ sai, cao hơn giá đã thỏa thuận/duyệt)."""
+    from apps.crm.models import Quote, QuoteLine, QuoteStatus
+    from apps.sales.models import SalesOrder
+    cust = CustomerFactory(owner=sale)
+    q = Quote.objects.create(code='BG-7002', customer=cust, owner=sale,
+                             status=QuoteStatus.APPROVED, discount_pct=15)
+    QuoteLine.objects.create(quote=q, part_no='X1', part_name='Part X', qty=2, unit_price_vnd=500000)
+    q.recompute_total(); q.save(update_fields=['total_vnd'])
+    assert int(q.total_vnd) == 850000   # 1_000_000 * (1 - 15%)
+    cli = APIClient(); cli.force_authenticate(sale)
+    r = cli.post(f'/api/v1/crm/quotes/{q.id}/to-order/')
+    assert r.status_code == 200
+    order = SalesOrder.objects.get(code=r.data['order_code'])
+    assert int(order.total_vnd) == 850000
+    line = order.lines.get()
+    assert float(line.discount_pct) == 15 and int(line.line_total) == 850000
 
 
 # ─── N2.5 Reject quote ───────────────────────────────────────────────────
