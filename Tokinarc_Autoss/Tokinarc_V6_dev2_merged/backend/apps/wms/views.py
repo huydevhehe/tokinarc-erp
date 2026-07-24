@@ -721,7 +721,7 @@ class CycleCountSerializer(serializers.ModelSerializer):
     class Meta:
         model = CycleCount
         fields = ['id', 'code', 'warehouse', 'warehouse_code', 'status', 'note',
-                  'applied_at', 'created_at', 'lines']
+                  'is_active', 'applied_at', 'created_at', 'lines']
         read_only_fields = ['id', 'code', 'status', 'applied_at', 'created_at', 'lines']
 
 
@@ -730,6 +730,12 @@ class CycleCountViewSet(viewsets.ModelViewSet):
     serializer_class = CycleCountSerializer
     permission_classes = [WMSPermission]
     queryset = CycleCount.objects.select_related('warehouse').prefetch_related('lines')
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.action == 'list':
+            qs = qs.filter(is_active=True)
+        return qs
 
     def perform_create(self, serializer):
         from django.utils import timezone

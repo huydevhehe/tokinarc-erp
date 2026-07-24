@@ -425,6 +425,9 @@ class CycleCount(BaseModel):
                                  default=CycleCountStatus.OPEN, db_index=True)
     note      = models.CharField(max_length=200, blank=True)
     applied_at = models.DateTimeField(null=True, blank=True)
+    # "Xóa" = is_active=false (ẩn khỏi danh sách, giống Supplier/Part/Torch/Inbound/
+    # Outbound) — KHÔNG xóa cứng dù phiên đã áp dụng, để giữ chứng từ đối chiếu tồn.
+    is_active = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         db_table = 'wms_cycle_count'

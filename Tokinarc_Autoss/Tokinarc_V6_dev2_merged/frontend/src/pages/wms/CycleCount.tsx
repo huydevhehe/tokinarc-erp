@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { ClipboardCheck, Plus, ScanLine, CheckCheck, Search, Link2 } from 'lucide-react'
+import { ClipboardCheck, Plus, ScanLine, CheckCheck, Search, Link2, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
@@ -15,7 +15,7 @@ import type { CatalogPart, SerialNumber } from '@/lib/types'
 import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 
 interface CCLine { id: string; bin_code: string; part_name: string; system_qty: number; counted_qty: number; diff: number }
-interface CC { id: string; code: string; warehouse_code: string; status: string; lines: CCLine[] }
+interface CC { id: string; code: string; warehouse_code: string; status: string; note: string; lines: CCLine[] }
 
 export function WmsCycleCountPage() {
   const qc = useQueryClient()
@@ -88,6 +88,16 @@ export function WmsCycleCountPage() {
   const apply = useMutation({
     mutationFn: () => api.post(`/wms/cycle-counts/${openId}/apply/`),
     onSuccess: (r) => { toast.success(`Đã áp dụng (${r.data.applied} dòng, chênh ${r.data.total_diff})`); qc.invalidateQueries({ queryKey: ['cycle-count', openId] }); qc.invalidateQueries({ queryKey: ['cycle-counts'] }) },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const editNote = useMutation({
+    mutationFn: (v: { id: string; note: string }) => api.patch(`/wms/cycle-counts/${v.id}/`, { note: v.note }),
+    onSuccess: () => { toast.success('Đã lưu ghi chú'); qc.invalidateQueries({ queryKey: ['cycle-counts'] }) },
+    onError: (e) => toast.error(apiError(e)),
+  })
+  const deactivate = useMutation({
+    mutationFn: (id: string) => api.patch(`/wms/cycle-counts/${id}/`, { is_active: false }),
+    onSuccess: () => { toast.success('Đã xoá phiên'); qc.invalidateQueries({ queryKey: ['cycle-counts'] }) },
     onError: (e) => toast.error(apiError(e)),
   })
 
@@ -177,16 +187,35 @@ export function WmsCycleCountPage() {
       {tab === 'count' && (<>
       {!openId && (
         <TableCard>
-          <thead><tr className="border-b border-line"><Th>Mã phiên</Th><Th>Kho</Th><Th>Trạng thái</Th><Th /></tr></thead>
+          <thead><tr className="border-b border-line"><Th>Mã phiên</Th><Th>Kho</Th><Th>Trạng thái</Th><Th>Ghi chú</Th><Th className="text-right">Hành động</Th></tr></thead>
           <tbody>
-            {list.isLoading && <RowMsg colSpan={4}>Đang tải…</RowMsg>}
-            {list.data && list.data.results.length === 0 && <RowMsg colSpan={4}>Chưa có phiên kiểm kê.</RowMsg>}
+            {list.isLoading && <RowMsg colSpan={5}>Đang tải…</RowMsg>}
+            {list.data && list.data.results.length === 0 && <RowMsg colSpan={5}>Chưa có phiên kiểm kê.</RowMsg>}
             {list.data?.results.map((s) => (
               <tr key={s.id} className="border-b border-line/50 hover:bg-ink-3/40 cursor-pointer" onClick={() => setOpenId(s.id)}>
                 <Td className="font-mono text-flame">{s.code}</Td>
                 <Td>{s.warehouse_code}</Td>
                 <Td><Tag tone={s.status === 'applied' ? 'ok' : s.status === 'open' ? 'warn' : 'gray'}>{s.status}</Tag></Td>
-                <Td className="text-right text-xs text-txt-2">Mở</Td>
+                <Td className="text-txt-2 text-xs truncate max-w-[160px]">{s.note || '—'}</Td>
+                <Td className="text-right">
+                  <span className="inline-flex gap-1.5 justify-end" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="ghost" size="sm" onClick={() => {
+                      const v = prompt('Ghi chú cho phiên ' + s.code, s.note || '')
+                      if (v !== null) editNote.mutate({ id: s.id, note: v })
+                    }}>
+                      <Pencil size={13} /> Sửa
+                    </Button>
+                    <Button variant="ghost" size="sm" disabled={deactivate.isPending} className="!text-danger"
+                      onClick={() => {
+                        if (confirm(`Xoá phiên "${s.code}"? Phiên sẽ ẩn khỏi danh sách (dữ liệu kiểm kê cũ vẫn giữ nguyên).`)) {
+                          deactivate.mutate(s.id)
+                        }
+                      }}>
+                      <Trash2 size={13} /> Xoá
+                    </Button>
+                    <span className="text-xs text-txt-2 self-center ml-1" onClick={() => setOpenId(s.id)}>Mở</span>
+                  </span>
+                </Td>
               </tr>
             ))}
           </tbody>

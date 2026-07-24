@@ -458,6 +458,29 @@ def test_cycle_count_scan_and_apply(auth, auth_mgr, part, wh_user):
     assert InventoryItem.objects.get(bin=b, part=part).qty_on_hand == 92
 
 
+@pytest.mark.django_db
+def test_cycle_count_edit_note(auth):
+    from apps.wms.models import Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    cc = auth.post('/api/v1/wms/cycle-counts/', {'warehouse': str(wh.id)}, format='json').data
+    r = auth.patch(f"/api/v1/wms/cycle-counts/{cc['id']}/", {'note': 'kiểm khu A'}, format='json')
+    assert r.status_code == 200 and r.data['note'] == 'kiểm khu A'
+
+
+@pytest.mark.django_db
+def test_cycle_count_delete_is_deactivate_not_hard_delete(auth):
+    """"Xóa" phiên kiểm kê = is_active=False: biến mất khỏi list nhưng row vẫn
+    còn trong DB (giữ chứng từ đối chiếu), khớp pattern deactivate-user/supplier."""
+    from apps.wms.models import CycleCount, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    cc = auth.post('/api/v1/wms/cycle-counts/', {'warehouse': str(wh.id)}, format='json').data
+    r = auth.patch(f"/api/v1/wms/cycle-counts/{cc['id']}/", {'is_active': False}, format='json')
+    assert r.status_code == 200
+    assert CycleCount.objects.filter(pk=cc['id']).exists()
+    listed = auth.get('/api/v1/wms/cycle-counts/')
+    assert cc['id'] not in [x['id'] for x in listed.data['results']]
+
+
 # ─── N1.3 Serial history (2 chiều, gồm ticket) ───────────────────────────────
 @pytest.mark.django_db
 def test_serial_history_includes_tickets(auth, torch):
