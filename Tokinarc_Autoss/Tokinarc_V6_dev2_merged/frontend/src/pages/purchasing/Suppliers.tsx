@@ -3,9 +3,9 @@
  * Nhà cung cấp: danh sách + thêm/sửa/xóa. GET/POST/PATCH /purchasing/suppliers/.
  * "Xóa" = PATCH is_active=false (đổi trạng thái, không xóa row — xem SupplierViewSet.get_queryset).
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Building, Pencil, Plus, Trash2, Upload } from 'lucide-react'
+import { Building, Loader2, Pencil, Plus, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
@@ -41,7 +41,34 @@ export function SuppliersPage() {
   // Sửa/Xóa/Import NCC: Quản lý kho trở lên (khớp backend PO_WRITE_ROLES).
   const role = useAuth((s) => s.user?.role)
   const canWrite = role === 'wh_manager' || role === 'manager' || role === 'ceo'
-  const { register, handleSubmit, reset } = useForm<Form>()
+  const { register, handleSubmit, reset, watch, setValue } = useForm<Form>()
+  const taxCodeInput = watch('tax_code')
+  const dTaxCodeLookup = useDebounced(taxCodeInput, 600)
+  const [lookup, setLookup] = useState<'idle' | 'loading' | 'found' | 'notfound'>('idle')
+
+  // Gõ MST -> tự tra cứu tên/địa chỉ doanh nghiệp (API công khai, không cần key).
+  // Chỉ chạy khi THÊM MỚI (sửa NCC có sẵn thì giữ nguyên dữ liệu đã lưu).
+  // Điện thoại/Email nguồn này không có -> luôn để trống, tự gõ tay.
+  useEffect(() => {
+    const mst = (dTaxCodeLookup || '').trim()
+    if (!open || editing || mst.length < 10) { setLookup('idle'); return }
+    let cancelled = false
+    setLookup('loading')
+    fetch(`https://api.vietqr.io/v2/business/${mst}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled) return
+        if (j?.code === '00' && j.data) {
+          if (j.data.name) setValue('name', j.data.name)
+          if (j.data.address) setValue('address', j.data.address)
+          setLookup('found')
+        } else {
+          setLookup('notfound')
+        }
+      })
+      .catch(() => { if (!cancelled) setLookup('notfound') })
+    return () => { cancelled = true }
+  }, [dTaxCodeLookup, open, editing, setValue])
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['suppliers', dCode, dName, dTaxCode, dPhone, page, pageSize],
     queryFn: () => fetchPage<Supplier>('/purchasing/suppliers/', {
@@ -69,10 +96,11 @@ export function SuppliersPage() {
     onSuccess: () => { toast.success('Đã xoá NCC'); qc.invalidateQueries({ queryKey: ['suppliers'] }) },
     onError: (e) => toast.error(apiError(e)),
   })
-  const openAdd = () => { setEditing(null); reset({ name: '', tax_code: '', phone: '', email: '', address: '' }); setOpen(true) }
+  const openAdd = () => { setEditing(null); reset({ name: '', tax_code: '', phone: '', email: '', address: '' }); setLookup('idle'); setOpen(true) }
   const openEdit = (s: Supplier) => {
     setEditing(s)
     reset({ name: s.name, tax_code: s.tax_code, phone: s.phone, email: s.email, address: s.address || '' })
+    setLookup('idle')
     setOpen(true)
   }
 
@@ -139,13 +167,28 @@ export function SuppliersPage() {
         footer={<><Button variant="ghost" onClick={() => { setOpen(false); setEditing(null) }}>Hủy</Button>
           <Button onClick={handleSubmit((d) => save.mutate(d))} disabled={save.isPending}>Lưu</Button></>}>
         <form>
+          <div className="mb-3">
+            <TextInput label="Mã số thuế" full
+              placeholder="Nhập MST để tự điền tên + địa chỉ…"
+              {...register('tax_code')} />
+            {!editing && lookup === 'loading' && (
+              <p className="text-[11px] text-txt-2 mt-1 flex items-center gap-1">
+                <Loader2 size={11} className="animate-spin" /> Đang tra cứu…
+              </p>
+            )}
+            {!editing && lookup === 'found' && (
+              <p className="text-[11px] text-ok mt-1">✓ Đã tìm thấy, tự điền tên/địa chỉ bên dưới — vẫn có thể sửa lại.</p>
+            )}
+            {!editing && lookup === 'notfound' && (
+              <p className="text-[11px] text-txt-2 mt-1">Không tìm thấy doanh nghiệp với MST này — tự nhập tay.</p>
+            )}
+          </div>
           <TextInput label="Tên *" full {...register('name', { required: true })} />
-          <FieldRow>
-            <TextInput label="Mã số thuế" {...register('tax_code')} />
-            <TextInput label="Điện thoại" {...register('phone')} />
-          </FieldRow>
-          <TextInput label="Email" full {...register('email')} />
           <TextInput label="Địa chỉ" full {...register('address')} />
+          <FieldRow>
+            <TextInput label="Điện thoại" {...register('phone')} />
+            <TextInput label="Email" {...register('email')} />
+          </FieldRow>
         </form>
       </Modal>
 
