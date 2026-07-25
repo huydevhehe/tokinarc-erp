@@ -751,6 +751,25 @@ def test_inbound_hide_via_is_active_works_at_any_status(auth, wh_user):
 
 
 @pytest.mark.django_db
+def test_inbound_received_at_editable_after_putaway(auth, wh_user):
+    """Ngày nhập kho (received_at) phải sửa lại được sau khi đã cất kho xong —
+    đối chiếu đúng ngày hàng thực tế về, không đụng SL/tồn kho đã cộng."""
+    import datetime as dt
+
+    from django.utils import timezone
+
+    from apps.wms.models import InboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    io = InboundOrder.objects.create(code='IN-DATE1', warehouse=wh, status='putaway',
+                                     received_at=timezone.now(), created_by=wh_user, updated_by=wh_user)
+    new_date = (timezone.now() - dt.timedelta(days=3)).date().isoformat()
+    r = auth.patch(f'/api/v1/wms/inbound/{io.id}/', {'received_at': new_date}, format='json')
+    assert r.status_code == 200, r.data
+    io.refresh_from_db()
+    assert timezone.localtime(io.received_at).date().isoformat() == new_date
+
+
+@pytest.mark.django_db
 def test_outbound_hide_via_is_active_works_at_any_status(auth, wh_user):
     from apps.wms.models import OutboundOrder, Warehouse
     wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)

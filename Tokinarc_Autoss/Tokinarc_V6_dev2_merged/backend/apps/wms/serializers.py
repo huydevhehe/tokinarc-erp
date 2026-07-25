@@ -157,7 +157,10 @@ class InboundOrderSerializer(serializers.ModelSerializer):
                   'supplier', 'invoice_no', 'invoice_date', 'shortage_note', 'received_at', 'lines', 'notes',
                   'flow_type', 'delivered_by_name', 'received_by', 'received_by_username',
                   'is_active', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'status', 'received_at', 'received_by', 'created_at', 'updated_at']
+        # received_at: hệ thống tự set khi confirm() nhận hàng, nhưng vẫn cho SỬA
+        # LẠI sau đó (đối chiếu đúng ngày hàng thực tế về kho, VD nhận hàng hôm
+        # confirm trên hệ thống trễ hơn ngày NCC giao thực tế).
+        read_only_fields = ['id', 'status', 'received_by', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (IN-YYYY-NNN).
         extra_kwargs = {'code': {'required': False}}
 
@@ -169,6 +172,10 @@ class InboundOrderSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         is_active = validated_data.pop('is_active', None)
+        # Ngày nhập kho (received_at) là mốc đối chiếu, KHÔNG phải SL/tồn kho —
+        # cho sửa lại ở mọi trạng thái đã nhận (giống is_active), để chỉnh đúng
+        # ngày hàng thực tế về khi ngày bấm "Nhận" trên hệ thống lệch thực tế.
+        received_at = validated_data.pop('received_at', None)
         # "Xóa" (is_active=false) chỉ đổi hiển thị, không đụng nội dung/tồn kho →
         # cho phép ở MỌI trạng thái (giống Supplier/Part/Torch). Sửa NỘI DUNG
         # (kho/dòng hàng/...) vẫn chỉ cho phiếu Nháp (chưa nhận) để tránh lệch tồn.
@@ -182,6 +189,8 @@ class InboundOrderSerializer(serializers.ModelSerializer):
             setattr(instance, k, v)
         if is_active is not None:
             instance.is_active = is_active
+        if received_at is not None:
+            instance.received_at = received_at
         instance.save()
         if lines is not None:   # thay toàn bộ dòng (draft chưa nhận nên an toàn)
             instance.lines.all().delete()
