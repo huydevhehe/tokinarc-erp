@@ -205,6 +205,7 @@ export function InboundPage() {
               Trạng thái: <Tag tone={INBOUND_STATUS_TONE[viewOrder.status]}>{INBOUND_STATUS_LABEL[viewOrder.status]}</Tag>
               {viewOrder.po_code && <span className="ml-3">Từ đơn mua: <b className="text-txt font-mono">{viewOrder.po_code}</b></span>}
               <span className="ml-3">Loại: <b className="text-txt">{viewOrder.flow_type === 'supplier' ? 'Nhà cung cấp' : 'Nội bộ'}</b></span>
+              {viewOrder.supplier && <span className="ml-3">Nhà cung cấp: <b className="text-txt">{viewOrder.supplier}</b></span>}
             </div>
             <div>
               Ngày nhập kho: <b className="text-txt">{formatDate(viewOrder.received_at)}</b>
@@ -222,12 +223,13 @@ export function InboundPage() {
             )}
           </div>
         )}
-        q1Label="SL dự kiến" q2Label="Đã nhận" showPrice
+        q1Label="SL dự kiến" q2Label="Đã nhận" showPrice showTax
         lines={(viewOrder?.lines ?? []).map((l, i) => ({
           key: l.id ?? String(i), name: l.part_name ?? '', code: l.part ?? l.torch ?? '—',
           unit: l.unit, q1: l.qty_expected, q2: l.qty_received,
           unitPrice: l.unit_cost != null ? String(l.unit_cost) : null,
           lineTotal: l.unit_cost != null ? String(Number(l.unit_cost) * l.qty_received) : null,
+          taxPct: l.tax_pct,
         }))}
       />
 

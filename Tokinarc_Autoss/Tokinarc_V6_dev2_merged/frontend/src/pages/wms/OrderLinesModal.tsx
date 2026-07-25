@@ -11,17 +11,18 @@ import { formatVnd } from '@/lib/crm'
 
 export interface DocLine {
   key: string; name: string; code: string; unit?: string; q1: number; q2: number
-  unitPrice?: string | null; lineTotal?: string | null
+  unitPrice?: string | null; lineTotal?: string | null; taxPct?: string | number | null
 }
 
-export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, lines, showPrice }: {
+export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, lines, showPrice, showTax }: {
   open: boolean; onClose: () => void; title: string; meta?: ReactNode
-  q1Label: string; q2Label: string; lines: DocLine[]; showPrice?: boolean
+  q1Label: string; q2Label: string; lines: DocLine[]; showPrice?: boolean; showTax?: boolean
 }) {
   const totalQ1 = lines.reduce((s, l) => s + (l.q1 || 0), 0)
   const totalQ2 = lines.reduce((s, l) => s + (l.q2 || 0), 0)
   const totalValue = lines.reduce((s, l) => s + Number(l.lineTotal || 0), 0)
-  const cols = 6 + (showPrice ? 2 : 0)
+  const totalTax = lines.reduce((s, l) => s + Number(l.lineTotal || 0) * (l.taxPct != null ? Number(l.taxPct) : 0) / 100, 0)
+  const cols = 6 + (showPrice ? 2 : 0) + (showTax ? 1 : 0)
   return (
     <Modal open={open} onClose={onClose} wide title={title}
       icon={<PackageCheck size={18} className="text-flame" />}
@@ -37,6 +38,7 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
             <th className="text-right">{q2Label}</th>
             <th className="text-right">Lệch</th>
             {showPrice && <th className="text-right">Đơn giá</th>}
+            {showPrice && showTax && <th className="text-right">Thuế (%)</th>}
             {showPrice && <th className="text-right">Thành tiền</th>}
           </tr>
         </thead>
@@ -57,6 +59,9 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
                   : <span className="text-ok">đủ ✓</span>}
               </td>
               {showPrice && <td className="text-right tabular-nums text-txt-2">{l.unitPrice ? formatVnd(l.unitPrice) : '—'}</td>}
+              {showPrice && showTax && (
+                <td className="text-right tabular-nums text-txt-2">{l.taxPct != null && l.taxPct !== '' ? `${Number(l.taxPct)}%` : '—'}</td>
+              )}
               {showPrice && <td className="text-right tabular-nums">{l.lineTotal ? formatVnd(l.lineTotal) : '—'}</td>}
             </tr>
           )})}
@@ -76,8 +81,27 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
                   : <span className="text-ok">đủ</span>}
               </td>
               {showPrice && <td />}
-              {showPrice && <td className="text-right tabular-nums text-flame">{formatVnd(totalValue)}</td>}
+              {showPrice && showTax && <td />}
+              {showPrice && <td />}
             </tr>
+            {showPrice && (
+              <tr className="text-txt-2">
+                <td className="text-right py-1" colSpan={cols - 1}>Tổng tiền hàng</td>
+                <td className="text-right tabular-nums">{formatVnd(totalValue)}</td>
+              </tr>
+            )}
+            {showPrice && showTax && (
+              <tr className="text-txt-2">
+                <td className="text-right py-1" colSpan={cols - 1}>Thuế</td>
+                <td className="text-right tabular-nums">{formatVnd(totalTax)}</td>
+              </tr>
+            )}
+            {showPrice && showTax && (
+              <tr className="font-semibold">
+                <td className="text-right py-1.5 border-t border-line/60" colSpan={cols - 1}>Tổng cộng</td>
+                <td className="text-right tabular-nums text-flame border-t border-line/60">{formatVnd(totalValue + totalTax)}</td>
+              </tr>
+            )}
           </tfoot>
         )}
       </table>
