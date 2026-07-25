@@ -547,7 +547,9 @@ class InboundViewSet(viewsets.ModelViewSet):
     permission_classes = [WMSPermission]
     queryset = InboundOrder.objects.prefetch_related('lines')
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
-    filterset_fields = ['status', 'warehouse']
+    # received_at__gte/lte lọc theo "Ngày nhập kho" hiển thị trên bảng (tháng/quý/
+    # năm tự tính ở FE thành 1 khoảng ngày rồi gửi xuống, xem lib/wms.ts DATE_QUICK_RANGES).
+    filterset_fields = {'warehouse': ['exact'], 'received_at': ['gte', 'lte']}
     search_fields = ['code', 'supplier', 'purchase_order__code']
 
     def get_queryset(self):

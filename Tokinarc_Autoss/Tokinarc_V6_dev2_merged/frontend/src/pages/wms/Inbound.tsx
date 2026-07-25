@@ -11,7 +11,8 @@ import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
-import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE } from '@/lib/wms'
+import { formatDate } from '@/lib/crm'
+import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE, DATE_QUICK_RANGES } from '@/lib/wms'
 import type { InboundOrder, InboundStatus } from '@/lib/types'
 import {
   PageHeader, SearchInput, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
@@ -21,7 +22,7 @@ import { ScanOrderModal } from '@/pages/wms/ScanOrderModal'
 import { OrderLinesModal } from '@/pages/wms/OrderLinesModal'
 import { Modal } from '@/components/Modal'
 
-const INBOUND_STATUSES: (InboundStatus | '')[] = ['', 'draft', 'confirmed', 'partial', 'putaway', 'cancelled']
+const INBOUND_STATUSES: (InboundStatus | '')[] = ['', 'draft', 'partial', 'putaway', 'cancelled']
 
 export function InboundPage() {
   const qc = useQueryClient()
@@ -34,13 +35,23 @@ export function InboundPage() {
   const [editOrder, setEditOrder] = useState<InboundOrder | null>(null)   // sửa phiếu Nháp
   const [status, setStatus] = useState<InboundStatus | ''>('')
   const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const debounced = useDebounced(search, 350, () => setPage(1))
+
+  const applyQuick = (key: keyof typeof DATE_QUICK_RANGES) => {
+    const [from, to] = DATE_QUICK_RANGES[key]()
+    setDateFrom(from); setDateTo(to); setPage(1)
+  }
+
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-inbound-list', debounced, status, page, pageSize],
+    queryKey: ['wms-inbound-list', debounced, status, dateFrom, dateTo, page, pageSize],
     queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', {
-      search: debounced || undefined, status: status || undefined, page, page_size: pageSize,
+      search: debounced || undefined, status: status || undefined,
+      received_at__gte: dateFrom || undefined, received_at__lte: dateTo ? `${dateTo}T23:59:59` : undefined,
+      page, page_size: pageSize,
     }),
     placeholderData: keepPreviousData,
   })
@@ -85,6 +96,19 @@ export function InboundPage() {
               className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
               {INBOUND_STATUSES.map((s) => <option key={s} value={s}>{s ? INBOUND_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}
             </select>
+            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
+            <span className="text-txt-2 text-sm">–</span>
+            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
+              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
+            <Button variant="ghost" size="sm" onClick={() => applyQuick('month')}>Tháng này</Button>
+            <Button variant="ghost" size="sm" onClick={() => applyQuick('quarter')}>Quý này</Button>
+            <Button variant="ghost" size="sm" onClick={() => applyQuick('year')}>Năm nay</Button>
+            {(dateFrom || dateTo) && (
+              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}>
+                Bỏ lọc ngày
+              </Button>
+            )}
             <Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn nhập</Button>
           </>
         } />
@@ -93,13 +117,13 @@ export function InboundPage() {
         <thead>
           <tr className="border-b border-line">
             <Th>Mã đơn</Th><Th>Nhà cung cấp</Th><Th>Từ đơn mua</Th><Th>Tiến độ nhận</Th>
-            <Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
+            <Th>Ngày nhập kho</Th><Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={6} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {data && items.length === 0 && <RowMsg colSpan={6}>Chưa có đơn nhập.</RowMsg>}
+          {isLoading && <RowMsg colSpan={7}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={7} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {data && items.length === 0 && <RowMsg colSpan={7}>Chưa có đơn nhập.</RowMsg>}
           {items.map((o) => {
             const exp = (o.lines ?? []).reduce((s, l) => s + (l.qty_expected || 0), 0)
             const rec = (o.lines ?? []).reduce((s, l) => s + (l.qty_received || 0), 0)
@@ -110,6 +134,7 @@ export function InboundPage() {
               <Td className="text-txt-2">{o.supplier || '—'}</Td>
               <Td className="text-txt-2 font-mono">{o.po_code || '—'}</Td>
               <Td className={`tabular-nums ${short ? 'text-warn' : 'text-ok'}`}>{rec}/{exp}</Td>
+              <Td className="text-txt-2">{formatDate(o.received_at)}</Td>
               <Td><Tag tone={INBOUND_STATUS_TONE[o.status]}>{INBOUND_STATUS_LABEL[o.status]}</Tag></Td>
               <Td className="text-right">
                 <span className="inline-flex gap-1.5 items-center">
@@ -120,19 +145,21 @@ export function InboundPage() {
                   onClick={() => downloadFile(`/wms/inbound/${o.id}/export-xlsx/`, `phieu_nhap_${o.code}.xlsx`)}>
                   <Download size={13} /> Excel
                 </Button>
-                {o.status === 'draft' && (
+                {o.is_active && o.status === 'draft' && (
                   <Button variant="ghost" size="sm" onClick={() => setEditOrder(o)}>
                     <Pencil size={13} /> Sửa
                   </Button>
                 )}
-                <Button variant="ghost" size="sm" className="!text-danger"
-                  disabled={remove.isPending && remove.variables === o.id}
-                  onClick={() => {
-                    if (window.confirm(`Xóa phiếu nhập "${o.code}"? Phiếu sẽ ẩn khỏi danh sách (tồn kho/lịch sử vẫn giữ nguyên).`)) remove.mutate(o.id)
-                  }}>
-                  <Trash2 size={13} /> Xóa
-                </Button>
-                {(o.status === 'draft' || o.status === 'confirmed' || o.status === 'partial') ? (
+                {o.is_active && (
+                  <Button variant="ghost" size="sm" className="!text-danger"
+                    disabled={remove.isPending && remove.variables === o.id}
+                    onClick={() => {
+                      if (window.confirm(`Xóa phiếu nhập "${o.code}"? Phiếu sẽ ẩn khỏi danh sách (tồn kho/lịch sử vẫn giữ nguyên).`)) remove.mutate(o.id)
+                    }}>
+                    <Trash2 size={13} /> Xóa
+                  </Button>
+                )}
+                {o.is_active && (o.status === 'draft' || o.status === 'confirmed' || o.status === 'partial') ? (
                   <span className="inline-flex gap-1.5">
                     <Button variant="ghost" size="sm" onClick={() => setScanId(o.id)}>
                       <ScanLine size={13} /> Quét
@@ -178,6 +205,11 @@ export function InboundPage() {
               Trạng thái: <Tag tone={INBOUND_STATUS_TONE[viewOrder.status]}>{INBOUND_STATUS_LABEL[viewOrder.status]}</Tag>
               {viewOrder.po_code && <span className="ml-3">Từ đơn mua: <b className="text-txt font-mono">{viewOrder.po_code}</b></span>}
               <span className="ml-3">Loại: <b className="text-txt">{viewOrder.flow_type === 'supplier' ? 'Nhà cung cấp' : 'Nội bộ'}</b></span>
+            </div>
+            <div>
+              Ngày nhập kho: <b className="text-txt">{formatDate(viewOrder.received_at)}</b>
+              {viewOrder.invoice_date && <span className="ml-3">Ngày xuất hóa đơn: <b className="text-txt">{formatDate(viewOrder.invoice_date)}</b></span>}
+              {viewOrder.invoice_no && <span className="ml-3">Số hóa đơn: <b className="text-txt">{viewOrder.invoice_no}</b></span>}
             </div>
             <div>
               {viewOrder.delivered_by_name && <span>Người giao: <b className="text-txt">{viewOrder.delivered_by_name}</b></span>}

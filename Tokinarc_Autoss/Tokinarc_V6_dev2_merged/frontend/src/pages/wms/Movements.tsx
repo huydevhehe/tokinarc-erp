@@ -11,37 +11,13 @@ import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
 import { formatDateTime } from '@/lib/crm'
 import { useWarehouseOptions } from '@/lib/useWmsOptions'
-import { MOVE_REASON_LABEL, MOVE_REASON_TONE } from '@/lib/wms'
+import { MOVE_REASON_LABEL, MOVE_REASON_TONE, DATE_QUICK_RANGES } from '@/lib/wms'
 import type { StockMovement, MovementReason } from '@/lib/types'
 import {
   PageHeader, SearchInput, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 
 const REASONS: (MovementReason | '')[] = ['', 'inbound', 'outbound', 'adjust', 'transfer', 'return']
-
-/** yyyy-MM-dd theo giờ ĐỊA PHƯƠNG — KHÔNG dùng toISOString() (quy đổi UTC làm
- * lệch 1 ngày ở múi giờ Việt Nam, VD 01/07 00:00 local -> 30/06 17:00 UTC). */
-function fmtDate(d: Date) {
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
-}
-/** Khoảng ngày cho nút nhanh Tháng/Quý/Năm — FE tự tính, BE chỉ nhận ts__gte/ts__lte. */
-const QUICK_RANGES: Record<string, () => [string, string]> = {
-  month: () => {
-    const n = new Date()
-    return [fmtDate(new Date(n.getFullYear(), n.getMonth(), 1)), fmtDate(new Date(n.getFullYear(), n.getMonth() + 1, 0))]
-  },
-  quarter: () => {
-    const n = new Date(); const q = Math.floor(n.getMonth() / 3)
-    return [fmtDate(new Date(n.getFullYear(), q * 3, 1)), fmtDate(new Date(n.getFullYear(), q * 3 + 3, 0))]
-  },
-  year: () => {
-    const n = new Date()
-    return [fmtDate(new Date(n.getFullYear(), 0, 1)), fmtDate(new Date(n.getFullYear(), 11, 31))]
-  },
-}
 
 export function MovementsPage() {
   const { options: whs } = useWarehouseOptions()
@@ -54,8 +30,8 @@ export function MovementsPage() {
   const [pageSize, setPageSize] = useState<number>(PAGE_SIZE)
   const debounced = useDebounced(search, 350, () => setPage(1))
 
-  const applyQuick = (key: keyof typeof QUICK_RANGES) => {
-    const [from, to] = QUICK_RANGES[key]()
+  const applyQuick = (key: keyof typeof DATE_QUICK_RANGES) => {
+    const [from, to] = DATE_QUICK_RANGES[key]()
     setDateFrom(from); setDateTo(to); setPage(1)
   }
 
