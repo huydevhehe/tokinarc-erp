@@ -18,6 +18,7 @@ function chatbotKey(): string {
 }
 const CHATBOT_KEY = chatbotKey()
 const CHATBOT_TARGET = process.env.VITE_CHATBOT_TARGET || 'http://localhost:8080'
+const API_TARGET = process.env.VITE_API_TARGET || 'http://localhost:8000'
 
 export default defineConfig({
   plugins: [react()],
@@ -39,7 +40,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       // Dev: proxy API sang Django, tránh CORS lúc phát triển.
-      '/api': { target: 'http://localhost:8000', changeOrigin: true },
+      '/api': { target: API_TARGET, changeOrigin: true },
       // Dev: proxy /chatbot → chatbot FastAPI, tự chèn X-API-Key.
       '/chatbot': {
         target: CHATBOT_TARGET,
