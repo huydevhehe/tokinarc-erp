@@ -169,8 +169,8 @@ export function PurchaseOrdersPage() {
               <Td className="font-mono text-flame">{o.code}</Td>
               <Td className="font-medium">{o.supplier_name}</Td>
               <Td className="text-txt-2">{o.warehouse_code}</Td>
-              <Td className="text-right tabular-nums">{compactVnd(o.total_vnd)}</Td>
-              <Td className="text-right tabular-nums">{o.debt_vnd > 0 ? <span className="text-warn">{formatVnd(o.debt_vnd)}</span> : <span className="text-ok">Đã trả</span>}</Td>
+              <Td className="text-right tabular-nums whitespace-nowrap">{compactVnd(o.total_vnd)}</Td>
+              <Td className="text-right tabular-nums whitespace-nowrap">{o.debt_vnd > 0 ? <span className="text-warn">{formatVnd(o.debt_vnd)}</span> : <span className="text-ok">Đã trả</span>}</Td>
               <Td><Tag tone={TONE[o.status] ?? 'gray'}>{o.status_display}</Tag></Td>
               <Td className="text-right whitespace-nowrap">
                 <Button size="sm" variant="ghost" className="mr-1" onClick={() => setDetail(o as PODetail)}>
@@ -230,7 +230,7 @@ export function PurchaseOrdersPage() {
               <Td className="text-txt-2 whitespace-nowrap">{o.expected_date ?? '—'}</Td>
               <Td>{o.is_overdue ? <Tag tone="danger">Trễ {o.days_late} ngày</Tag> : <Tag tone="ok">Đúng hẹn</Tag>}</Td>
               <Td className="text-txt-2">{[o.carrier, o.tracking_no].filter(Boolean).join(' · ') || '—'}</Td>
-              <Td className="text-right tabular-nums">{compactVnd(o.total_vnd)}</Td>
+              <Td className="text-right tabular-nums whitespace-nowrap">{compactVnd(o.total_vnd)}</Td>
               <Td><Tag tone={TONE[o.status] ?? 'gray'}>{o.status_display}</Tag></Td>
             </tr>
           ))}
