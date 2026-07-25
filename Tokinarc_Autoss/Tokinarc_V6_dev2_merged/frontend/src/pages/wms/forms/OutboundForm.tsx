@@ -22,11 +22,11 @@ import type { OutboundOrder } from '@/lib/types'
 interface LineForm { item: string; qty_ordered: number }
 interface Form {
   warehouse: string; customer: string
-  sales_order_code: string; rule: string; purpose: string; lines: LineForm[]
+  sales_order_code: string; rule: string; purpose: string; notes: string; lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_ordered: 1 }
 const EMPTY: Form = {
-  warehouse: '', customer: '', sales_order_code: '', rule: 'FIFO', purpose: 'sale',
+  warehouse: '', customer: '', sales_order_code: '', rule: 'FIFO', purpose: 'sale', notes: '',
   lines: [{ ...EMPTY_LINE }],
 }
 
@@ -66,6 +66,7 @@ export function OutboundForm({ open, onClose, editing }: {
     reset(editing ? {
       warehouse: editing.warehouse, customer: editing.customer ?? '',
       sales_order_code: editing.sales_order_code ?? '', rule: editing.rule, purpose: editing.purpose,
+      notes: editing.notes ?? '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
         qty_ordered: l.qty_ordered,
@@ -84,6 +85,7 @@ export function OutboundForm({ open, onClose, editing }: {
         sales_order_code: d.sales_order_code,
         rule: d.rule,
         purpose: d.purpose,
+        notes: d.notes,
         lines: d.lines.map((l) => ({ ...splitItem(l.item), qty_ordered: Number(l.qty_ordered) || 0 })),
       }
       return editing
@@ -142,6 +144,12 @@ export function OutboundForm({ open, onClose, editing }: {
               .map((k) => ({ value: k, label: OUTBOUND_PURPOSE_LABEL[k] }))}
             {...register('purpose')} />
         </FieldRow>
+        <div className="mb-3">
+          <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Ghi chú</label>
+          <textarea rows={2} placeholder="Ghi chú thêm cho phiếu xuất…"
+            {...register('notes')}
+            className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
+        </div>
 
         <div className="mb-1.5 flex items-center justify-between">
           <span className="text-[11px] font-semibold uppercase tracking-wide text-txt-2">Dòng hàng</span>

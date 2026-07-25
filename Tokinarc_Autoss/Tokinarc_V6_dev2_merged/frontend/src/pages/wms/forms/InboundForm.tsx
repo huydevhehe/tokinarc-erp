@@ -26,13 +26,13 @@ interface LineForm {
 }
 interface Form {
   warehouse: string; supplier: string; invoice_no: string; invoice_date: string
-  flow_type: '' | 'internal' | 'supplier'; delivered_by_name: string
+  flow_type: '' | 'internal' | 'supplier'; delivered_by_name: string; notes: string
   lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '', serials: '' }
 const EMPTY: Form = {
   warehouse: '', supplier: '', invoice_no: '', invoice_date: '',
-  flow_type: '', delivered_by_name: '',
+  flow_type: '', delivered_by_name: '', notes: '',
   lines: [{ ...EMPTY_LINE }],
 }
 
@@ -78,7 +78,7 @@ export function InboundForm({ open, onClose, editing }: {
       supplier: editing.supplier ?? '', invoice_no: editing.invoice_no ?? '',
       invoice_date: editing.invoice_date ?? '',
       flow_type: editing.flow_type ?? '',
-      delivered_by_name: editing.delivered_by_name ?? '',
+      delivered_by_name: editing.delivered_by_name ?? '', notes: editing.notes ?? '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
         qty_expected: l.qty_expected, target_bin: l.target_bin ?? '',
@@ -98,7 +98,7 @@ export function InboundForm({ open, onClose, editing }: {
         warehouse: d.warehouse, supplier: d.supplier, invoice_no: d.invoice_no,
         invoice_date: d.invoice_date || null,
         flow_type: d.flow_type || 'internal',
-        delivered_by_name: d.delivered_by_name,
+        delivered_by_name: d.delivered_by_name, notes: d.notes,
         lines: d.lines.map((l) => ({
           ...splitItem(l.item),
           qty_expected: Number(l.qty_expected) || 0,
@@ -164,6 +164,12 @@ export function InboundForm({ open, onClose, editing }: {
           <TextInput label="Người giao hàng" placeholder="Tên nhân viên NCC/bên giao hàng" full
             {...register('delivered_by_name')} />
         </FieldRow>
+        <div className="mb-3">
+          <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Ghi chú</label>
+          <textarea rows={2} placeholder="Ghi chú thêm cho phiếu nhập…"
+            {...register('notes')}
+            className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
+        </div>
         {flowType === 'supplier' && (
           <p className="text-[11px] text-warn mb-1.5">
             Luồng NCC: cần điền đủ <b>Đơn giá</b> + <b>Thuế (%)</b> cho từng dòng trước khi Xác nhận nhận hàng.
