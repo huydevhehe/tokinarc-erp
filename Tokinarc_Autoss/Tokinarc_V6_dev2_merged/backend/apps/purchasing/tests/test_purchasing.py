@@ -215,6 +215,18 @@ def test_supplier_filter_by_code_name_tax_code_phone(manager):
 
 
 @pytest.mark.django_db
+def test_supplier_create_without_code_auto_generates(manager):
+    """FE bỏ ô "Mã NCC" khỏi form thêm mới — BE phải tự sinh mã NCC-XXXX kế
+    tiếp khi không nhận được 'code', để các bảng khác (PO, đơn nhập) vẫn tham
+    chiếu supplier_id bình thường."""
+    Supplier.objects.create(code='NCC-0007', name='Cu', created_by=manager, updated_by=manager)
+    c = APIClient(); c.force_authenticate(manager)
+    r = c.post('/api/v1/purchasing/suppliers/', {'name': 'Cty Moi'}, format='json')
+    assert r.status_code == 201
+    assert r.data['code'] == 'NCC-0008'
+
+
+@pytest.mark.django_db
 def test_supplier_edit(manager):
     sup = Supplier.objects.create(code='NCC-E01', name='Cu', created_by=manager, updated_by=manager)
     c = APIClient(); c.force_authenticate(manager)

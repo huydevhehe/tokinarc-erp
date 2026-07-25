@@ -21,7 +21,7 @@ interface Supplier {
   id: string; code: string; name: string; tax_code: string; phone: string; email: string
   address?: string; notes?: string
 }
-interface Form { code: string; name: string; tax_code: string; phone: string; email: string; address: string }
+interface Form { name: string; tax_code: string; phone: string; email: string; address: string }
 
 export function SuppliersPage() {
   const qc = useQueryClient()
@@ -69,10 +69,10 @@ export function SuppliersPage() {
     onSuccess: () => { toast.success('Đã xoá NCC'); qc.invalidateQueries({ queryKey: ['suppliers'] }) },
     onError: (e) => toast.error(apiError(e)),
   })
-  const openAdd = () => { setEditing(null); reset({ code: '', name: '', tax_code: '', phone: '', email: '', address: '' }); setOpen(true) }
+  const openAdd = () => { setEditing(null); reset({ name: '', tax_code: '', phone: '', email: '', address: '' }); setOpen(true) }
   const openEdit = (s: Supplier) => {
     setEditing(s)
-    reset({ code: s.code, name: s.name, tax_code: s.tax_code, phone: s.phone, email: s.email, address: s.address || '' })
+    reset({ name: s.name, tax_code: s.tax_code, phone: s.phone, email: s.email, address: s.address || '' })
     setOpen(true)
   }
 
@@ -139,10 +139,7 @@ export function SuppliersPage() {
         footer={<><Button variant="ghost" onClick={() => { setOpen(false); setEditing(null) }}>Hủy</Button>
           <Button onClick={handleSubmit((d) => save.mutate(d))} disabled={save.isPending}>Lưu</Button></>}>
         <form>
-          <FieldRow>
-            <TextInput label="Mã NCC *" placeholder="NCC-0001" {...register('code', { required: true })} />
-            <TextInput label="Tên *" {...register('name', { required: true })} />
-          </FieldRow>
+          <TextInput label="Tên *" full {...register('name', { required: true })} />
           <FieldRow>
             <TextInput label="Mã số thuế" {...register('tax_code')} />
             <TextInput label="Điện thoại" {...register('phone')} />

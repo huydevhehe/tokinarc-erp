@@ -14,6 +14,7 @@ class SupplierSerializer(serializers.ModelSerializer):
         fields = ['id', 'code', 'name', 'tax_code', 'phone', 'email', 'address',
                   'notes', 'is_active', 'created_at']
         read_only_fields = ['id', 'created_at']
+        extra_kwargs = {'code': {'required': False}}   # tạo mới: BE tự sinh NCC-XXXX
 
 
 class POLineSerializer(serializers.ModelSerializer):

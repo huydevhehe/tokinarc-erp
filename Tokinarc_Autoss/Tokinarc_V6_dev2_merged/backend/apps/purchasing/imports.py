@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import csv
 import io
-import re
 
 from django.db import transaction
 from rest_framework.parsers import FormParser, MultiPartParser
@@ -30,7 +29,6 @@ from .models import Supplier
 from .views import PO_WRITE_ROLES
 
 COLUMNS = ['code', 'name', 'tax_code', 'phone', 'email', 'address', 'notes']
-_CODE_NUM_RE = re.compile(r'NCC-(\d+)', re.IGNORECASE)
 
 
 def _norm(s: str) -> str:
@@ -58,15 +56,6 @@ def _parse_file(f) -> list[dict]:
         out.append({headers[i]: (str(c).strip() if c is not None else '')
                     for i, c in enumerate(r) if i < len(headers)})
     return out
-
-
-def _next_code_seq() -> int:
-    mx = 0
-    for code in Supplier.objects.values_list('code', flat=True):
-        m = _CODE_NUM_RE.search(code or '')
-        if m:
-            mx = max(mx, int(m.group(1)))
-    return mx + 1
 
 
 def validate_and_plan(rows: list[dict]):
@@ -143,7 +132,7 @@ class SupplierImportView(APIView):
                              'update': p['mode'] == 'update'} for p in plan[:10]],
             })
 
-        seq = _next_code_seq()
+        seq = Supplier.next_code_seq()
         with transaction.atomic():
             for p in plan:
                 code = p['code']

@@ -5,10 +5,14 @@ Nhận hàng theo PO sẽ cộng tồn qua wms.services.receive_stock.
 """
 from __future__ import annotations
 
+import re
+
 from django.conf import settings
 from django.db import models
 
 from apps.common.models import BaseModel, SoftDeleteMixin
+
+_CODE_NUM_RE = re.compile(r'NCC-(\d+)', re.IGNORECASE)
 
 
 class Supplier(BaseModel, SoftDeleteMixin):
@@ -27,6 +31,22 @@ class Supplier(BaseModel, SoftDeleteMixin):
 
     def __str__(self) -> str:
         return f"{self.code} — {self.name}"
+
+    @classmethod
+    def next_code_seq(cls) -> int:
+        """Số thứ tự kế tiếp cho mã NCC-XXXX — quét toàn bộ mã hiện có và lấy
+        max phần số (không dùng order_by('-code').first(): sắp ASCII sẽ sai
+        nếu có mã không đúng khuôn 4 chữ số, VD import tay 'NCC-12345')."""
+        mx = 0
+        for code in cls.objects.values_list('code', flat=True):
+            m = _CODE_NUM_RE.search(code or '')
+            if m:
+                mx = max(mx, int(m.group(1)))
+        return mx + 1
+
+    @classmethod
+    def next_code(cls) -> str:
+        return f'NCC-{cls.next_code_seq():04d}'
 
 
 class PurchaseStatus(models.TextChoices):

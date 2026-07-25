@@ -96,7 +96,8 @@ class SupplierViewSet(viewsets.ModelViewSet):
         return qs
 
     def perform_create(self, serializer):
-        serializer.save(created_by=self.request.user, updated_by=self.request.user)
+        code = serializer.validated_data.get('code') or Supplier.next_code()
+        serializer.save(code=code, created_by=self.request.user, updated_by=self.request.user)
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
