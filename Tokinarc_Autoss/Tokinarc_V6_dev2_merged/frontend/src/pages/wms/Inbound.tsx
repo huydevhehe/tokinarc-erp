@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { PackageCheck, Check, Plus, ScanLine, Eye, Download, Pencil, Trash2 } from 'lucide-react'
+import { PackageCheck, Check, Plus, ScanLine, Eye, Pencil, Trash2, CalendarClock } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
@@ -33,6 +33,8 @@ export function InboundPage() {
   const [reason, setReason] = useState('')
   const [fullFor, setFullFor] = useState<InboundOrder | null>(null)   // xác nhận nhận đủ khi chưa quét
   const [editOrder, setEditOrder] = useState<InboundOrder | null>(null)   // sửa phiếu Nháp
+  const [dateEditFor, setDateEditFor] = useState<InboundOrder | null>(null)   // sửa Ngày nhập kho
+  const [newReceivedAt, setNewReceivedAt] = useState('')
   const [status, setStatus] = useState<InboundStatus | ''>('')
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -67,6 +69,19 @@ export function InboundPage() {
       qc.invalidateQueries({ queryKey: ['wms-inbound-list'] })
       qc.invalidateQueries({ queryKey: ['wms'] })
       qc.invalidateQueries({ queryKey: ['wms-inventory'] })
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
+  const editDate = useMutation({
+    // Chỉ sửa ngày nhận (received_at) — KHÔNG đụng SL/đơn giá dòng hàng, nên
+    // an toàn ở mọi trạng thái đã nhận (tồn kho đã cộng không bị ảnh hưởng).
+    mutationFn: (v: { id: string; received_at: string }) =>
+      api.patch(`/wms/inbound/${v.id}/`, { received_at: v.received_at }),
+    onSuccess: () => {
+      toast.success('Đã cập nhật ngày nhập kho')
+      qc.invalidateQueries({ queryKey: ['wms-inbound-list'] })
+      setDateEditFor(null)
     },
     onError: (e) => toast.error(apiError(e)),
   })
@@ -116,8 +131,8 @@ export function InboundPage() {
       <TableCard>
         <thead>
           <tr className="border-b border-line">
-            <Th>Mã đơn</Th><Th>Nhà cung cấp</Th><Th>Từ đơn mua</Th><Th>Tiến độ nhận</Th>
-            <Th>Ngày nhập kho</Th><Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
+            <Th>Mã đơn</Th><Th>Ngày nhập kho</Th><Th>Nhà cung cấp</Th><Th>Từ đơn mua</Th><Th>Tiến độ nhận</Th>
+            <Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
           </tr>
         </thead>
         <tbody>
@@ -131,23 +146,25 @@ export function InboundPage() {
             return (
             <tr key={o.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{o.code}</Td>
+              <Td className="text-txt-2">{formatDate(o.received_at)}</Td>
               <Td className="text-txt-2">{o.supplier || '—'}</Td>
               <Td className="text-txt-2 font-mono">{o.po_code || '—'}</Td>
               <Td className={`tabular-nums ${short ? 'text-warn' : 'text-ok'}`}>{rec}/{exp}</Td>
-              <Td className="text-txt-2">{formatDate(o.received_at)}</Td>
               <Td><Tag tone={INBOUND_STATUS_TONE[o.status]}>{INBOUND_STATUS_LABEL[o.status]}</Tag></Td>
               <Td className="text-right">
                 <span className="inline-flex gap-1.5 items-center">
                 <Button variant="ghost" size="sm" onClick={() => setViewOrder(o)}>
                   <Eye size={13} /> Xem
                 </Button>
-                <Button variant="ghost" size="sm"
-                  onClick={() => downloadFile(`/wms/inbound/${o.id}/export-xlsx/`, `phieu_nhap_${o.code}.xlsx`)}>
-                  <Download size={13} /> Excel
-                </Button>
                 {o.is_active && o.status === 'draft' && (
                   <Button variant="ghost" size="sm" onClick={() => setEditOrder(o)}>
                     <Pencil size={13} /> Sửa
+                  </Button>
+                )}
+                {o.is_active && o.received_at && (
+                  <Button variant="ghost" size="sm"
+                    onClick={() => { setNewReceivedAt(o.received_at!.slice(0, 10)); setDateEditFor(o) }}>
+                    <CalendarClock size={13} /> Sửa ngày
                   </Button>
                 )}
                 {o.is_active && (
@@ -199,6 +216,7 @@ export function InboundPage() {
       <OrderLinesModal
         open={!!viewOrder} onClose={() => setViewOrder(null)}
         title={`Phiếu nhập ${viewOrder?.code ?? ''}`}
+        onExport={() => viewOrder && downloadFile(`/wms/inbound/${viewOrder.id}/export-xlsx/`, `phieu_nhap_${viewOrder.code}.xlsx`)}
         meta={viewOrder && (
           <div className="text-sm text-txt-2 space-y-1.5">
             <div>
@@ -278,6 +296,24 @@ export function InboundPage() {
           nhận <b>ĐỦ theo số lượng đặt</b> mà không kiểm tra thực tế. Nên <b>Quét</b> từng món
           trước để đối chiếu.
         </p>
+      </Modal>
+
+      {/* Sửa Ngày nhập kho — chỉ đổi received_at, không đụng SL/đơn giá dòng hàng */}
+      <Modal open={!!dateEditFor} onClose={() => setDateEditFor(null)}
+        title={`Sửa ngày nhập kho — ${dateEditFor?.code ?? ''}`}
+        icon={<CalendarClock size={18} className="text-flame" />}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDateEditFor(null)}>Hủy</Button>
+            <Button disabled={editDate.isPending || !newReceivedAt}
+              onClick={() => dateEditFor && editDate.mutate({ id: dateEditFor.id, received_at: newReceivedAt })}>
+              {editDate.isPending ? 'Đang lưu…' : 'Lưu'}
+            </Button>
+          </>
+        }>
+        <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">Ngày nhập kho</label>
+        <input type="date" value={newReceivedAt} onChange={(e) => setNewReceivedAt(e.target.value)} autoFocus
+          className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
       </Modal>
     </div>
   )

@@ -4,7 +4,7 @@
  * hàng (mặt hàng + 2 cột số lượng). Read-only.
  */
 import type { ReactNode } from 'react'
-import { PackageCheck } from 'lucide-react'
+import { Download, PackageCheck } from 'lucide-react'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
 import { formatVnd } from '@/lib/crm'
@@ -14,9 +14,9 @@ export interface DocLine {
   unitPrice?: string | null; lineTotal?: string | null; taxPct?: string | number | null
 }
 
-export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, lines, showPrice, showTax }: {
+export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, lines, showPrice, showTax, onExport }: {
   open: boolean; onClose: () => void; title: string; meta?: ReactNode
-  q1Label: string; q2Label: string; lines: DocLine[]; showPrice?: boolean; showTax?: boolean
+  q1Label: string; q2Label: string; lines: DocLine[]; showPrice?: boolean; showTax?: boolean; onExport?: () => void
 }) {
   const totalQ1 = lines.reduce((s, l) => s + (l.q1 || 0), 0)
   const totalQ2 = lines.reduce((s, l) => s + (l.q2 || 0), 0)
@@ -26,7 +26,16 @@ export function OrderLinesModal({ open, onClose, title, meta, q1Label, q2Label, 
   return (
     <Modal open={open} onClose={onClose} wide title={title}
       icon={<PackageCheck size={18} className="text-flame" />}
-      footer={<Button variant="ghost" onClick={onClose}>Đóng</Button>}>
+      footer={
+        <>
+          {onExport && (
+            <Button variant="ghost" onClick={onExport}>
+              <Download size={13} /> Excel
+            </Button>
+          )}
+          <Button variant="ghost" onClick={onClose}>Đóng</Button>
+        </>
+      }>
       {meta && <div className="mb-3">{meta}</div>}
       <table className="w-full text-sm">
         <thead>

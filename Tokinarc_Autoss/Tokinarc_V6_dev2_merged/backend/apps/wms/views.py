@@ -555,7 +555,17 @@ class InboundViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         qs = super().get_queryset()
         if self.action == 'list':
-            qs = qs.filter(is_active=True)
+            # 'cancelled' không còn phiếu nào tự sinh ra (không có luồng huỷ
+            # phiếu nhập) — FE dùng lại giá trị này làm bộ lọc "Đã xóa" cho
+            # phiếu đã bị ẩn (is_active=false, nút "Xóa"), khác với is_active=True
+            # + status thật cho các trạng thái còn lại.
+            status_param = self.request.query_params.get('status')
+            if status_param == 'cancelled':
+                qs = qs.filter(is_active=False)
+            elif status_param:
+                qs = qs.filter(is_active=True, status=status_param)
+            else:
+                qs = qs.filter(is_active=True)
         return qs
 
     def perform_update(self, serializer):
