@@ -6,8 +6,15 @@
  *
  * Component "câm" (controlled: value/onChange) để ghép được vào bất kỳ form
  * nào (kể cả react-hook-form qua setValue), không phụ thuộc thư viện ngoài.
+ *
+ * Danh sách gợi ý render qua PORTAL vào document.body (position: fixed, toạ độ
+ * lấy từ getBoundingClientRect) — không phải con của ô input trong DOM nữa, để
+ * KHÔNG bị modal cha (overflow-y-auto, VD form Tạo đơn mua nhiều dòng) cắt mất
+ * phần dưới khi ô nằm gần đáy vùng cuộn. Không tự lật lên trên khi sát đáy màn
+ * hình — đủ dùng cho các modal hiện tại, chưa cần phức tạp hơn.
  */
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Search } from 'lucide-react'
 import type { Option } from '@/components/form'
 
@@ -23,11 +30,35 @@ export function SearchableSelect({ value, onChange, options, loading, placeholde
 }) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [pos, setPos] = useState<{ top: number; left: number; width: number } | null>(null)
   const boxRef = useRef<HTMLDivElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+
+  const updatePos = () => {
+    const el = boxRef.current
+    if (!el) return
+    const r = el.getBoundingClientRect()
+    setPos({ top: r.bottom + 4, left: r.left, width: r.width })
+  }
+
+  useEffect(() => {
+    if (!open) return
+    updatePos()
+    // capture:true — bắt được cả cuộn bên trong modal (overflow-y-auto), không
+    // chỉ cuộn trang ngoài cùng.
+    window.addEventListener('scroll', updatePos, true)
+    window.addEventListener('resize', updatePos)
+    return () => {
+      window.removeEventListener('scroll', updatePos, true)
+      window.removeEventListener('resize', updatePos)
+    }
+  }, [open])
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) { setOpen(false); setQuery('') }
+      const t = e.target as Node
+      if (boxRef.current?.contains(t) || menuRef.current?.contains(t)) return
+      setOpen(false); setQuery('')
     }
     document.addEventListener('mousedown', onClickOutside)
     return () => document.removeEventListener('mousedown', onClickOutside)
@@ -50,8 +81,10 @@ export function SearchableSelect({ value, onChange, options, loading, placeholde
           className="w-full bg-ink-3 border border-line rounded-md pl-7 pr-2 py-1.5 text-sm focus:border-flame focus:outline-none disabled:opacity-50"
         />
       </div>
-      {open && !disabled && (
-        <div className="absolute z-20 mt-1 w-full max-h-56 overflow-y-auto rounded-md border border-line bg-ink-2 shadow-lg">
+      {open && !disabled && pos && createPortal(
+        <div ref={menuRef}
+          style={{ position: 'fixed', top: pos.top, left: pos.left, width: pos.width }}
+          className="z-[100] max-h-56 overflow-y-auto rounded-md border border-line bg-ink-2 shadow-lg">
           {filtered.length === 0 && (
             <div className="px-3 py-2 text-sm text-txt-2">Không tìm thấy — thử từ khoá khác.</div>
           )}
@@ -69,7 +102,8 @@ export function SearchableSelect({ value, onChange, options, loading, placeholde
               Còn {filtered.length - MAX_VISIBLE} kết quả — gõ thêm để lọc bớt.
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
