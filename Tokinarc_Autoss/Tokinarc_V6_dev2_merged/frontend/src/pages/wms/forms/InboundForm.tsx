@@ -200,7 +200,7 @@ export function InboundForm({ open, onClose, editing }: {
                   <Trash2 size={15} />
                 </button>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className={`grid grid-cols-2 gap-2 ${flowType === 'internal' ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}>
                 <div>
                   <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">SL</label>
                   <input type="number" min={1} placeholder="SL"
@@ -213,12 +213,14 @@ export function InboundForm({ open, onClose, editing }: {
                     {...register(`lines.${i}.unit_cost` as const, { valueAsNumber: true })}
                     className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 </div>
-                <div>
-                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Thuế %</label>
-                  <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
-                    {...register(`lines.${i}.tax_pct` as const)}
-                    className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
-                </div>
+                {flowType !== 'internal' && (
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Thuế %</label>
+                    <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
+                      {...register(`lines.${i}.tax_pct` as const)}
+                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                  </div>
+                )}
                 <div>
                   <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Bin đích</label>
                   <input type="hidden" {...register(`lines.${i}.target_bin` as const)} />
