@@ -154,7 +154,7 @@ class InboundOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model  = InboundOrder
         fields = ['id', 'code', 'warehouse', 'asn', 'purchase_order', 'po_code', 'status',
-                  'supplier', 'invoice_no', 'shortage_note', 'received_at', 'lines', 'notes',
+                  'supplier', 'invoice_no', 'invoice_date', 'shortage_note', 'received_at', 'lines', 'notes',
                   'flow_type', 'delivered_by_name', 'received_by', 'received_by_username',
                   'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'status', 'received_at', 'received_by', 'created_at', 'updated_at']

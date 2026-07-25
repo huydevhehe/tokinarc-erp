@@ -214,6 +214,7 @@ export interface InboundOrder {
   status: InboundStatus
   supplier?: string
   invoice_no?: string
+  invoice_date?: string | null
   shortage_note?: string
   received_at: string | null
   lines: InboundLine[]

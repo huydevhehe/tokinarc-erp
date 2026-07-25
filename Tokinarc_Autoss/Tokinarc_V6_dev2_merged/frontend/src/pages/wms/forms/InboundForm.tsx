@@ -25,13 +25,13 @@ interface LineForm {
   unit_cost: number; tax_pct: string; serials: string
 }
 interface Form {
-  warehouse: string; supplier: string; invoice_no: string
+  warehouse: string; supplier: string; invoice_no: string; invoice_date: string
   flow_type: '' | 'internal' | 'supplier'; delivered_by_name: string
   lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '', serials: '' }
 const EMPTY: Form = {
-  warehouse: '', supplier: '', invoice_no: '',
+  warehouse: '', supplier: '', invoice_no: '', invoice_date: '',
   flow_type: '', delivered_by_name: '',
   lines: [{ ...EMPTY_LINE }],
 }
@@ -76,6 +76,7 @@ export function InboundForm({ open, onClose, editing }: {
     reset(editing ? {
       warehouse: editing.warehouse,
       supplier: editing.supplier ?? '', invoice_no: editing.invoice_no ?? '',
+      invoice_date: editing.invoice_date ?? '',
       flow_type: editing.flow_type ?? '',
       delivered_by_name: editing.delivered_by_name ?? '',
       lines: (editing.lines ?? []).map((l) => ({
@@ -95,6 +96,7 @@ export function InboundForm({ open, onClose, editing }: {
         // InboundViewSet.perform_create). Sửa: giữ nguyên mã cũ, không đổi.
         ...(editing ? { code: editing.code } : {}),
         warehouse: d.warehouse, supplier: d.supplier, invoice_no: d.invoice_no,
+        invoice_date: d.invoice_date || null,
         flow_type: d.flow_type || 'internal',
         delivered_by_name: d.delivered_by_name,
         lines: d.lines.map((l) => ({
@@ -147,15 +149,19 @@ export function InboundForm({ open, onClose, editing }: {
             options={[...new Set([...(editing?.supplier ? [editing.supplier] : []), ...supplierNames])]
               .map((n) => ({ value: n, label: n }))}
             {...register('supplier')} />
-          <TextInput label="Số hóa đơn/phiếu NCC" placeholder="VD: HD-12345"
-            {...register('invoice_no')} />
-        </FieldRow>
-        <FieldRow>
           <SelectInput label="Loại phiếu nhập *" error={errors.flow_type?.message}
             placeholder="— Chọn loại —"
             options={[{ value: 'internal', label: 'Nội bộ' }, { value: 'supplier', label: 'Nhà cung cấp (NCC)' }]}
             {...register('flow_type', { required: 'Chọn loại phiếu nhập' })} />
-          <TextInput label="Người giao hàng" placeholder="Tên nhân viên NCC/bên giao hàng"
+        </FieldRow>
+        <FieldRow>
+          <TextInput label="Số hóa đơn/phiếu NCC" placeholder="VD: HD-12345"
+            {...register('invoice_no')} />
+          <TextInput label="Ngày xuất hoá đơn" type="date"
+            {...register('invoice_date')} />
+        </FieldRow>
+        <FieldRow>
+          <TextInput label="Người giao hàng" placeholder="Tên nhân viên NCC/bên giao hàng" full
             {...register('delivered_by_name')} />
         </FieldRow>
         {flowType === 'supplier' && (
