@@ -124,7 +124,11 @@ class WarehouseViewSet(viewsets.ModelViewSet):
         if n:
             return Response({'detail': f'Kho còn {n} khu — xoá hết khu trước khi xoá kho.',
                              'code': 'CONFLICT'}, status=status.HTTP_409_CONFLICT)
-        return super().destroy(request, *args, **kwargs)
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError:
+            return Response({'detail': 'Kho đã có lịch sử nhập/xuất/kiểm kê — không xoá được.',
+                             'code': 'CONFLICT'}, status=status.HTTP_409_CONFLICT)
 
 
 class ZoneViewSet(viewsets.ModelViewSet):
