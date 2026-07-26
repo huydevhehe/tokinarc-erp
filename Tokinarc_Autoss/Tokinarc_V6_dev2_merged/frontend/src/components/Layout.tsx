@@ -11,6 +11,7 @@ import {
   Package, Barcode, History, PackageCheck,
   Warehouse, Map as MapIcon, Crown, Bot, ClipboardCheck,
   ShoppingCart, Building, Undo2, CalendarDays, UserCog, MessageSquare, FolderTree,
+  PanelLeftClose, PanelLeftOpen,
 } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { useAuth, isWmsControl, isManager } from '@/lib/auth/store'
@@ -167,6 +168,9 @@ export function Layout() {
   const loc = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  // Thu gọn sidebar chỉ còn icon (desktop) — tự thu lại sau khi bấm vào 1 mục
+  // menu để tiết kiệm diện tích màn hình; bấm nút mở rộng lại khi cần đổi mục.
+  const [collapsed, setCollapsed] = useState(false)
 
   const role = user?.role
   const canCtrl = isWmsControl(role)
@@ -184,53 +188,75 @@ export function Layout() {
 
   const onLogout = async () => { await logout(); nav('/login', { replace: true }) }
   const closeDrawer = () => setMobileOpen(false)
+  // Mobile luôn mở sidebar đầy đủ (drawer tạm, không cần thu gọn).
+  const openDrawer = () => { setMobileOpen(true); setCollapsed(false) }
+  const onNavClick = () => { closeDrawer(); setCollapsed(true) }
 
   return (
     <div className="h-screen flex overflow-hidden">
       {mobileOpen && <div className="fixed inset-0 bg-black/60 z-30 lg:hidden" onClick={closeDrawer} />}
 
       <aside
-        className={`bg-ink-2 border-r border-line flex flex-col w-60 shrink-0 overflow-y-auto
-                    fixed inset-y-0 left-0 z-40 transition-transform duration-200
+        className={`bg-ink-2 border-r border-line flex flex-col shrink-0 overflow-y-auto overflow-x-hidden
+                    fixed inset-y-0 left-0 z-40 transition-all duration-200
                     lg:static lg:translate-x-0
+                    ${collapsed ? 'w-16' : 'w-60'}
                     ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <div className="h-14 flex items-center gap-2 px-4 border-b border-line shrink-0">
-          <div className="w-8 h-8 rounded-lg bg-flame grid place-items-center">
+        <div className={`h-14 flex items-center border-b border-line shrink-0 ${collapsed ? 'justify-center px-2' : 'gap-2 px-4'}`}>
+          <div className="w-8 h-8 rounded-lg bg-flame grid place-items-center shrink-0">
             <Flame className="text-white" size={17} />
           </div>
-          <div className="leading-tight flex-1">
-            <div className="font-bold text-sm tracking-tight">Tokinarc</div>
-            <div className="text-[10px] text-txt-2">{current.label}</div>
-          </div>
+          {!collapsed && (
+            <div className="leading-tight flex-1 min-w-0">
+              <div className="font-bold text-sm tracking-tight">Tokinarc</div>
+              <div className="text-[10px] text-txt-2">{current.label}</div>
+            </div>
+          )}
+          {!collapsed && (
+            <button className="hidden lg:block text-txt-2 hover:text-txt p-1" onClick={() => setCollapsed(true)} aria-label="Thu gọn menu">
+              <PanelLeftClose size={17} />
+            </button>
+          )}
           <button className="lg:hidden text-txt-2 hover:text-txt p-1" onClick={closeDrawer} aria-label="Đóng menu">
             <X size={18} />
           </button>
         </div>
 
-        {/* Module switcher */}
-        <div className="flex gap-1 p-2 border-b border-line">
-          {visibleModules.map((m) => (
-            <button
-              key={m.key}
-              onClick={() => { nav(m.home); closeDrawer() }}
-              className={`flex-1 text-xs font-medium rounded-md py-1.5 transition-colors ${
-                m.key === moduleKey ? 'bg-flame/15 text-flame' : 'text-txt-2 hover:bg-ink-3 hover:text-txt'
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+        {collapsed && (
+          <button className="hidden lg:flex items-center justify-center py-2 border-b border-line text-txt-2 hover:text-txt"
+            onClick={() => setCollapsed(false)} aria-label="Mở rộng menu" title="Mở rộng menu">
+            <PanelLeftOpen size={17} />
+          </button>
+        )}
+
+        {/* Module switcher — ẩn khi thu gọn (chỉ có chữ, không có icon riêng). */}
+        {!collapsed && (
+          <div className="flex gap-1 p-2 border-b border-line">
+            {visibleModules.map((m) => (
+              <button
+                key={m.key}
+                onClick={() => { nav(m.home); closeDrawer() }}
+                className={`flex-1 text-xs font-medium rounded-md py-1.5 transition-colors ${
+                  m.key === moduleKey ? 'bg-flame/15 text-flame' : 'text-txt-2 hover:bg-ink-3 hover:text-txt'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        )}
 
         <nav className="flex-1 p-2">
           {current.nav.filter((g) => g.items.some(navVisible)).map((g) => (
             <div key={g.group}>
-              <div className="text-[10px] uppercase tracking-wide text-txt-2 font-semibold px-2.5 pt-3 pb-1">
-                {g.group}
-              </div>
+              {!collapsed && (
+                <div className="text-[10px] uppercase tracking-wide text-txt-2 font-semibold px-2.5 pt-3 pb-1">
+                  {g.group}
+                </div>
+              )}
               {g.items.filter(navVisible).map((it) => (
-                <SideLink key={it.to} to={it.to} icon={it.icon} badge={it.badge} onClick={closeDrawer}>
+                <SideLink key={it.to} to={it.to} icon={it.icon} badge={it.badge} collapsed={collapsed} onClick={onNavClick}>
                   {it.label}
                 </SideLink>
               ))}
@@ -241,7 +267,7 @@ export function Layout() {
 
       <div className="flex-1 flex flex-col min-w-0">
         <header className="h-14 bg-ink-2 border-b border-line flex items-center gap-3 px-4 sm:px-5 shrink-0">
-          <button className="lg:hidden text-txt-2 hover:text-txt -ml-1 p-1" onClick={() => setMobileOpen(true)} aria-label="Mở menu">
+          <button className="lg:hidden text-txt-2 hover:text-txt -ml-1 p-1" onClick={openDrawer} aria-label="Mở menu">
             <Menu size={20} />
           </button>
           <div className="flex-1" />
@@ -273,22 +299,27 @@ export function Layout() {
   )
 }
 
-function SideLink({ to, icon, badge, onClick, children }: {
-  to: string; icon: ReactNode; badge?: number; onClick?: () => void; children: ReactNode
+function SideLink({ to, icon, badge, collapsed, onClick, children }: {
+  to: string; icon: ReactNode; badge?: number; collapsed?: boolean; onClick?: () => void; children: ReactNode
 }) {
   return (
     <NavLink
       to={to}
       onClick={onClick}
+      title={collapsed ? String(children) : undefined}
       className={({ isActive }) =>
-        `flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[13px] transition-colors mb-0.5 ${
-          isActive ? 'bg-flame/15 text-flame font-semibold' : 'text-txt-2 hover:text-txt hover:bg-ink-3/50'
-        }`
+        `flex items-center rounded-md text-[13px] transition-colors mb-0.5 relative ${
+          collapsed ? 'justify-center px-2 py-2.5' : 'gap-2.5 px-2.5 py-2'
+        } ${isActive ? 'bg-flame/15 text-flame font-semibold' : 'text-txt-2 hover:text-txt hover:bg-ink-3/50'}`
       }
     >
-      <span className="w-4 grid place-items-center">{icon}</span>
-      <span className="flex-1">{children}</span>
-      {badge ? <span className="bg-flame text-white rounded-full text-[10px] px-1.5 leading-4">{badge}</span> : null}
+      <span className="w-4 grid place-items-center shrink-0">{icon}</span>
+      {!collapsed && <span className="flex-1">{children}</span>}
+      {badge ? (
+        collapsed
+          ? <span className="absolute top-1 right-1.5 w-2 h-2 rounded-full bg-flame" />
+          : <span className="bg-flame text-white rounded-full text-[10px] px-1.5 leading-4">{badge}</span>
+      ) : null}
     </NavLink>
   )
 }
