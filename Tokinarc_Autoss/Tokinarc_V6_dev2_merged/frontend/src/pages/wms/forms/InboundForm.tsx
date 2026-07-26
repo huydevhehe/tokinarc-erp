@@ -20,19 +20,25 @@ import type { InboundOrder } from '@/lib/types'
 
 interface BinLite { id: string; full_code: string }
 interface SupplierLite { id: string; name: string }
+interface POLineLite { part: string; qty: number; unit_cost: string | number; qty_received: number }
+interface POLite {
+  id: string; code: string; supplier_name: string; warehouse: string; status: string
+  lines: POLineLite[]
+}
 interface LineForm {
   item: string; qty_expected: number; target_bin: string
   unit_cost: number; tax_pct: string; serials: string
 }
 interface Form {
   warehouse: string; supplier: string; invoice_no: string; invoice_date: string
-  flow_type: '' | 'internal' | 'supplier'; delivered_by_name: string; notes: string
+  flow_type: '' | 'internal' | 'supplier'; purchase_order: string
+  delivered_by_name: string; notes: string
   lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '', serials: '' }
 const EMPTY: Form = {
   warehouse: '', supplier: '', invoice_no: '', invoice_date: '',
-  flow_type: '', delivered_by_name: '', notes: '',
+  flow_type: '', purchase_order: '', delivered_by_name: '', notes: '',
   lines: [{ ...EMPTY_LINE }],
 }
 
@@ -47,10 +53,34 @@ export function InboundForm({ open, onClose, editing }: {
   // #10/#11 biên bản: NCC phải SỔ TÊN CÓ SẴN (dropdown), không gõ tay tự do.
   const suppliers = useQuery({ queryKey: ['suppliers-opt'], queryFn: () => fetchAll<SupplierLite>('/purchasing/suppliers/') })
   const supplierNames = (suppliers.data?.items ?? []).map((s) => s.name)
+  // Luồng NCC: chọn đơn mua đã đặt hàng → kéo NCC/kho/dòng hàng còn thiếu vào phiếu.
+  const pos = useQuery({ queryKey: ['po-eligible-for-inbound'], queryFn: () => fetchAll<POLite>('/purchasing/orders/') })
+  const poOptions = (pos.data?.items ?? [])
+    .filter((p) => p.status === 'ordered' || p.status === 'partial')
+    .map((p) => ({ value: p.id, label: `${p.code} — ${p.supplier_name}` }))
   const { register, handleSubmit, reset, control, setValue, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
-  const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
+  const { fields, append, remove, replace } = useFieldArray({ control, name: 'lines' })
   const watched = (useWatch({ control, name: 'lines' }) as LineForm[] | undefined) ?? []
   const flowType = useWatch({ control, name: 'flow_type' })
+  const purchaseOrder = useWatch({ control, name: 'purchase_order' })
+
+  // Chọn 1 đơn mua → tự điền kho/NCC + dòng hàng (SL còn lại chưa nhận, đơn giá theo PO).
+  const onPickPO = (poId: string) => {
+    setValue('purchase_order', poId, { shouldValidate: true })
+    const po = (pos.data?.items ?? []).find((p) => p.id === poId)
+    if (!po) return
+    setValue('warehouse', po.warehouse, { shouldValidate: true })
+    setValue('supplier', po.supplier_name)
+    const remaining = po.lines
+      .map((l) => ({ ...l, remaining: l.qty - l.qty_received }))
+      .filter((l) => l.remaining > 0)
+    if (remaining.length > 0) {
+      replace(remaining.map((l) => ({
+        item: `part:${l.part}`, qty_expected: l.remaining, target_bin: '',
+        unit_cost: Number(l.unit_cost), tax_pct: '', serials: '',
+      })))
+    }
+  }
   const itemLabel = (v: string) => items.find((o) => o.value === v)?.label ?? v
   const filled = watched.filter((l) => l?.item)
   const totalQty = filled.reduce((s, l) => s + (Number(l.qty_expected) || 0), 0)
@@ -77,7 +107,7 @@ export function InboundForm({ open, onClose, editing }: {
       warehouse: editing.warehouse,
       supplier: editing.supplier ?? '', invoice_no: editing.invoice_no ?? '',
       invoice_date: editing.invoice_date ?? '',
-      flow_type: editing.flow_type ?? '',
+      flow_type: editing.flow_type ?? '', purchase_order: editing.purchase_order ?? '',
       delivered_by_name: editing.delivered_by_name ?? '', notes: editing.notes ?? '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
@@ -98,6 +128,7 @@ export function InboundForm({ open, onClose, editing }: {
         warehouse: d.warehouse, supplier: d.supplier, invoice_no: d.invoice_no,
         invoice_date: d.invoice_date || null,
         flow_type: d.flow_type || 'internal',
+        purchase_order: d.flow_type === 'supplier' ? (d.purchase_order || null) : null,
         delivered_by_name: d.delivered_by_name, notes: d.notes,
         lines: d.lines.map((l) => ({
           ...splitItem(l.item),
@@ -121,18 +152,25 @@ export function InboundForm({ open, onClose, editing }: {
     onError: (e) => toast.error(apiError(e)),
   })
 
+  const onSubmit = (d: Form) => {
+    if (d.flow_type === 'supplier' && !d.purchase_order) {
+      toast.error('Phiếu nhập NCC phải chọn Đơn mua'); return
+    }
+    save.mutate(d)
+  }
+
   return (
     <Modal open={open} onClose={onClose} wide title={editing ? `Sửa phiếu nhập ${editing.code}` : 'Tạo đơn nhập kho'}
       icon={<PackageCheck size={18} className="text-flame" />}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>Hủy</Button>
-          <Button onClick={handleSubmit((d) => save.mutate(d))} disabled={save.isPending}>
+          <Button onClick={handleSubmit(onSubmit)} disabled={save.isPending}>
             {save.isPending ? 'Đang lưu…' : 'Tạo'}
           </Button>
         </>
       }>
-      <form onSubmit={handleSubmit((d) => save.mutate(d))}>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <FieldRow>
           {editing
             ? <TextInput label="Mã đơn" value={editing.code} disabled readOnly />
@@ -154,6 +192,20 @@ export function InboundForm({ open, onClose, editing }: {
             options={[{ value: 'internal', label: 'Nội bộ' }, { value: 'supplier', label: 'Nhà cung cấp (NCC)' }]}
             {...register('flow_type', { required: 'Chọn loại phiếu nhập' })} />
         </FieldRow>
+        {flowType === 'supplier' && (
+          <FieldRow>
+            <div className="col-span-2">
+              <input type="hidden" {...register('purchase_order')} />
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Đơn mua *</label>
+              <SearchableSelect
+                value={purchaseOrder ?? ''}
+                onChange={onPickPO}
+                options={poOptions} loading={pos.isLoading}
+                placeholder="Gõ mã PO/tên NCC để tìm đơn mua…" />
+              <p className="text-[11px] text-txt-2 mt-1">Chỉ đơn đã đặt (chưa nhận đủ) mới chọn được. Chọn đơn → tự điền kho/NCC/dòng hàng còn lại.</p>
+            </div>
+          </FieldRow>
+        )}
         <FieldRow>
           <TextInput label="Số hóa đơn/phiếu NCC" placeholder="VD: HD-12345"
             {...register('invoice_no')} />

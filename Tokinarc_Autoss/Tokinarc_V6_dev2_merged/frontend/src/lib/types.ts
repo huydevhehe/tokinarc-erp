@@ -210,6 +210,7 @@ export interface InboundOrder {
   code: string
   warehouse: string
   asn: string | null
+  purchase_order?: string | null
   po_code?: string
   status: InboundStatus
   supplier?: string
@@ -251,6 +252,7 @@ export interface OutboundOrder {
   warehouse: string
   sales_order_code: string
   customer: string | null
+  customer_name?: string
   rule: OutboundRule
   status: OutboundStatus
   purpose: OutboundPurpose
