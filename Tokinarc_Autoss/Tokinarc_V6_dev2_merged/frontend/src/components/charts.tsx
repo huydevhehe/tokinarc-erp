@@ -36,7 +36,7 @@ export function MoneyBarChart({ data, height = 240, multicolor = false }: {
         <CartesianGrid strokeDasharray="3 3" stroke="rgb(var(--line))" vertical={false} />
         <XAxis dataKey="label" stroke="rgb(var(--txt-2))" fontSize={11} tickLine={false} axisLine={{ stroke: 'rgb(var(--line))' }} />
         <YAxis stroke="rgb(var(--txt-2))" fontSize={11} tickLine={false} axisLine={false}
-          tickFormatter={(v) => compactVnd(v).replace('₫ ', '')} width={56} />
+          tickFormatter={(v) => compactVnd(v).replace(' ₫', '')} width={56} />
         <Tooltip content={<MoneyTooltip />} cursor={{ fill: 'rgba(224,92,27,0.08)' }} />
         <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={64}>
           {data.map((_, i) => (

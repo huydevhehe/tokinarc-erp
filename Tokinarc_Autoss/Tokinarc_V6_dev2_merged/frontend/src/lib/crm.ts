@@ -123,24 +123,24 @@ export const ACTIVITY_TYPE_TONE: Record<string, TagTone> = {
 }
 
 // ── Tiền VND ──────────────────────────────────────────────────────────────
-/** "₫ 2.470.000.000" — đầy đủ, dùng ở detail. */
+/** "2.470.000.000 ₫" — đầy đủ, dùng ở detail. */
 export function formatVnd(amount: string | number | null | undefined): string {
   if (amount === null || amount === undefined || amount === '') return '—'
   const n = typeof amount === 'string' ? Number(amount) : amount
   if (!Number.isFinite(n)) return '—'
-  return '₫ ' + Math.round(n).toLocaleString('vi-VN')
+  return Math.round(n).toLocaleString('vi-VN') + ' ₫'
 }
 
-/** "2.47 tỷ" / "185 tr" — gọn, dùng ở KPI/bảng giống mockup. */
+/** "2.47 tỷ ₫" / "185 tr ₫" — gọn, dùng ở KPI/bảng giống mockup. */
 export function compactVnd(amount: string | number | null | undefined): string {
   if (amount === null || amount === undefined || amount === '') return '—'
   const n = typeof amount === 'string' ? Number(amount) : amount
   if (!Number.isFinite(n)) return '—'
   const abs = Math.abs(n)
-  if (abs >= 1e9) return `₫ ${(n / 1e9).toFixed(2).replace(/\.?0+$/, '')} tỷ`
-  if (abs >= 1e6) return `₫ ${Math.round(n / 1e6)} tr`
-  if (abs >= 1e3) return `₫ ${Math.round(n / 1e3)}k`
-  return '₫ ' + Math.round(n).toLocaleString('vi-VN')
+  if (abs >= 1e9) return `${(n / 1e9).toFixed(2).replace(/\.?0+$/, '')} tỷ ₫`
+  if (abs >= 1e6) return `${Math.round(n / 1e6)} tr ₫`
+  if (abs >= 1e3) return `${Math.round(n / 1e3)}k ₫`
+  return Math.round(n).toLocaleString('vi-VN') + ' ₫'
 }
 
 /** Ngày ISO → "dd/MM/yyyy" (an toàn null). */
