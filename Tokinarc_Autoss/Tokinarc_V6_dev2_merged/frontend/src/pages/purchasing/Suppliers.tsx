@@ -5,13 +5,13 @@
  */
 import { useEffect, useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Building, Loader2, Pencil, Plus, Trash2, Upload } from 'lucide-react'
+import { Building, Loader2, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
 import { Modal } from '@/components/Modal'
-import { PageHeader, Button, SearchInput, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
+import { PageHeader, Button, Card, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 import { FieldRow, TextInput } from '@/components/form'
 import { useForm } from 'react-hook-form'
 import { useAuth } from '@/lib/auth/store'
@@ -116,12 +116,23 @@ export function SuppliersPage() {
             <Button onClick={openAdd}><Plus size={14} /> Thêm NCC</Button>
           </>
         } />
-      <div className="flex flex-wrap gap-2 mb-3">
-        <SearchInput value={code} onChange={setCode} placeholder="Lọc theo mã…" />
-        <SearchInput value={name} onChange={setName} placeholder="Lọc theo tên…" />
-        <SearchInput value={taxCode} onChange={setTaxCode} placeholder="Lọc theo MST…" />
-        <SearchInput value={phone} onChange={setPhone} placeholder="Lọc theo điện thoại…" />
-      </div>
+      <Card className="mb-4 !p-3">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
+          {[
+            { value: code, onChange: setCode, placeholder: 'Lọc theo mã…' },
+            { value: name, onChange: setName, placeholder: 'Lọc theo tên…' },
+            { value: taxCode, onChange: setTaxCode, placeholder: 'Lọc theo MST…' },
+            { value: phone, onChange: setPhone, placeholder: 'Lọc theo điện thoại…' },
+          ].map((f, i) => (
+            <div key={i} className="relative">
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-2" />
+              <input value={f.value} onChange={(e) => f.onChange(e.target.value)} placeholder={f.placeholder}
+                className="bg-ink-3 border border-line rounded-md pl-9 pr-3 py-2 text-sm w-full
+                           focus:border-flame transition-colors" />
+            </div>
+          ))}
+        </div>
+      </Card>
       <TableCard>
         <thead><tr className="border-b border-line">
           <Th>Mã</Th><Th>Tên</Th><Th>MST</Th><Th>Điện thoại</Th>
