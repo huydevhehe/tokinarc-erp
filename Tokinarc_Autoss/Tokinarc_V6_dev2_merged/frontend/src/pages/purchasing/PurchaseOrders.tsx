@@ -6,7 +6,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { ShoppingCart, Plus, Check, PackageCheck, Wallet, Trash2, Eye, X, Download, Truck } from 'lucide-react'
+import { ShoppingCart, Plus, Check, PackageCheck, Wallet, Trash2, Eye, X, Truck } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
@@ -207,15 +207,14 @@ export function PurchaseOrdersPage() {
       {view === 'all' ? (
       <TableCard>
         <thead><tr className="border-b border-line">
-          <Th>Mã PO</Th><Th>Nhà cung cấp</Th><Th>Kho</Th><Th className="text-right">Giá trị</Th>
+          <Th>Nhà cung cấp</Th><Th>Kho</Th><Th className="text-right">Giá trị</Th>
           <Th className="text-right">Còn nợ</Th><Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
         </tr></thead>
         <tbody>
-          {orders.isLoading && <RowMsg colSpan={7}>Đang tải…</RowMsg>}
-          {orders.data?.length === 0 && <RowMsg colSpan={7}>Chưa có đơn mua.</RowMsg>}
+          {orders.isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
+          {orders.data?.length === 0 && <RowMsg colSpan={6}>Chưa có đơn mua.</RowMsg>}
           {orders.data?.map((o) => (
             <tr key={o.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
-              <Td className="font-mono text-flame">{o.code}</Td>
               <Td className="font-medium">{o.supplier_name}</Td>
               <Td className="text-txt-2">{o.warehouse_code}</Td>
               <Td className="text-right tabular-nums whitespace-nowrap">{compactVnd(o.total_vnd)}</Td>
@@ -224,10 +223,6 @@ export function PurchaseOrdersPage() {
               <Td className="text-right whitespace-nowrap">
                 <Button size="sm" variant="ghost" className="mr-1" onClick={() => setDetail(o as PODetail)}>
                   <Eye size={13} /> Xem
-                </Button>
-                <Button size="sm" variant="ghost" className="mr-1"
-                  onClick={() => downloadFile(`/purchasing/orders/${o.id}/export-xlsx/`, `don_mua_${o.code}.xlsx`)}>
-                  <Download size={13} /> Excel
                 </Button>
                 {/* Duyệt (1 cấp — manager/CEO) cho đơn nháp */}
                 {o.status === 'draft' && canManage && (
@@ -266,15 +261,14 @@ export function PurchaseOrdersPage() {
       ) : (
       <TableCard>
         <thead><tr className="border-b border-line">
-          <Th>Mã PO</Th><Th>Nhà cung cấp</Th><Th>Dự kiến về</Th><Th>Tình trạng</Th>
+          <Th>Nhà cung cấp</Th><Th>Dự kiến về</Th><Th>Tình trạng</Th>
           <Th>Vận chuyển</Th><Th className="text-right">Giá trị</Th><Th>Trạng thái</Th>
         </tr></thead>
         <tbody>
-          {incoming.isLoading && <RowMsg colSpan={7}>Đang tải…</RowMsg>}
-          {incoming.data?.results.length === 0 && <RowMsg colSpan={7}>Không có đơn nào đang về.</RowMsg>}
+          {incoming.isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
+          {incoming.data?.results.length === 0 && <RowMsg colSpan={6}>Không có đơn nào đang về.</RowMsg>}
           {incoming.data?.results.map((o) => (
             <tr key={o.id} className={`border-b border-line/50 last:border-0 hover:bg-ink-3/40 ${o.is_overdue ? 'bg-danger/5' : ''}`}>
-              <Td className="font-mono text-flame">{o.code}</Td>
               <Td className="font-medium">{o.supplier_name}</Td>
               <Td className="text-txt-2 whitespace-nowrap">{o.expected_date ?? '—'}</Td>
               <Td>{o.is_overdue ? <Tag tone="danger">Trễ {o.days_late} ngày</Tag> : <Tag tone="ok">Đúng hẹn</Tag>}</Td>
@@ -358,7 +352,8 @@ export function PurchaseOrdersPage() {
           className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm" />
       </Modal>
 
-      <PODetailModal po={detail} open={!!detail} onClose={() => setDetail(null)} />
+      <PODetailModal po={detail} open={!!detail} onClose={() => setDetail(null)}
+        onExport={() => detail && downloadFile(`/purchasing/orders/${detail.id}/export-xlsx/`, `don_mua_${detail.code}.xlsx`)} />
     </div>
   )
 }

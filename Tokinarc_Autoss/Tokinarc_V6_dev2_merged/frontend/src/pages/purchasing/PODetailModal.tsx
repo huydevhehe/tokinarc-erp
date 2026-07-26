@@ -3,7 +3,7 @@
  * Xem chi tiết đơn mua (read-only) trước khi duyệt: NCC, kho, dòng hàng, tổng.
  */
 import type { ReactNode } from 'react'
-import { ShoppingCart } from 'lucide-react'
+import { Download, ShoppingCart } from 'lucide-react'
 import { Modal } from '@/components/Modal'
 import { Tag, Button } from '@/components/ui'
 import { formatVnd } from '@/lib/crm'
@@ -22,14 +22,23 @@ const TONE: Record<string, 'gray' | 'blue' | 'warn' | 'ok' | 'danger' | 'purple'
   ordered: 'purple', partial: 'warn', received: 'ok', cancelled: 'danger',
 }
 
-export function PODetailModal({ po, open, onClose, footer }: {
-  po: PODetail | null; open: boolean; onClose: () => void; footer?: ReactNode
+export function PODetailModal({ po, open, onClose, footer, onExport }: {
+  po: PODetail | null; open: boolean; onClose: () => void; footer?: ReactNode; onExport?: () => void
 }) {
   return (
     <Modal open={open} onClose={onClose} wide
       title={po ? `Đơn mua ${po.code}` : 'Đơn mua'}
       icon={<ShoppingCart size={18} className="text-flame" />}
-      footer={footer ?? <Button variant="ghost" onClick={onClose}>Đóng</Button>}>
+      footer={footer ?? (
+        <>
+          {onExport && (
+            <Button variant="ghost" onClick={onExport}>
+              <Download size={13} /> Excel
+            </Button>
+          )}
+          <Button variant="ghost" onClick={onClose}>Đóng</Button>
+        </>
+      )}>
       {po && (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
