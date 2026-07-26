@@ -216,10 +216,11 @@ class OutboundLineSerializer(serializers.ModelSerializer):
 
 class OutboundOrderSerializer(serializers.ModelSerializer):
     lines = OutboundLineSerializer(many=True, required=False)
+    customer_name = serializers.CharField(source='customer.name', read_only=True, default='')
 
     class Meta:
         model  = OutboundOrder
-        fields = ['id', 'code', 'warehouse', 'sales_order_code', 'customer',
+        fields = ['id', 'code', 'warehouse', 'sales_order_code', 'customer', 'customer_name',
                   'rule', 'status', 'purpose', 'shipped_at', 'lines', 'notes',
                   'is_active', 'created_at', 'updated_at']
         read_only_fields = ['id', 'status', 'shipped_at', 'created_at', 'updated_at']
