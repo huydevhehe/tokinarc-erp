@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { PackageCheck, Check, Plus, ScanLine, Eye, Pencil, Trash2, CalendarClock } from 'lucide-react'
+import { PackageCheck, Check, Plus, ScanLine, Eye, Pencil, Trash2, CalendarClock, Undo2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
@@ -98,6 +98,18 @@ export function InboundPage() {
     onError: (e) => toast.error(apiError(e)),
   })
 
+  const restore = useMutation({
+    // Lỡ xóa (is_active=false) thì khôi phục lại — chỉ đổi trạng thái hiển thị,
+    // không đụng gì đến tồn kho/lịch sử.
+    mutationFn: (id: string) => api.patch(`/wms/inbound/${id}/`, { is_active: true }),
+    onSuccess: () => {
+      toast.success('Đã khôi phục phiếu nhập')
+      qc.invalidateQueries({ queryKey: ['wms-inbound-list'] })
+      qc.invalidateQueries({ queryKey: ['wms'] })
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
   const items = data?.results ?? []
 
   return (
@@ -163,6 +175,13 @@ export function InboundPage() {
                 <Button variant="ghost" size="sm" onClick={() => setViewOrder(o)}>
                   <Eye size={13} /> Xem
                 </Button>
+                {!o.is_active && (
+                  <Button variant="ghost" size="sm"
+                    disabled={restore.isPending && restore.variables === o.id}
+                    onClick={() => restore.mutate(o.id)}>
+                    <Undo2 size={13} /> Khôi phục
+                  </Button>
+                )}
                 {o.is_active && o.status === 'draft' && (
                   <Button variant="ghost" size="sm" onClick={() => setEditOrder(o)}>
                     <Pencil size={13} /> Sửa
