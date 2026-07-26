@@ -190,7 +190,8 @@ export function Layout() {
   const closeDrawer = () => setMobileOpen(false)
   // Mobile luôn mở sidebar đầy đủ (drawer tạm, không cần thu gọn).
   const openDrawer = () => { setMobileOpen(true); setCollapsed(false) }
-  const onNavClick = () => { closeDrawer(); setCollapsed(true) }
+  // Thu/mở sidebar chỉ do người dùng tự bấm nút thu gọn — không tự động thu khi bấm 1 mục nav.
+  const onNavClick = () => { closeDrawer() }
 
   return (
     <div className="h-screen flex overflow-hidden">
