@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models import F, Sum
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import permissions, status, viewsets
+from rest_framework import filters, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import SAFE_METHODS
@@ -104,6 +104,9 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
     serializer_class = PurchaseOrderSerializer
     permission_classes = [PurchasingPermission]
     queryset = PurchaseOrder.objects.select_related('supplier', 'warehouse', 'owner').prefetch_related('lines')
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = {'status': ['exact'], 'supplier': ['exact'], 'warehouse': ['exact']}
+    search_fields = ['code', 'supplier__name']
 
     def perform_create(self, serializer):
         year = timezone.now().year

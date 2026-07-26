@@ -14,10 +14,22 @@ import { compactVnd, formatVnd } from '@/lib/crm'
 import { isManager, useAuth } from '@/lib/auth/store'
 import { useCan } from '@/lib/auth/capabilities'
 import { usePartOptions } from '@/lib/useWmsOptions'
+import { useDebounced } from '@/lib/useDebounced'
 import { Modal } from '@/components/Modal'
-import { PageHeader, Button, StatCard, Tag, TableCard, Th, Td, RowMsg } from '@/components/ui'
+import { PageHeader, Button, StatCard, Tag, TableCard, Th, Td, RowMsg, SearchInput } from '@/components/ui'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { PODetailModal, type PODetail } from '@/pages/purchasing/PODetailModal'
+
+const PO_STATUSES: { value: string; label: string }[] = [
+  { value: '', label: 'Tất cả trạng thái' },
+  { value: 'draft', label: 'Nháp' },
+  { value: 'approved', label: 'Đã duyệt' },
+  { value: 'rejected', label: 'Từ chối' },
+  { value: 'ordered', label: 'Đã đặt' },
+  { value: 'partial', label: 'Nhận một phần' },
+  { value: 'received', label: 'Đã nhận đủ' },
+  { value: 'cancelled', label: 'Hủy' },
+]
 
 interface POLine { id?: string; part: string; part_name?: string; description?: string; qty: number; unit_cost: number; qty_received?: number }
 interface PO {
@@ -59,7 +71,20 @@ export function PurchaseOrdersPage() {
   const { options: partOptions, isLoading: partsLoading } = usePartOptions()
 
   const [view, setView] = useState<'all' | 'incoming'>('all')
-  const orders = useQuery({ queryKey: ['po'], queryFn: async () => (await api.get<{ results: PO[] }>('/purchasing/orders/')).data.results ?? [] })
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
+  const [supplierFilter, setSupplierFilter] = useState('')
+  const [warehouseFilter, setWarehouseFilter] = useState('')
+  const dSearch = useDebounced(search, 350)
+  const orders = useQuery({
+    queryKey: ['po', dSearch, statusFilter, supplierFilter, warehouseFilter],
+    queryFn: async () => (await api.get<{ results: PO[] }>('/purchasing/orders/', {
+      params: {
+        search: dSearch || undefined, status: statusFilter || undefined,
+        supplier: supplierFilter || undefined, warehouse: warehouseFilter || undefined,
+      },
+    })).data.results ?? [],
+  })
   const ap = useQuery({ queryKey: ['po-ap'], queryFn: async () => (await api.get('/purchasing/orders/ap-summary/')).data })
   const incoming = useQuery({ queryKey: ['po-incoming'], queryFn: async () => (await api.get<IncomingResp>('/purchasing/orders/incoming/')).data })
   const suppliers = useQuery({ queryKey: ['suppliers'], queryFn: async () => (await api.get<{ results: { id: string; name: string }[] }>('/purchasing/suppliers/')).data.results ?? [] })
@@ -136,6 +161,30 @@ export function PurchaseOrdersPage() {
             {canCreatePO && <Button onClick={() => setOpen(true)}><Plus size={14} /> Tạo PO</Button>}
           </>
         } />
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã PO, tên NCC…" />
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+          className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+          {PO_STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
+        </select>
+        <select value={supplierFilter} onChange={(e) => setSupplierFilter(e.target.value)}
+          className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+          <option value="">Tất cả NCC</option>
+          {(suppliers.data ?? []).map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
+        </select>
+        <select value={warehouseFilter} onChange={(e) => setWarehouseFilter(e.target.value)}
+          className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+          <option value="">Tất cả kho</option>
+          {(whs.data ?? []).map((w) => <option key={w.id} value={w.id}>{w.code}</option>)}
+        </select>
+        {(search || statusFilter || supplierFilter || warehouseFilter) && (
+          <Button variant="ghost" size="sm"
+            onClick={() => { setSearch(''); setStatusFilter(''); setSupplierFilter(''); setWarehouseFilter('') }}>
+            Bỏ lọc
+          </Button>
+        )}
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
         <StatCard label="Công nợ phải trả" tone="danger" value={ap.data ? compactVnd(ap.data.total_payable) : '…'} />
