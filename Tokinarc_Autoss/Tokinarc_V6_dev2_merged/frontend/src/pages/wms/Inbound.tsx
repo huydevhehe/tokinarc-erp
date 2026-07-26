@@ -11,7 +11,7 @@ import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
-import { formatDate } from '@/lib/crm'
+import { formatDate, compactVnd } from '@/lib/crm'
 import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE, DATE_QUICK_RANGES } from '@/lib/wms'
 import type { InboundOrder, InboundStatus } from '@/lib/types'
 import {
@@ -131,25 +131,29 @@ export function InboundPage() {
       <TableCard>
         <thead>
           <tr className="border-b border-line">
-            <Th>Mã đơn</Th><Th>Ngày nhập kho</Th><Th>Nhà cung cấp</Th><Th>Từ đơn mua</Th><Th>Tiến độ nhận</Th>
+            <Th>Mã đơn</Th><Th>Ngày nhập</Th><Th>Nhà CC</Th><Th>Mặt hàng</Th>
+            <Th className="text-right">SL</Th><Th className="text-right">Thành tiền</Th>
             <Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={7}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={7} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {data && items.length === 0 && <RowMsg colSpan={7}>Chưa có đơn nhập.</RowMsg>}
+          {isLoading && <RowMsg colSpan={8}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={8} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {data && items.length === 0 && <RowMsg colSpan={8}>Chưa có đơn nhập.</RowMsg>}
           {items.map((o) => {
-            const exp = (o.lines ?? []).reduce((s, l) => s + (l.qty_expected || 0), 0)
-            const rec = (o.lines ?? []).reduce((s, l) => s + (l.qty_received || 0), 0)
-            const short = rec < exp
+            const lines = o.lines ?? []
+            const exp = lines.reduce((s, l) => s + (l.qty_expected || 0), 0)
+            const amount = lines.reduce((s, l) => s + (l.qty_expected || 0) * Number(l.unit_cost || 0), 0)
+            const itemLabel = lines.length === 1 ? (lines[0].part_name || '—')
+              : lines.length > 1 ? `${lines.length} mặt hàng` : '—'
             return (
             <tr key={o.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{o.code}</Td>
               <Td className="text-txt-2">{formatDate(o.received_at)}</Td>
               <Td className="text-txt-2">{o.supplier || '—'}</Td>
-              <Td className="text-txt-2 font-mono">{o.po_code || '—'}</Td>
-              <Td className={`tabular-nums ${short ? 'text-warn' : 'text-ok'}`}>{rec}/{exp}</Td>
+              <Td className="text-txt-2 truncate max-w-[220px]">{itemLabel}</Td>
+              <Td className="text-right tabular-nums">{exp}</Td>
+              <Td className="text-right tabular-nums whitespace-nowrap">{compactVnd(amount)}</Td>
               <Td><Tag tone={INBOUND_STATUS_TONE[o.status]}>{INBOUND_STATUS_LABEL[o.status]}</Tag></Td>
               <Td className="text-right">
                 <span className="inline-flex gap-1.5 items-center">
