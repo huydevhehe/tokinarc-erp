@@ -113,7 +113,7 @@ export function InboundPage() {
   const items = data?.results ?? []
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-7xl">
       <PageHeader icon={<PackageCheck size={20} className="text-flame" />} title="Nhập kho"
         subtitle={data ? `${data.count} đơn nhập` : undefined}
         actions={<Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn nhập</Button>} />

@@ -98,7 +98,7 @@ export function OutboundPage() {
   const items = data?.results ?? []
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-7xl">
       <PageHeader icon={<PackageCheck size={20} className="text-flame" />} title="Xuất kho"
         subtitle={data ? `${data.count} đơn xuất` : undefined}
         actions={

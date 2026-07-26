@@ -52,7 +52,7 @@ export function MovementsPage() {
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-7xl">
       <PageHeader
         icon={<History size={20} className="text-flame" />}
         title="Lịch sử kho"
