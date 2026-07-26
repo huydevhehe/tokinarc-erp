@@ -14,7 +14,7 @@ import { useWarehouseOptions } from '@/lib/useWmsOptions'
 import { MOVE_REASON_LABEL, MOVE_REASON_TONE, DATE_QUICK_RANGES } from '@/lib/wms'
 import type { StockMovement, MovementReason } from '@/lib/types'
 import {
-  PageHeader, SearchInput, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
+  PageHeader, SearchInput, Tag, Button, Card, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 
 const REASONS: (MovementReason | '')[] = ['', 'inbound', 'outbound', 'adjust', 'transfer', 'return']
@@ -58,41 +58,46 @@ export function MovementsPage() {
         title="Lịch sử kho"
         subtitle={data ? `${data.count} biến động` : undefined}
         actions={
-          <>
-            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã hàng, vị trí, tham chiếu…" />
-            <select value={warehouse} onChange={(e) => { setWarehouse(e.target.value); setPage(1) }}
-              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
-              <option value="">Tất cả kho</option>
-              {whs.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
-            </select>
-            <select value={reason} onChange={(e) => { setReason(e.target.value as MovementReason | ''); setPage(1) }}
-              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
-              {REASONS.map((r) => <option key={r} value={r}>{r ? MOVE_REASON_LABEL[r] : 'Tất cả loại'}</option>)}
-            </select>
-            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
-              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
-            <span className="text-txt-2 text-sm">–</span>
-            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
-              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
-            <Button variant="ghost" size="sm" onClick={() => applyQuick('month')}>Tháng này</Button>
-            <Button variant="ghost" size="sm" onClick={() => applyQuick('quarter')}>Quý này</Button>
-            <Button variant="ghost" size="sm" onClick={() => applyQuick('year')}>Năm nay</Button>
-            {(dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}>
-                Bỏ lọc ngày
-              </Button>
-            )}
-            <Button variant="ghost"
-              onClick={() => downloadFile(
-                `/wms/stock-movements/export-xlsx/?${new URLSearchParams(
-                  Object.fromEntries(Object.entries(filterParams).filter(([, v]) => v !== undefined)) as Record<string, string>,
-                ).toString()}`,
-                'lich_su_kho.xlsx')}>
-              <Download size={14} /> Xuất Excel
-            </Button>
-          </>
+          <Button variant="ghost"
+            onClick={() => downloadFile(
+              `/wms/stock-movements/export-xlsx/?${new URLSearchParams(
+                Object.fromEntries(Object.entries(filterParams).filter(([, v]) => v !== undefined)) as Record<string, string>,
+              ).toString()}`,
+              'lich_su_kho.xlsx')}>
+            <Download size={14} /> Xuất Excel
+          </Button>
         }
       />
+
+      <Card className="mb-4 !p-3 flex flex-wrap items-center gap-2">
+        <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã hàng, vị trí, tham chiếu…" />
+        <select value={warehouse} onChange={(e) => { setWarehouse(e.target.value); setPage(1) }}
+          className="bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+          <option value="">Tất cả kho</option>
+          {whs.map((w) => <option key={w.value} value={w.value}>{w.label}</option>)}
+        </select>
+        <select value={reason} onChange={(e) => { setReason(e.target.value as MovementReason | ''); setPage(1) }}
+          className="bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+          {REASONS.map((r) => <option key={r} value={r}>{r ? MOVE_REASON_LABEL[r] : 'Tất cả loại'}</option>)}
+        </select>
+        <div className="flex items-center gap-2">
+          <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
+            className="bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
+          <span className="text-txt-2 text-sm">–</span>
+          <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
+            className="bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button variant="ghost" size="sm" onClick={() => applyQuick('month')}>Tháng này</Button>
+          <Button variant="ghost" size="sm" onClick={() => applyQuick('quarter')}>Quý này</Button>
+          <Button variant="ghost" size="sm" onClick={() => applyQuick('year')}>Năm nay</Button>
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}>
+              Bỏ lọc ngày
+            </Button>
+          )}
+        </div>
+      </Card>
 
       <TableCard>
         <thead>

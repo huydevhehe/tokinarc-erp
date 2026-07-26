@@ -15,7 +15,7 @@ import { formatDate, compactVnd } from '@/lib/crm'
 import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE, DATE_QUICK_RANGES } from '@/lib/wms'
 import type { InboundOrder, InboundStatus } from '@/lib/types'
 import {
-  PageHeader, SearchInput, Tag, Button, TableCard, Th, Td, RowMsg, Pagination,
+  PageHeader, SearchInput, Tag, Button, Card, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
 import { InboundForm } from '@/pages/wms/forms/InboundForm'
 import { ScanOrderModal } from '@/pages/wms/ScanOrderModal'
@@ -104,29 +104,32 @@ export function InboundPage() {
     <div className="max-w-5xl">
       <PageHeader icon={<PackageCheck size={20} className="text-flame" />} title="Nhập kho"
         subtitle={data ? `${data.count} đơn nhập` : undefined}
-        actions={
-          <>
-            <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã đơn, NCC, mã đơn mua…" />
-            <select value={status} onChange={(e) => { setStatus(e.target.value as InboundStatus | ''); setPage(1) }}
-              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
-              {INBOUND_STATUSES.map((s) => <option key={s} value={s}>{s ? INBOUND_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}
-            </select>
-            <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
-              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
-            <span className="text-txt-2 text-sm">–</span>
-            <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
-              className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
-            <Button variant="ghost" size="sm" onClick={() => applyQuick('month')}>Tháng này</Button>
-            <Button variant="ghost" size="sm" onClick={() => applyQuick('quarter')}>Quý này</Button>
-            <Button variant="ghost" size="sm" onClick={() => applyQuick('year')}>Năm nay</Button>
-            {(dateFrom || dateTo) && (
-              <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}>
-                Bỏ lọc ngày
-              </Button>
-            )}
-            <Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn nhập</Button>
-          </>
-        } />
+        actions={<Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn nhập</Button>} />
+
+      <Card className="mb-4 !p-3 flex flex-wrap items-center gap-2">
+        <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã đơn, NCC, mã đơn mua…" />
+        <select value={status} onChange={(e) => { setStatus(e.target.value as InboundStatus | ''); setPage(1) }}
+          className="bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+          {INBOUND_STATUSES.map((s) => <option key={s} value={s}>{s ? INBOUND_STATUS_LABEL[s] : 'Tất cả trạng thái'}</option>)}
+        </select>
+        <div className="flex items-center gap-2">
+          <input type="date" value={dateFrom} onChange={(e) => { setDateFrom(e.target.value); setPage(1) }}
+            className="bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
+          <span className="text-txt-2 text-sm">–</span>
+          <input type="date" value={dateTo} onChange={(e) => { setDateTo(e.target.value); setPage(1) }}
+            className="bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <Button variant="ghost" size="sm" onClick={() => applyQuick('month')}>Tháng này</Button>
+          <Button variant="ghost" size="sm" onClick={() => applyQuick('quarter')}>Quý này</Button>
+          <Button variant="ghost" size="sm" onClick={() => applyQuick('year')}>Năm nay</Button>
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(''); setDateTo(''); setPage(1) }}>
+              Bỏ lọc ngày
+            </Button>
+          )}
+        </div>
+      </Card>
 
       <TableCard>
         <thead>
