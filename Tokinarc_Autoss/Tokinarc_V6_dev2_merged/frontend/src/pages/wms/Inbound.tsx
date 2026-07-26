@@ -13,7 +13,7 @@ import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
 import { formatDate, compactVnd } from '@/lib/crm'
 import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE, DATE_QUICK_RANGES } from '@/lib/wms'
-import type { InboundOrder, InboundStatus } from '@/lib/types'
+import type { InboundFlowType, InboundOrder, InboundStatus } from '@/lib/types'
 import {
   PageHeader, SearchInput, Tag, Button, Card, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
@@ -35,6 +35,7 @@ export function InboundPage() {
   const [editOrder, setEditOrder] = useState<InboundOrder | null>(null)   // sửa phiếu Nháp
   const [dateEditFor, setDateEditFor] = useState<InboundOrder | null>(null)   // sửa Ngày nhập kho
   const [newReceivedAt, setNewReceivedAt] = useState('')
+  const [flowTab, setFlowTab] = useState<InboundFlowType>('internal')   // 2 tab song song: Nội bộ / Nhà cung cấp
   const [status, setStatus] = useState<InboundStatus | ''>('')
   const [search, setSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
@@ -49,9 +50,9 @@ export function InboundPage() {
   }
 
   const { data, isLoading, isError, error, isFetching } = useQuery({
-    queryKey: ['wms-inbound-list', debounced, status, dateFrom, dateTo, page, pageSize],
+    queryKey: ['wms-inbound-list', flowTab, debounced, status, dateFrom, dateTo, page, pageSize],
     queryFn: () => fetchPage<InboundOrder>('/wms/inbound/', {
-      search: debounced || undefined, status: status || undefined,
+      flow_type: flowTab, search: debounced || undefined, status: status || undefined,
       received_at__gte: dateFrom || undefined, received_at__lte: dateTo ? `${dateTo}T23:59:59` : undefined,
       page, page_size: pageSize,
     }),
@@ -117,6 +118,17 @@ export function InboundPage() {
       <PageHeader icon={<PackageCheck size={20} className="text-flame" />} title="Nhập kho"
         subtitle={data ? `${data.count} đơn nhập` : undefined}
         actions={<Button onClick={() => setFormOpen(true)}><Plus size={14} /> Tạo đơn nhập</Button>} />
+
+      <div className="flex gap-1.5 mb-3">
+        <button onClick={() => { setFlowTab('internal'); setPage(1) }}
+          className={`text-xs rounded-md px-3 py-1.5 border transition-colors ${flowTab === 'internal' ? 'border-flame text-flame bg-flame/10' : 'border-line text-txt-2 hover:text-txt'}`}>
+          Nội bộ
+        </button>
+        <button onClick={() => { setFlowTab('supplier'); setPage(1) }}
+          className={`text-xs rounded-md px-3 py-1.5 border transition-colors ${flowTab === 'supplier' ? 'border-flame text-flame bg-flame/10' : 'border-line text-txt-2 hover:text-txt'}`}>
+          Nhà cung cấp (NCC)
+        </button>
+      </div>
 
       <Card className="mb-4 !p-3 flex flex-wrap items-center gap-2">
         <SearchInput value={search} onChange={setSearch} placeholder="Tìm mã đơn, NCC, mã đơn mua…" />
