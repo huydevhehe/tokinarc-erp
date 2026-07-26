@@ -14,8 +14,9 @@ import { useWarehouseOptions, useItemOptions, splitItem } from '@/lib/useWmsOpti
 import { CameraScanner } from '@/components/CameraScanner'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
-import { FieldRow, TextInput, SelectInput } from '@/components/form'
+import { FieldRow, TextInput, SelectInput, formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
+import { SupplierFormModal } from '@/pages/purchasing/SupplierFormModal'
 import type { InboundOrder } from '@/lib/types'
 
 interface BinLite { id: string; full_code: string }
@@ -63,6 +64,8 @@ export function InboundForm({ open, onClose, editing }: {
   const watched = (useWatch({ control, name: 'lines' }) as LineForm[] | undefined) ?? []
   const flowType = useWatch({ control, name: 'flow_type' })
   const purchaseOrder = useWatch({ control, name: 'purchase_order' })
+  const watchedSupplier = (useWatch({ control, name: 'supplier' }) as string | undefined) ?? ''
+  const [supplierModalOpen, setSupplierModalOpen] = useState(false)
 
   // Chọn 1 đơn mua → tự điền kho/NCC + dòng hàng (SL còn lại chưa nhận, đơn giá theo PO).
   const onPickPO = (poId: string) => {
@@ -160,6 +163,7 @@ export function InboundForm({ open, onClose, editing }: {
   }
 
   return (
+    <>
     <Modal open={open} onClose={onClose} wide title={editing ? `Sửa phiếu nhập ${editing.code}` : 'Tạo đơn nhập kho'}
       icon={<PackageCheck size={18} className="text-flame" />}
       footer={
@@ -183,10 +187,23 @@ export function InboundForm({ open, onClose, editing }: {
             {...register('warehouse', { required: 'Chọn kho' })} />
         </FieldRow>
         <FieldRow>
-          <SelectInput label="Nhà cung cấp" placeholder="— Chọn NCC có sẵn —"
-            options={[...new Set([...(editing?.supplier ? [editing.supplier] : []), ...supplierNames])]
-              .map((n) => ({ value: n, label: n }))}
-            {...register('supplier')} />
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Nhà cung cấp</label>
+            <input type="hidden" {...register('supplier')} />
+            <div className="flex gap-1.5">
+              <div className="flex-1">
+                <SearchableSelect
+                  value={watchedSupplier}
+                  onChange={(v) => setValue('supplier', v, { shouldValidate: true })}
+                  options={[...new Set([...(editing?.supplier ? [editing.supplier] : []), ...supplierNames])]
+                    .map((n) => ({ value: n, label: n }))}
+                  loading={suppliers.isLoading} placeholder="Gõ tên để tìm NCC…" />
+              </div>
+              <Button type="button" variant="ghost" onClick={() => setSupplierModalOpen(true)} aria-label="Thêm NCC mới">
+                <Plus size={15} />
+              </Button>
+            </div>
+          </div>
           <SelectInput label="Loại phiếu nhập *" error={errors.flow_type?.message}
             placeholder="— Chọn loại —"
             options={[{ value: 'internal', label: 'Nội bộ' }, { value: 'supplier', label: 'Nhà cung cấp (NCC)' }]}
@@ -271,12 +288,15 @@ export function InboundForm({ open, onClose, editing }: {
                   </label>
                   <input type="number" min={1} placeholder="SL"
                     {...register(`lines.${i}.qty_expected` as const, { valueAsNumber: true })}
+                    onFocus={(e) => e.target.select()}
                     className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 </div>
                 <div>
                   <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Đơn giá nhập</label>
-                  <input type="number" min={0} placeholder="Đơn giá nhập"
-                    {...register(`lines.${i}.unit_cost` as const, { valueAsNumber: true })}
+                  <input type="text" inputMode="numeric" placeholder="Đơn giá nhập"
+                    value={formatMoneyDisplay(watched[i]?.unit_cost ?? 0)}
+                    onFocus={(e) => e.target.select()}
+                    onChange={(e) => setValue(`lines.${i}.unit_cost` as const, parseMoneyInput(e.target.value))}
                     className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 </div>
                 {flowType !== 'internal' && (
@@ -284,6 +304,7 @@ export function InboundForm({ open, onClose, editing }: {
                     <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Thuế %</label>
                     <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
                       {...register(`lines.${i}.tax_pct` as const)}
+                      onFocus={(e) => e.target.select()}
                       className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                   </div>
                 )}
@@ -323,5 +344,9 @@ export function InboundForm({ open, onClose, editing }: {
         )}
       </form>
     </Modal>
+
+    <SupplierFormModal open={supplierModalOpen} onClose={() => setSupplierModalOpen(false)}
+      onSaved={(s) => setValue('supplier', s.name, { shouldValidate: true })} />
+    </>
   )
 }

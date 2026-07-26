@@ -3,25 +3,17 @@
  * Nhà cung cấp: danh sách + thêm/sửa/xóa. GET/POST/PATCH /purchasing/suppliers/.
  * "Xóa" = PATCH is_active=false (đổi trạng thái, không xóa row — xem SupplierViewSet.get_queryset).
  */
-import { useEffect, useState } from 'react'
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { Building, Loader2, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
+import { useState } from 'react'
+import { useQuery, useQueryClient, useMutation, keepPreviousData } from '@tanstack/react-query'
+import { Building, Pencil, Plus, Search, Trash2, Upload } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
-import { Modal } from '@/components/Modal'
 import { PageHeader, Button, Card, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
-import { FieldRow, TextInput } from '@/components/form'
-import { useForm } from 'react-hook-form'
 import { useAuth } from '@/lib/auth/store'
 import { ImportModal } from '@/pages/crm/ImportModal'
-
-interface Supplier {
-  id: string; code: string; name: string; tax_code: string; phone: string; email: string
-  address?: string; notes?: string
-}
-interface Form { name: string; tax_code: string; phone: string; email: string; address: string }
+import { SupplierFormModal, type Supplier } from '@/pages/purchasing/SupplierFormModal'
 
 export function SuppliersPage() {
   const qc = useQueryClient()
@@ -41,34 +33,6 @@ export function SuppliersPage() {
   // Sửa/Xóa/Import NCC: Quản lý kho trở lên (khớp backend PO_WRITE_ROLES).
   const role = useAuth((s) => s.user?.role)
   const canWrite = role === 'wh_manager' || role === 'manager' || role === 'ceo'
-  const { register, handleSubmit, reset, watch, setValue } = useForm<Form>()
-  const taxCodeInput = watch('tax_code')
-  const dTaxCodeLookup = useDebounced(taxCodeInput, 600)
-  const [lookup, setLookup] = useState<'idle' | 'loading' | 'found' | 'notfound'>('idle')
-
-  // Gõ MST -> tự tra cứu tên/địa chỉ doanh nghiệp (API công khai, không cần key).
-  // Chỉ chạy khi THÊM MỚI (sửa NCC có sẵn thì giữ nguyên dữ liệu đã lưu).
-  // Điện thoại/Email nguồn này không có -> luôn để trống, tự gõ tay.
-  useEffect(() => {
-    const mst = (dTaxCodeLookup || '').trim()
-    if (!open || editing || mst.length < 10) { setLookup('idle'); return }
-    let cancelled = false
-    setLookup('loading')
-    fetch(`https://api.vietqr.io/v2/business/${mst}`)
-      .then((r) => r.json())
-      .then((j) => {
-        if (cancelled) return
-        if (j?.code === '00' && j.data) {
-          if (j.data.name) setValue('name', j.data.name)
-          if (j.data.address) setValue('address', j.data.address)
-          setLookup('found')
-        } else {
-          setLookup('notfound')
-        }
-      })
-      .catch(() => { if (!cancelled) setLookup('notfound') })
-    return () => { cancelled = true }
-  }, [dTaxCodeLookup, open, editing, setValue])
   const { data, isLoading, isFetching } = useQuery({
     queryKey: ['suppliers', dCode, dName, dTaxCode, dPhone, page, pageSize],
     queryFn: () => fetchPage<Supplier>('/purchasing/suppliers/', {
@@ -81,28 +45,13 @@ export function SuppliersPage() {
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
-  const save = useMutation({
-    mutationFn: (d: Form) => editing
-      ? api.patch(`/purchasing/suppliers/${editing.id}/`, d)
-      : api.post('/purchasing/suppliers/', d),
-    onSuccess: () => {
-      toast.success(editing ? 'Đã lưu NCC' : 'Đã thêm NCC')
-      qc.invalidateQueries({ queryKey: ['suppliers'] }); setOpen(false); setEditing(null); reset()
-    },
-    onError: (e) => toast.error(apiError(e)),
-  })
   const deactivate = useMutation({
     mutationFn: (id: string) => api.patch(`/purchasing/suppliers/${id}/`, { is_active: false }),
     onSuccess: () => { toast.success('Đã xoá NCC'); qc.invalidateQueries({ queryKey: ['suppliers'] }) },
     onError: (e) => toast.error(apiError(e)),
   })
-  const openAdd = () => { setEditing(null); reset({ name: '', tax_code: '', phone: '', email: '', address: '' }); setLookup('idle'); setOpen(true) }
-  const openEdit = (s: Supplier) => {
-    setEditing(s)
-    reset({ name: s.name, tax_code: s.tax_code, phone: s.phone, email: s.email, address: s.address || '' })
-    setLookup('idle')
-    setOpen(true)
-  }
+  const openAdd = () => { setEditing(null); setOpen(true) }
+  const openEdit = (s: Supplier) => { setEditing(s); setOpen(true) }
 
   return (
     <div className="max-w-4xl">
@@ -172,36 +121,7 @@ export function SuppliersPage() {
           onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
       )}
 
-      <Modal open={open} onClose={() => { setOpen(false); setEditing(null) }}
-        title={editing ? 'Sửa nhà cung cấp' : 'Thêm nhà cung cấp'}
-        icon={<Building size={18} className="text-flame" />}
-        footer={<><Button variant="ghost" onClick={() => { setOpen(false); setEditing(null) }}>Hủy</Button>
-          <Button onClick={handleSubmit((d) => save.mutate(d))} disabled={save.isPending}>Lưu</Button></>}>
-        <form>
-          <div className="mb-3">
-            <TextInput label="Mã số thuế" full
-              placeholder="Nhập MST để tự điền tên + địa chỉ…"
-              {...register('tax_code')} />
-            {!editing && lookup === 'loading' && (
-              <p className="text-[11px] text-txt-2 mt-1 flex items-center gap-1">
-                <Loader2 size={11} className="animate-spin" /> Đang tra cứu…
-              </p>
-            )}
-            {!editing && lookup === 'found' && (
-              <p className="text-[11px] text-ok mt-1">✓ Đã tìm thấy, tự điền tên/địa chỉ bên dưới — vẫn có thể sửa lại.</p>
-            )}
-            {!editing && lookup === 'notfound' && (
-              <p className="text-[11px] text-txt-2 mt-1">Không tìm thấy doanh nghiệp với MST này — tự nhập tay.</p>
-            )}
-          </div>
-          <TextInput label="Tên *" full {...register('name', { required: true })} />
-          <TextInput label="Địa chỉ" full {...register('address')} />
-          <FieldRow>
-            <TextInput label="Điện thoại" {...register('phone')} />
-            <TextInput label="Email" {...register('email')} />
-          </FieldRow>
-        </form>
-      </Modal>
+      <SupplierFormModal open={open} onClose={() => { setOpen(false); setEditing(null) }} editing={editing} />
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} spec={{
         title: 'Import nhà cung cấp',
