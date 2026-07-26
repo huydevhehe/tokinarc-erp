@@ -21,7 +21,7 @@ import { formatVnd } from '@/lib/crm'
 import { useAuth, isManager } from '@/lib/auth/store'
 import type { CatalogPart, CatalogTorch, ProductGroupNode } from '@/lib/types'
 import { Modal } from '@/components/Modal'
-import { FieldRow, TextInput, SelectInput } from '@/components/form'
+import { FieldRow, TextInput, SelectInput, formatMoneyDisplay } from '@/components/form'
 import { ImportModal } from '@/pages/crm/ImportModal'
 import {
   PageHeader, SearchInput, Tag, TableCard, Th, Td, RowMsg, Pagination, Button,
@@ -335,7 +335,9 @@ function CostModal({ partNo, open, onClose }: { partNo: string | null; open: boo
             <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">
               Giá vốn (₫) — để trống nếu chưa có
             </label>
-            <input type="number" min={0} value={cost} onChange={(e) => setCost(e.target.value)}
+            <input type="text" inputMode="numeric" value={formatMoneyDisplay(cost)}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setCost(e.target.value.replace(/\D/g, ''))}
               className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
             <p className="text-[11px] text-txt-2 mt-1">
               Giá vốn tự cập nhật bình quân khi nhập kho theo Đơn mua. Chỉ chỉnh tay khi cần (tồn đầu kỳ…).
@@ -369,7 +371,7 @@ function PartForm({ open, editing, onClose }: {
   open: boolean; editing: CatalogPart | null; onClose: () => void
 }) {
   const qc = useQueryClient()
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<PartFormValues>({ defaultValues: EMPTY_PART_FORM })
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<PartFormValues>({ defaultValues: EMPTY_PART_FORM })
 
   useEffect(() => {
     if (!open) return
@@ -430,7 +432,13 @@ function PartForm({ open, editing, onClose }: {
           <TextInput label="Tên tiếng Anh" placeholder="(tùy chọn)" {...register('display_name_en')} />
         </FieldRow>
         <FieldRow>
-          <TextInput label="Giá bán (₫)" type="number" placeholder="0" {...register('price_vnd')} />
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Giá bán (₫)</label>
+            <input type="text" inputMode="numeric" placeholder="0" value={formatMoneyDisplay(watch('price_vnd'))}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setValue('price_vnd', e.target.value.replace(/\D/g, ''))}
+              className="w-full bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm text-txt focus:outline-none focus:border-flame transition-colors" />
+          </div>
           <TextInput label="Thuế (%)" type="number" placeholder="VD: 8" {...register('tax_pct')} />
         </FieldRow>
         <label className="flex items-center gap-2 text-sm text-txt-2">
@@ -521,7 +529,7 @@ function TorchForm({ open, editing, onClose }: {
   open: boolean; editing: CatalogTorch | null; onClose: () => void
 }) {
   const qc = useQueryClient()
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<TorchFormValues>({ defaultValues: EMPTY_TORCH_FORM })
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<TorchFormValues>({ defaultValues: EMPTY_TORCH_FORM })
 
   useEffect(() => {
     if (!open) return
@@ -586,7 +594,13 @@ function TorchForm({ open, editing, onClose }: {
           <TextInput label="Dòng điện (A)" type="number" placeholder="VD: 350" {...register('rated_dc_a')} />
         </FieldRow>
         <FieldRow>
-          <TextInput label="Giá bán (₫)" type="number" placeholder="0" {...register('price_vnd')} />
+          <div>
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Giá bán (₫)</label>
+            <input type="text" inputMode="numeric" placeholder="0" value={formatMoneyDisplay(watch('price_vnd'))}
+              onFocus={(e) => e.target.select()}
+              onChange={(e) => setValue('price_vnd', e.target.value.replace(/\D/g, ''))}
+              className="w-full bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm text-txt focus:outline-none focus:border-flame transition-colors" />
+          </div>
         </FieldRow>
         <label className="flex items-center gap-2 text-sm text-txt-2">
           <input type="checkbox" {...register('is_contact_price')} className="accent-flame" />

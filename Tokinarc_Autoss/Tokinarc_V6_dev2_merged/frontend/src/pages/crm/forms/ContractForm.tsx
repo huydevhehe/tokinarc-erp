@@ -13,7 +13,7 @@ import { useCustomerOptions, optionsFromLabels } from '@/lib/useCustomerOptions'
 import type { Contract } from '@/lib/types'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
-import { FieldRow, TextInput, TextArea, SelectInput } from '@/components/form'
+import { FieldRow, TextInput, TextArea, SelectInput, MoneyInput } from '@/components/form'
 
 interface Form {
   customer: string; title: string; discount_pct: number; value_vnd: number; paid_vnd: number
@@ -29,7 +29,7 @@ export function ContractForm({ open, onClose, editing }: {
 }) {
   const qc = useQueryClient()
   const { options: customers, isLoading } = useCustomerOptions()
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
 
   useEffect(() => {
     if (!open) return
@@ -74,8 +74,8 @@ export function ContractForm({ open, onClose, editing }: {
           {...register('customer', { required: 'Chọn khách hàng' })} />
         <TextInput label="Tiêu đề" full {...register('title')} />
         <FieldRow>
-          <TextInput label="Giá trị (₫)" type="number" min={0} {...register('value_vnd', { valueAsNumber: true })} />
-          <TextInput label="Đã thanh toán (₫)" type="number" min={0} {...register('paid_vnd', { valueAsNumber: true })} />
+          <MoneyInput label="Giá trị (₫)" value={watch('value_vnd')} onChange={(v) => setValue('value_vnd', v)} />
+          <MoneyInput label="Đã thanh toán (₫)" value={watch('paid_vnd')} onChange={(v) => setValue('paid_vnd', v)} />
         </FieldRow>
         <FieldRow>
           <SelectInput label="Trạng thái" options={optionsFromLabels(CONTRACT_STATUS_LABEL)} {...register('status')} />

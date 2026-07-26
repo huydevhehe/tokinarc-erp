@@ -188,6 +188,7 @@ export function OutboundForm({ open, onClose, editing }: {
                   </label>
                   <input type="number" min={1} placeholder="SL"
                     {...register(`lines.${i}.qty_ordered` as const, { valueAsNumber: true })}
+                    onFocus={(e) => e.target.select()}
                     className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 </div>
                 <button type="button" onClick={() => fields.length > 1 && remove(i)}

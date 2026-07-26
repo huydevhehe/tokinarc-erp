@@ -14,7 +14,7 @@ import { useCustomerOptions } from '@/lib/useCustomerOptions'
 import type { Quote } from '@/lib/types'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
-import { FieldRow, TextInput, TextArea, SelectInput } from '@/components/form'
+import { FieldRow, TextInput, TextArea, SelectInput, formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 
 interface LineForm { part_no: string; part_name: string; qty: number; unit_price_vnd: number }
 interface Form {
@@ -52,6 +52,21 @@ function LineInfo({ control, index, info }: { control: Control<Form>; index: num
           ? <span className="text-ok">Giá {info.segment}: −{info.discount}% → {info.suggested.toLocaleString('vi-VN')}₫ (niêm yết {info.list.toLocaleString('vi-VN')})</span>
           : <span className="text-txt-2">Giá niêm yết: {info.list.toLocaleString('vi-VN')}₫</span>}
     </div>
+  )
+}
+
+/** Ô đơn giá của 1 dòng — tự chấm phân cách nghìn khi gõ (VD "2000000" → "2.000.000"). */
+function LinePriceInput({ control, index, setValue }: {
+  control: Control<Form>; index: number
+  setValue: (name: `lines.${number}.unit_price_vnd`, value: number) => void
+}) {
+  const price = useWatch({ control, name: `lines.${index}.unit_price_vnd` })
+  return (
+    <input placeholder="Đơn giá ₫" type="text" inputMode="numeric"
+      value={formatMoneyDisplay(price ?? 0)}
+      onFocus={(e) => e.target.select()}
+      onChange={(e) => setValue(`lines.${index}.unit_price_vnd`, parseMoneyInput(e.target.value))}
+      className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
   )
 }
 
@@ -198,10 +213,9 @@ export function QuoteForm({ open, onClose, editing }: {
                   className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 <input placeholder="SL" type="number" min={1}
                   {...register(`lines.${i}.qty` as const, { valueAsNumber: true })}
+                  onFocus={(e) => e.target.select()}
                   className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
-                <input placeholder="Đơn giá ₫" type="number" min={0}
-                  {...register(`lines.${i}.unit_price_vnd` as const, { valueAsNumber: true })}
-                  className="bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                <LinePriceInput control={control} index={i} setValue={setValue} />
                 <button type="button" onClick={() => fields.length > 1 && remove(i)}
                   className="text-txt-2 hover:text-danger p-1.5 disabled:opacity-30"
                   disabled={fields.length <= 1} aria-label="Xóa dòng">

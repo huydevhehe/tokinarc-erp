@@ -13,6 +13,7 @@ import { isManager, isWmsControl, useAuth } from '@/lib/auth/store'
 import { useCustomerOptions } from '@/lib/useCustomerOptions'
 import { Modal } from '@/components/Modal'
 import { PageHeader, Button, Tag, TableCard, Th, Td, RowMsg } from '@/components/ui'
+import { formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 
 interface RLine { part: string; qty: number; unit_price: number }
 interface RO { id: string; code: string; customer_name: string; warehouse_code: string; status: string; status_display: string; total_vnd: string; reason: string; created_at: string }
@@ -93,9 +94,12 @@ export function ReturnsPage() {
             <div key={i} className="flex gap-2 items-center">
               <input placeholder="Mã part" value={l.part} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, part: e.target.value } : x))}
                 className="flex-1 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
-              <input placeholder="SL" type="number" value={l.qty} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, qty: Number(e.target.value) } : x))}
+              <input placeholder="SL" type="number" value={l.qty} onFocus={(e) => e.target.select()}
+                onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, qty: Number(e.target.value) } : x))}
                 className="w-20 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
-              <input placeholder="Đơn giá" type="number" value={l.unit_price} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, unit_price: Number(e.target.value) } : x))}
+              <input placeholder="Đơn giá" type="text" inputMode="numeric" value={formatMoneyDisplay(l.unit_price)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, unit_price: parseMoneyInput(e.target.value) } : x))}
                 className="w-28 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
               <button onClick={() => setLines((a) => a.filter((_, j) => j !== i))} className="text-txt-2 hover:text-danger"><Trash2 size={14} /></button>
             </div>

@@ -13,6 +13,7 @@ import { compactVnd, formatVnd, formatDate } from '@/lib/crm'
 import { isManager, useAuth } from '@/lib/auth/store'
 import { Modal } from '@/components/Modal'
 import { PageHeader, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
+import { formatMoneyDisplay } from '@/components/form'
 import { OrderDetailModal } from '@/pages/crm/OrderDetailModal'
 
 interface Order {
@@ -127,7 +128,9 @@ export function OrdersPage() {
         footer={<><Button variant="ghost" onClick={() => setPayFor(null)}>Hủy</Button>
           <Button onClick={() => pay.mutate()} disabled={pay.isPending || !amt}>Ghi thu</Button></>}>
         <p className="text-sm text-txt-2 mb-2">Còn nợ: <b className="text-warn">{payFor ? formatVnd(payFor.debt_vnd) : ''}</b></p>
-        <input placeholder="Số tiền thu" type="number" value={amt} onChange={(e) => setAmt(e.target.value)}
+        <input placeholder="Số tiền thu" type="text" inputMode="numeric" value={formatMoneyDisplay(amt)}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => { const d = e.target.value.replace(/\D/g, ''); setAmt(d) }}
           className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm" />
       </Modal>
 

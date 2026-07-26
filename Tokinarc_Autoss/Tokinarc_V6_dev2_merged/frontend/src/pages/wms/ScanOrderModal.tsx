@@ -132,6 +132,7 @@ function Inp({ label, v, set, ph, type = 'text' }: { label: string; v: string; s
     <div className="flex-1">
       <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">{label}</label>
       <input value={v} onChange={(e) => set(e.target.value)} placeholder={ph} type={type}
+        onFocus={(e) => { if (type === 'number') e.target.select() }}
         className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
     </div>
   )

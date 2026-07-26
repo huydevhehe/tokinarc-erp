@@ -29,10 +29,16 @@ function Wrap({ label, error, full, children }: {
 export const TextInput = forwardRef<
   HTMLInputElement,
   React.InputHTMLAttributes<HTMLInputElement> & { label: string; error?: string; full?: boolean }
->(function TextInput({ label, error, full, ...props }, ref) {
+>(function TextInput({ label, error, full, type, onFocus, ...props }, ref) {
+  // Ô số mặc định 0/1: con trỏ không tự bôi đen khi focus nên gõ số mới bị
+  // dính vào số cũ (VD gõ "2" thành "02"). Bôi đen toàn bộ khi focus để gõ
+  // là thay hẳn, giữ nguyên onFocus của nơi gọi nếu có truyền riêng.
+  const handleFocus = type === 'number'
+    ? (e: React.FocusEvent<HTMLInputElement>) => { onFocus?.(e); e.target.select() }
+    : onFocus
   return (
     <Wrap label={label} error={error} full={full}>
-      <input ref={ref} {...props} className={BASE} />
+      <input ref={ref} type={type} onFocus={handleFocus} {...props} className={BASE} />
     </Wrap>
   )
 })
@@ -44,6 +50,38 @@ export const TextArea = forwardRef<
   return (
     <Wrap label={label} error={error} full>
       <textarea ref={ref} {...props} className={`${BASE} min-h-[70px] resize-y`} />
+    </Wrap>
+  )
+})
+
+/** Ô nhập tiền: tự chấm phân cách nghìn khi gõ (VD gõ "2000000" hiện "2.000.000").
+ * Value/onChange làm việc với number thô (không dấu chấm) — chỉ định dạng hiển thị.
+ * Export riêng 2 hàm này cho chỗ nào cần render input "trần" (không label/Wrap,
+ * VD dòng hàng dạng lưới) mà vẫn tự chấm số giống MoneyInput. */
+export function formatMoneyDisplay(v: number | string): string {
+  const n = typeof v === 'number' ? v : Number(String(v).replace(/\D/g, ''))
+  return n ? n.toLocaleString('vi-VN') : ''
+}
+export function parseMoneyInput(raw: string): number {
+  const digits = raw.replace(/\D/g, '')
+  return digits === '' ? 0 : Number(digits)
+}
+
+export const MoneyInput = forwardRef<
+  HTMLInputElement,
+  {
+    label: string; error?: string; full?: boolean; placeholder?: string
+    disabled?: boolean; value: number | string; onChange: (v: number) => void
+  }
+>(function MoneyInput({ label, error, full, placeholder, disabled, value, onChange }, ref) {
+  return (
+    <Wrap label={label} error={error} full={full}>
+      <input ref={ref} type="text" inputMode="numeric" disabled={disabled}
+        placeholder={placeholder}
+        value={formatMoneyDisplay(value)}
+        onFocus={(e) => e.target.select()}
+        onChange={(e) => onChange(parseMoneyInput(e.target.value))}
+        className={BASE} />
     </Wrap>
   )
 })

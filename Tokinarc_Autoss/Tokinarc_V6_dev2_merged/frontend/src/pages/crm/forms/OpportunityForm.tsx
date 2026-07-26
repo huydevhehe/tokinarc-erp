@@ -13,7 +13,7 @@ import { useCustomerOptions, optionsFromLabels } from '@/lib/useCustomerOptions'
 import type { Opportunity } from '@/lib/types'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
-import { FieldRow, TextInput, TextArea, SelectInput } from '@/components/form'
+import { FieldRow, TextInput, TextArea, SelectInput, MoneyInput } from '@/components/form'
 
 interface Form {
   customer: string; title: string; stage: string
@@ -125,8 +125,8 @@ export function OpportunityForm({ open, onClose, editing, preset, onSaved }: {
           </p>
         )}
         <FieldRow>
-          <TextInput label="Giá trị ước tính (₫)" type="number" min={0}
-            {...register('est_value_vnd', { valueAsNumber: true })} />
+          <MoneyInput label="Giá trị ước tính (₫)" value={watch('est_value_vnd')}
+            onChange={(v) => setValue('est_value_vnd', v)} />
           <TextInput label="Dự kiến chốt" type="date" {...register('expected_close')} />
         </FieldRow>
         <TextArea label="Ghi chú" {...register('notes')} />

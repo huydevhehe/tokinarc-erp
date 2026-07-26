@@ -18,6 +18,7 @@ import { useDebounced } from '@/lib/useDebounced'
 import { Modal } from '@/components/Modal'
 import { PageHeader, Button, StatCard, Tag, TableCard, Th, Td, RowMsg, SearchInput } from '@/components/ui'
 import { SearchableSelect } from '@/components/SearchableSelect'
+import { formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 import { PODetailModal, type PODetail } from '@/pages/purchasing/PODetailModal'
 
 const PO_STATUSES: { value: string; label: string }[] = [
@@ -332,9 +333,12 @@ export function PurchaseOrdersPage() {
                   options={partOptions} loading={partsLoading} placeholder="Gõ mã/tên để tìm phụ tùng…" />
               </div>
               <input placeholder={unitByValue[l.part] ? `SL (${unitByValue[l.part]})` : 'SL'} type="number" value={l.qty}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, qty: Number(e.target.value) } : x))}
                 className="w-24 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
-              <input placeholder="Đơn giá" type="number" value={l.unit_cost} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, unit_cost: Number(e.target.value) } : x))}
+              <input placeholder="Đơn giá" type="text" inputMode="numeric" value={formatMoneyDisplay(l.unit_cost)}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, unit_cost: parseMoneyInput(e.target.value) } : x))}
                 className="w-28 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
               <button onClick={() => setLines((a) => a.filter((_, j) => j !== i))} className="text-txt-2 hover:text-danger"><Trash2 size={14} /></button>
             </div>
@@ -349,7 +353,9 @@ export function PurchaseOrdersPage() {
         footer={<><Button variant="ghost" onClick={() => setPayFor(null)}>Hủy</Button>
           <Button onClick={() => pay.mutate()} disabled={pay.isPending || !payAmt}>Ghi thanh toán</Button></>}>
         <p className="text-sm text-txt-2 mb-2">Còn nợ: <b className="text-warn">{payFor ? formatVnd(payFor.debt_vnd) : ''}</b></p>
-        <input placeholder="Số tiền trả" type="number" value={payAmt} onChange={(e) => setPayAmt(e.target.value)}
+        <input placeholder="Số tiền trả" type="text" inputMode="numeric" value={formatMoneyDisplay(payAmt)}
+          onFocus={(e) => e.target.select()}
+          onChange={(e) => setPayAmt(e.target.value.replace(/\D/g, ''))}
           className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm" />
       </Modal>
 

@@ -198,6 +198,7 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
                     <span className="inline-flex items-center gap-1">
                       <input type="number" min={0} autoFocus value={minDraft}
                         onChange={(e) => setMinDraft(e.target.value)}
+                        onFocus={(e) => e.target.select()}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') saveMinLevel(i.id)
                           if (e.key === 'Escape') setEditMinId(null)
