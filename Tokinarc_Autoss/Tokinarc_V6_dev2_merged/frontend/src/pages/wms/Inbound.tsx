@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { PackageCheck, Check, Plus, ScanLine, Eye, Pencil, Trash2, CalendarClock, Undo2 } from 'lucide-react'
+import { PackageCheck, Check, Plus, ScanLine, Eye, Pencil, Trash2, CalendarClock, Undo2, PackageMinus } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
@@ -171,55 +171,55 @@ export function InboundPage() {
               <Td className="text-right tabular-nums whitespace-nowrap">{compactVnd(amount)}</Td>
               <Td><Tag tone={INBOUND_STATUS_TONE[o.status]}>{INBOUND_STATUS_LABEL[o.status]}</Tag></Td>
               <Td className="text-right">
-                <span className="inline-flex gap-1.5 items-center">
-                <Button variant="ghost" size="sm" onClick={() => setViewOrder(o)}>
-                  <Eye size={13} /> Xem
+                <span className="inline-flex gap-1 items-center">
+                <Button variant="ghost" size="sm" className="!px-2" title="Xem" onClick={() => setViewOrder(o)}>
+                  <Eye size={13} />
                 </Button>
                 {!o.is_active && (
-                  <Button variant="ghost" size="sm"
+                  <Button variant="ghost" size="sm" className="!px-2" title="Khôi phục"
                     disabled={restore.isPending && restore.variables === o.id}
                     onClick={() => restore.mutate(o.id)}>
-                    <Undo2 size={13} /> Khôi phục
+                    <Undo2 size={13} />
                   </Button>
                 )}
                 {o.is_active && o.status === 'draft' && (
-                  <Button variant="ghost" size="sm" onClick={() => setEditOrder(o)}>
-                    <Pencil size={13} /> Sửa
+                  <Button variant="ghost" size="sm" className="!px-2" title="Sửa" onClick={() => setEditOrder(o)}>
+                    <Pencil size={13} />
                   </Button>
                 )}
                 {o.is_active && o.received_at && (
-                  <Button variant="ghost" size="sm"
+                  <Button variant="ghost" size="sm" className="!px-2" title="Sửa ngày nhập kho"
                     onClick={() => { setNewReceivedAt(o.received_at!.slice(0, 10)); setDateEditFor(o) }}>
-                    <CalendarClock size={13} /> Sửa ngày
+                    <CalendarClock size={13} />
                   </Button>
                 )}
                 {o.is_active && (
-                  <Button variant="ghost" size="sm" className="!text-danger"
+                  <Button variant="ghost" size="sm" className="!px-2 !text-danger" title="Xóa"
                     disabled={remove.isPending && remove.variables === o.id}
                     onClick={() => {
                       if (window.confirm(`Xóa phiếu nhập "${o.code}"? Phiếu sẽ ẩn khỏi danh sách (tồn kho/lịch sử vẫn giữ nguyên).`)) remove.mutate(o.id)
                     }}>
-                    <Trash2 size={13} /> Xóa
+                    <Trash2 size={13} />
                   </Button>
                 )}
                 {o.is_active && (o.status === 'draft' || o.status === 'confirmed' || o.status === 'partial') ? (
-                  <span className="inline-flex gap-1.5">
-                    <Button variant="ghost" size="sm" onClick={() => setScanId(o.id)}>
-                      <ScanLine size={13} /> Quét
+                  <span className="inline-flex gap-1">
+                    <Button variant="ghost" size="sm" className="!px-2" title="Quét mã" onClick={() => setScanId(o.id)}>
+                      <ScanLine size={13} />
                     </Button>
-                    <Button variant="ghost" size="sm"
+                    <Button variant="ghost" size="sm" className="!px-2" title="Nhận một phần"
                       disabled={confirm.isPending && confirm.variables?.id === o.id}
                       onClick={() => { setReason(o.shortage_note ?? ''); setPartialFor(o) }}>
-                      Nhận một phần
+                      <PackageMinus size={13} />
                     </Button>
-                    <Button variant="success" size="sm"
+                    <Button variant="success" size="sm" className="!px-2" title="Nhận đủ"
                       disabled={confirm.isPending && confirm.variables?.id === o.id}
                       onClick={() => {
                         const scanned = (o.lines ?? []).some((l) => (l.qty_received ?? 0) > 0)
                         if (scanned) confirm.mutate({ id: o.id })   // đã quét → nhận thẳng
                         else setFullFor(o)                          // chưa quét → hỏi xác nhận
                       }}>
-                      <Check size={13} /> Nhận đủ
+                      <Check size={13} />
                     </Button>
                   </span>
                 ) : null}
