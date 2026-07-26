@@ -65,7 +65,7 @@ export function TransferForm({ open, onClose, item, binOptions }: {
           <div className="bg-ink-3 rounded-md px-3 py-2 mb-3 text-sm">
             <div className="font-medium">{item.item_name}</div>
             <div className="text-xs text-txt-2 mt-0.5">
-              Từ <span className="font-mono">{item.bin_code}</span> · Khả dụng: {item.qty_available}
+              Từ <span className="font-mono">{item.bin_code}</span> · Khả dụng: {item.qty_available} {item.unit}
             </div>
           </div>
           <form onSubmit={handleSubmit((d) => save.mutate(d))}>
@@ -73,7 +73,7 @@ export function TransferForm({ open, onClose, item, binOptions }: {
               placeholder="— Chọn vị trí đích —" options={targets}
               {...register('to_bin', { required: 'Chọn bin đích' })} />
             <FieldRow>
-              <TextInput label="Số lượng *" type="number" min={1} max={item.qty_available}
+              <TextInput label={`Số lượng *${item.unit ? ` (${item.unit})` : ''}`} type="number" min={1} max={item.qty_available}
                 error={errors.qty?.message}
                 {...register('qty', {
                   valueAsNumber: true, required: 'Bắt buộc',

@@ -47,7 +47,7 @@ from .serializers import (
     ASNSerializer, AdjustSerializer, BinSerializer, InboundOrderSerializer,
     InventoryItemSerializer, LotSerializer, OutboundOrderSerializer,
     PickListItemSerializer, SerialNumberSerializer, StockMovementSerializer,
-    TransferSerializer, WarehouseSerializer, ZoneSerializer,
+    TransferSerializer, WarehouseSerializer, ZoneSerializer, _line_unit,
 )
 
 
@@ -734,18 +734,22 @@ class InboundViewSet(viewsets.ModelViewSet):
 
 class CycleCountLineSerializer(serializers.ModelSerializer):
     part_name = serializers.SerializerMethodField()
+    unit      = serializers.SerializerMethodField()
     bin_code  = serializers.CharField(source='bin.full_code', read_only=True)
     diff      = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = CycleCountLine
-        fields = ['id', 'bin', 'bin_code', 'part', 'torch', 'part_name',
+        fields = ['id', 'bin', 'bin_code', 'part', 'torch', 'part_name', 'unit',
                   'system_qty', 'counted_qty', 'diff', 'counted_at']
         read_only_fields = fields
 
     def get_part_name(self, obj):
         o = obj.part or obj.torch
         return getattr(o, 'display_name_vi', None)
+
+    def get_unit(self, obj) -> str:
+        return _line_unit(obj)
 
 
 class CycleCountSerializer(serializers.ModelSerializer):

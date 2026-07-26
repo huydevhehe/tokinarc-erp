@@ -34,7 +34,7 @@ class PartLiteSerializer(serializers.ModelSerializer):
         model = Part
         fields = [
             'tokin_part_no', 'category', 'ecosystem', 'current_class',
-            'display_name_vi', 'display_name_en',
+            'display_name_vi', 'display_name_en', 'price_unit',
             'effective_price_vnd', 'price_display', 'is_contact_price',
             'is_priority_sell', 'tax_pct',
             'product_category', 'group_name', 'category_name',
@@ -70,7 +70,7 @@ class TorchLiteSerializer(serializers.ModelSerializer):
         model = Torch
         fields = [
             'model_code', 'family', 'ecosystem', 'current_class', 'cooling',
-            'display_name_vi', 'display_name_en',
+            'display_name_vi', 'display_name_en', 'price_unit',
             'rated_dc_a', 'duty_cycle_pct',
             'effective_price_vnd', 'price_display', 'is_contact_price',
             'is_priority_sell',

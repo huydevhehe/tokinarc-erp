@@ -41,7 +41,7 @@ export function InboundForm({ open, onClose, editing }: {
 }) {
   const qc = useQueryClient()
   const { options: whs } = useWarehouseOptions()
-  const { options: items, isLoading: itemsLoading } = useItemOptions()
+  const { options: items, isLoading: itemsLoading, unitByValue } = useItemOptions()
   const bins = useQuery({ queryKey: ['wms-bins-opt'], queryFn: () => fetchAll<BinLite>('/wms/bins/') })
   const binItems = bins.data?.items ?? []
   // #10/#11 biên bản: NCC phải SỔ TÊN CÓ SẴN (dropdown), không gõ tay tự do.
@@ -214,7 +214,9 @@ export function InboundForm({ open, onClose, editing }: {
               </div>
               <div className={`grid grid-cols-2 gap-2 ${flowType === 'internal' ? 'sm:grid-cols-3' : 'sm:grid-cols-4'}`}>
                 <div>
-                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">SL</label>
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">
+                    SL{unitByValue[watched[i]?.item ?? ''] ? ` (${unitByValue[watched[i]?.item ?? '']})` : ''}
+                  </label>
                   <input type="number" min={1} placeholder="SL"
                     {...register(`lines.${i}.qty_expected` as const, { valueAsNumber: true })}
                     className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />

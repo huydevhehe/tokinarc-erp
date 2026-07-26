@@ -63,12 +63,12 @@ export function AdjustForm({ open, onClose, item }: {
           <div className="bg-ink-3 rounded-md px-3 py-2 mb-3 text-sm">
             <div className="font-medium">{item.item_name}</div>
             <div className="text-xs text-txt-2 mt-0.5">
-              Vị trí <span className="font-mono">{item.bin_code}</span> · Tồn hiện tại: {item.qty_on_hand}
+              Vị trí <span className="font-mono">{item.bin_code}</span> · Tồn hiện tại: {item.qty_on_hand} {item.unit}
             </div>
           </div>
           <form onSubmit={handleSubmit((d) => save.mutate(d))}>
             <FieldRow>
-              <TextInput label="Số lượng mới *" type="number" min={0} error={errors.new_qty?.message}
+              <TextInput label={`Số lượng mới *${item.unit ? ` (${item.unit})` : ''}`} type="number" min={0} error={errors.new_qty?.message}
                 {...register('new_qty', { valueAsNumber: true, required: 'Bắt buộc', min: { value: 0, message: '≥ 0' } })} />
               <SelectInput label="Lý do"
                 options={[{ value: 'adjust', label: 'Điều chỉnh' }, { value: 'return', label: 'Trả hàng' }]}

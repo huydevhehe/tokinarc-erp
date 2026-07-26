@@ -68,7 +68,7 @@ export function PurchaseOrdersPage() {
   const [notes, setNotes] = useState('')
   const [lines, setLines] = useState<POLine[]>([{ part: '', qty: 1, unit_cost: 0 }])
   const [payAmt, setPayAmt] = useState('')
-  const { options: partOptions, isLoading: partsLoading } = usePartOptions()
+  const { options: partOptions, isLoading: partsLoading, unitByValue } = usePartOptions()
 
   const [view, setView] = useState<'all' | 'incoming'>('all')
   const [search, setSearch] = useState('')
@@ -331,8 +331,9 @@ export function PurchaseOrdersPage() {
                   onChange={(v) => setLines((a) => a.map((x, j) => j === i ? { ...x, part: v } : x))}
                   options={partOptions} loading={partsLoading} placeholder="Gõ mã/tên để tìm phụ tùng…" />
               </div>
-              <input placeholder="SL" type="number" value={l.qty} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, qty: Number(e.target.value) } : x))}
-                className="w-20 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
+              <input placeholder={unitByValue[l.part] ? `SL (${unitByValue[l.part]})` : 'SL'} type="number" value={l.qty}
+                onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, qty: Number(e.target.value) } : x))}
+                className="w-24 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
               <input placeholder="Đơn giá" type="number" value={l.unit_cost} onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, unit_cost: Number(e.target.value) } : x))}
                 className="w-28 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
               <button onClick={() => setLines((a) => a.filter((_, j) => j !== i))} className="text-txt-2 hover:text-danger"><Trash2 size={14} /></button>

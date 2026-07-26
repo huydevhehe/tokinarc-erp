@@ -14,7 +14,7 @@ import { CameraScanner } from '@/components/CameraScanner'
 import type { CatalogPart, SerialNumber } from '@/lib/types'
 import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 
-interface CCLine { id: string; bin_code: string; part_name: string; system_qty: number; counted_qty: number; diff: number }
+interface CCLine { id: string; bin_code: string; part_name: string; unit?: string; system_qty: number; counted_qty: number; diff: number }
 interface CC { id: string; code: string; warehouse_code: string; status: string; note: string; lines: CCLine[] }
 
 export function WmsCycleCountPage() {
@@ -259,14 +259,15 @@ export function WmsCycleCountPage() {
           </Card>
 
           <TableCard>
-            <thead><tr className="border-b border-line"><Th>Ô</Th><Th>Mặt hàng</Th>
+            <thead><tr className="border-b border-line"><Th>Ô</Th><Th>Mặt hàng</Th><Th>ĐVT</Th>
               <Th className="text-right">Hệ thống</Th><Th className="text-right">Đếm</Th><Th className="text-right">Chênh</Th></tr></thead>
             <tbody>
-              {cc.lines.length === 0 && <RowMsg colSpan={5}>Chưa đếm dòng nào.</RowMsg>}
+              {cc.lines.length === 0 && <RowMsg colSpan={6}>Chưa đếm dòng nào.</RowMsg>}
               {cc.lines.map((l) => (
                 <tr key={l.id} className="border-b border-line/50">
                   <Td className="font-mono text-xs">{l.bin_code}</Td>
                   <Td>{l.part_name}</Td>
+                  <Td className="text-txt-2">{l.unit || '—'}</Td>
                   <Td className="text-right tabular-nums">{l.system_qty}</Td>
                   <Td className="text-right tabular-nums">{l.counted_qty}</Td>
                   <Td className={`text-right tabular-nums ${l.diff === 0 ? 'text-txt-2' : l.diff > 0 ? 'text-ok' : 'text-danger'}`}>

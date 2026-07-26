@@ -8,8 +8,8 @@ import { fetchAll } from '@/lib/list'
 import type { Warehouse } from '@/lib/types'
 import type { Option } from '@/components/form'
 
-interface PartLite { tokin_part_no: string; display_name_vi: string }
-interface TorchLite { model_code: string; display_name_vi: string }
+interface PartLite { tokin_part_no: string; display_name_vi: string; price_unit?: string }
+interface TorchLite { model_code: string; display_name_vi: string; price_unit?: string }
 
 export function useWarehouseOptions() {
   const q = useQuery({
@@ -40,7 +40,12 @@ export function useItemOptions() {
       value: `part:${p.tokin_part_no}`, label: `${p.tokin_part_no} — ${p.display_name_vi}`,
     })),
   ]
-  return { options, isLoading: parts.isLoading || torches.isLoading }
+  // ĐVT theo từng mặt hàng (mã hóa 'part:xxx'/'torch:yyy' khớp value ở trên) —
+  // cho form hiển thị "cái/hộp/mét…" ngay khi chọn hàng, trước khi lưu phiếu.
+  const unitByValue: Record<string, string> = {}
+  for (const t of torches.data?.items ?? []) unitByValue[`torch:${t.model_code}`] = t.price_unit || 'cái'
+  for (const p of parts.data?.items ?? []) unitByValue[`part:${p.tokin_part_no}`] = p.price_unit || 'cái'
+  return { options, isLoading: parts.isLoading || torches.isLoading, unitByValue }
 }
 
 /** Chỉ Phụ tùng (Part) — dùng cho dòng hàng PO (PurchaseOrderLine không có torch). */
@@ -53,7 +58,9 @@ export function usePartOptions() {
   const options: Option[] = (parts.data?.items ?? []).map((p) => ({
     value: p.tokin_part_no, label: `${p.tokin_part_no} — ${p.display_name_vi}`,
   }))
-  return { options, isLoading: parts.isLoading }
+  const unitByValue: Record<string, string> = {}
+  for (const p of parts.data?.items ?? []) unitByValue[p.tokin_part_no] = p.price_unit || 'cái'
+  return { options, isLoading: parts.isLoading, unitByValue }
 }
 
 /** Tách 'part:XXX' / 'torch:YYY' → { part?, torch? } cho payload. */

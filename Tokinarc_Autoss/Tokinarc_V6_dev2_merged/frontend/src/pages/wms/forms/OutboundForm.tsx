@@ -35,7 +35,7 @@ export function OutboundForm({ open, onClose, editing }: {
 }) {
   const qc = useQueryClient()
   const { options: whs } = useWarehouseOptions()
-  const { options: items, isLoading: itemsLoading } = useItemOptions()
+  const { options: items, isLoading: itemsLoading, unitByValue } = useItemOptions()
   const { options: customers, isLoading: customersLoading } = useOutboundCustomerOptions()
   const { register, handleSubmit, reset, control, setValue, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
@@ -183,7 +183,9 @@ export function OutboundForm({ open, onClose, editing }: {
                     options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
                 </div>
                 <div className="w-28 shrink-0">
-                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">SL</label>
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">
+                    SL{unitByValue[watched[i]?.item ?? ''] ? ` (${unitByValue[watched[i]?.item ?? '']})` : ''}
+                  </label>
                   <input type="number" min={1} placeholder="SL"
                     {...register(`lines.${i}.qty_ordered` as const, { valueAsNumber: true })}
                     className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
