@@ -310,6 +310,24 @@ def test_build_zones_creates_taxonomy_and_relocates(wh_user):
     assert sn.bin.zone.code == 'SUNG' and sn.bin.rack == 'T3'
 
 
+@pytest.mark.django_db
+def test_inbound_confirm_blocked_when_line_missing_target_bin(auth, part, wh_user):
+    """Bug thật (2026-07-27): dòng thiếu Bin đích trước đây bị bỏ qua âm thầm khi
+    confirm (không cộng tồn, qty_received=0) nhưng phiếu vẫn "xác nhận thành công"
+    với trạng thái kẹt ở 'partial' dù người dùng bấm Nhận đủ — hàng coi như mất.
+    Giờ phải chặn cứng (400), không cho xác nhận đủ khi còn thiếu bin."""
+    from apps.wms.models import InboundLine, InboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='RPR', name='K', is_active=True, is_default=True)
+    io = InboundOrder.objects.create(code='IN-RPR', warehouse=wh, flow_type='internal',
+                                     created_by=wh_user, updated_by=wh_user)
+    InboundLine.objects.create(inbound=io, part=part, qty_expected=10, target_bin=None)
+    r = auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
+    assert r.status_code == 400
+    assert r.data['code'] == 'MISSING_BIN'
+    io.refresh_from_db()
+    assert io.status == 'draft'   # không bị đổi trạng thái âm thầm
+
+
 # ─── Scan theo phiếu + kiểm kê (hoàn thiện scan) ─────────────────────────────
 @pytest.mark.django_db
 def test_inbound_scan_receive_then_confirm(auth, part, wh_user):
