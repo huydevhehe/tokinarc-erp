@@ -107,7 +107,10 @@ export function OutboundPage() {
       : names.length === 1 ? names[0]
       : `${names[0]} +${names.length - 1} mặt khác`
     const qty = lines.reduce((s, l) => s + (l.qty_ordered || 0), 0)
-    const total = lines.reduce((s, l) => s + Number(l.line_total || 0), 0)
+    // Tính theo đơn giá × SL đã soạn (giống modal "Xem") thay vì tin thẳng
+    // line_total lưu sẵn — field đó chỉ có giá trị khi phiếu tạo TỪ đơn bán
+    // (đồng bộ SalesOrderLine), phiếu tạo tay thủ công không có.
+    const total = lines.reduce((s, l) => s + (l.unit_price != null ? Number(l.unit_price) * l.qty_picked : 0), 0)
     return { itemsLabel, itemsTitle: names.join(', '), qty, total }
   }
 
@@ -218,16 +221,35 @@ export function OutboundPage() {
         open={!!viewOrder} onClose={() => setViewOrder(null)}
         title={`Phiếu xuất ${viewOrder?.code ?? ''}`}
         meta={viewOrder && (
-          <div className="text-sm text-txt-2 flex gap-4">
-            <span>Trạng thái: <Tag tone={OUTBOUND_STATUS_TONE[viewOrder.status]}>{OUTBOUND_STATUS_LABEL[viewOrder.status]}</Tag></span>
-            {viewOrder.sales_order_code && <span>Đơn bán: <span className="font-mono">{viewOrder.sales_order_code}</span></span>}
+          <div className="text-sm text-txt-2 space-y-1.5">
+            <div>
+              Trạng thái: <Tag tone={OUTBOUND_STATUS_TONE[viewOrder.status]}>{OUTBOUND_STATUS_LABEL[viewOrder.status]}</Tag>
+              {viewOrder.sales_order_code && <span className="ml-3">Từ đơn bán: <b className="text-txt font-mono">{viewOrder.sales_order_code}</b></span>}
+              <span className="ml-3">Mục đích: <b className="text-txt">{OUTBOUND_PURPOSE_LABEL[viewOrder.purpose]}</b></span>
+              {viewOrder.customer_name && <span className="ml-3">Khách hàng: <b className="text-txt">{viewOrder.customer_name}</b></span>}
+            </div>
+            <div>
+              Ngày giao hàng: <b className="text-txt">{formatDate(viewOrder.shipped_at)}</b>
+              <span className="ml-3">Rule soạn hàng: <b className="text-txt">{RULE_LABEL[viewOrder.rule]}</b></span>
+            </div>
+            <div>
+              {viewOrder.delivered_by_name && <span>Người giao hàng: <b className="text-txt">{viewOrder.delivered_by_name}</b></span>}
+              {viewOrder.shipped_by_username && <span className="ml-3">Người xác nhận giao: <b className="text-txt">{viewOrder.shipped_by_username}</b></span>}
+            </div>
+            {viewOrder.notes && (
+              <div className="bg-ink-3 border border-line rounded-md px-3 py-2 text-txt">
+                <b className="text-txt-2">Ghi chú:</b> {viewOrder.notes}
+              </div>
+            )}
           </div>
         )}
-        q1Label="SL đặt" q2Label="Đã soạn" showPrice
+        q1Label="SL đặt" q2Label="Đã soạn" showPrice showTax={viewOrder?.purpose === 'sale'}
         lines={(viewOrder?.lines ?? []).map((l, i) => ({
           key: l.id ?? String(i), name: l.part_name ?? '', code: l.part ?? l.torch ?? '—',
           unit: l.unit, q1: l.qty_ordered, q2: l.qty_picked,
-          unitPrice: l.unit_price, lineTotal: l.line_total,
+          unitPrice: l.unit_price != null ? String(l.unit_price) : null,
+          lineTotal: l.unit_price != null ? String(Number(l.unit_price) * l.qty_picked) : null,
+          taxPct: l.tax_pct,
         }))}
       />
 

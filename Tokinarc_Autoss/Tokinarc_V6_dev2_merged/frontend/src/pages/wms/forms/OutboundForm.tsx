@@ -19,15 +19,16 @@ import { FieldRow, TextInput, SelectInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import type { OutboundOrder } from '@/lib/types'
 
-interface LineForm { item: string; qty_ordered: number }
+interface LineForm { item: string; qty_ordered: number; unit_price: number; tax_pct: string }
 interface Form {
   warehouse: string; customer: string
-  sales_order_code: string; rule: string; purpose: string; notes: string; lines: LineForm[]
+  sales_order_code: string; rule: string; purpose: string; notes: string
+  delivered_by_name: string; lines: LineForm[]
 }
-const EMPTY_LINE: LineForm = { item: '', qty_ordered: 1 }
+const EMPTY_LINE: LineForm = { item: '', qty_ordered: 1, unit_price: 0, tax_pct: '' }
 const EMPTY: Form = {
   warehouse: '', customer: '', sales_order_code: '', rule: 'FIFO', purpose: 'sale', notes: '',
-  lines: [{ ...EMPTY_LINE }],
+  delivered_by_name: '', lines: [{ ...EMPTY_LINE }],
 }
 
 export function OutboundForm({ open, onClose, editing }: {
@@ -41,6 +42,7 @@ export function OutboundForm({ open, onClose, editing }: {
   const { fields, append, remove } = useFieldArray({ control, name: 'lines' })
   const watched = (useWatch({ control, name: 'lines' }) as LineForm[] | undefined) ?? []
   const watchedCustomer = (useWatch({ control, name: 'customer' }) as string | undefined) ?? ''
+  const purpose = useWatch({ control, name: 'purpose' })
   const itemLabel = (v: string) => items.find((o) => o.value === v)?.label ?? v
   const filled = watched.filter((l) => l?.item)
   const totalQty = filled.reduce((s, l) => s + (Number(l.qty_ordered) || 0), 0)
@@ -66,10 +68,12 @@ export function OutboundForm({ open, onClose, editing }: {
     reset(editing ? {
       warehouse: editing.warehouse, customer: editing.customer ?? '',
       sales_order_code: editing.sales_order_code ?? '', rule: editing.rule, purpose: editing.purpose,
-      notes: editing.notes ?? '',
+      notes: editing.notes ?? '', delivered_by_name: editing.delivered_by_name ?? '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
         qty_ordered: l.qty_ordered,
+        unit_price: Number(l.unit_price ?? 0),
+        tax_pct: l.tax_pct != null ? String(l.tax_pct) : '',
       })),
     } : EMPTY)
   }, [open, editing, reset])
@@ -86,7 +90,13 @@ export function OutboundForm({ open, onClose, editing }: {
         rule: d.rule,
         purpose: d.purpose,
         notes: d.notes,
-        lines: d.lines.map((l) => ({ ...splitItem(l.item), qty_ordered: Number(l.qty_ordered) || 0 })),
+        delivered_by_name: d.delivered_by_name,
+        lines: d.lines.map((l) => ({
+          ...splitItem(l.item),
+          qty_ordered: Number(l.qty_ordered) || 0,
+          unit_price: Number(l.unit_price) || 0,
+          tax_pct: l.tax_pct !== '' ? Number(l.tax_pct) : null,
+        })),
       }
       return editing
         ? api.patch(`/wms/outbound/${editing.id}/`, payload)
@@ -143,6 +153,8 @@ export function OutboundForm({ open, onClose, editing }: {
             options={(Object.keys(OUTBOUND_PURPOSE_LABEL) as (keyof typeof OUTBOUND_PURPOSE_LABEL)[])
               .map((k) => ({ value: k, label: OUTBOUND_PURPOSE_LABEL[k] }))}
             {...register('purpose')} />
+          <TextInput label="Người giao hàng" placeholder="Tên NV kho/tài xế giao hàng"
+            {...register('delivered_by_name')} />
         </FieldRow>
         <div className="mb-3">
           <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Ghi chú</label>
@@ -170,7 +182,7 @@ export function OutboundForm({ open, onClose, editing }: {
         )}
         <div className="space-y-2 mb-3">
           {fields.map((f, i) => (
-            <div key={f.id} className="border border-line/40 rounded-md p-2">
+            <div key={f.id} className="border border-line/40 rounded-md p-2 space-y-1.5">
               <div className="flex items-end gap-2">
                 {/* input ẩn giữ nguyên đăng ký react-hook-form (validate required
                     khi submit) — ô hiển thị là SearchableSelect, đồng bộ qua setValue. */}
@@ -196,6 +208,22 @@ export function OutboundForm({ open, onClose, editing }: {
                   <Trash2 size={15} />
                 </button>
               </div>
+              {purpose === 'sale' && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Đơn giá</label>
+                    <input type="number" min={0} placeholder="Đơn giá"
+                      {...register(`lines.${i}.unit_price` as const, { valueAsNumber: true })}
+                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Thuế %</label>
+                    <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
+                      {...register(`lines.${i}.tax_pct` as const)}
+                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

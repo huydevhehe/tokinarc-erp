@@ -478,6 +478,34 @@ def test_outbound_scan_pick_deducts(auth, part, wh_user):
 
 
 @pytest.mark.django_db
+def test_outbound_create_with_tax_and_ship_sets_shipped_by(auth, part, wh_user):
+    """Đơn xuất hàng bán: tax_pct lưu/trả đúng theo dòng; ship() phải tự điền
+    shipped_by = người bấm giao (khớp pattern InboundOrder.received_by)."""
+    from apps.wms.models import Bin, InventoryItem, OutboundOrder, Warehouse, Zone
+    wh = Warehouse.objects.create(code='HCM4', name='K4', is_active=True, is_default=True)
+    z = Zone.objects.create(warehouse=wh, code='A', name='A')
+    b = Bin.objects.create(zone=z, rack='R01', bin_code='B4', full_code='HCM4-A-R01-B4')
+    InventoryItem.objects.create(bin=b, part=part, qty_on_hand=20)
+
+    r = auth.post('/api/v1/wms/outbound/', {
+        'warehouse': str(wh.id), 'purpose': 'sale', 'delivered_by_name': 'Anh Tai',
+        'lines': [{'part': part.tokin_part_no, 'qty_ordered': 5, 'unit_price': 10000, 'tax_pct': 8}],
+    }, format='json')
+    assert r.status_code == 201, r.data
+    assert r.data['delivered_by_name'] == 'Anh Tai'
+    assert float(r.data['lines'][0]['tax_pct']) == 8
+    ob = OutboundOrder.objects.get(pk=r.data['id'])
+
+    auth.post(f'/api/v1/wms/outbound/{ob.id}/scan-pick/',
+             {'code': '002001', 'bin_code': 'HCM4-A-R01-B4', 'qty': 5}, format='json')
+    rs = auth.post(f'/api/v1/wms/outbound/{ob.id}/ship/')
+    assert rs.status_code == 200
+    ob.refresh_from_db()
+    assert ob.shipped_by_id == wh_user.id
+    assert rs.data['shipped_by_username'] == wh_user.username
+
+
+@pytest.mark.django_db
 def test_cycle_count_scan_and_apply(auth, auth_mgr, part, wh_user):
     from apps.wms.models import Bin, InventoryItem, Warehouse, Zone
     wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)

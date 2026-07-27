@@ -205,7 +205,7 @@ class OutboundLineSerializer(serializers.ModelSerializer):
     class Meta:
         model  = OutboundLine
         fields = ['id', 'part', 'torch', 'part_name', 'unit', 'qty_ordered', 'qty_picked', 'order_idx',
-                  'unit_price', 'line_total']
+                  'unit_price', 'tax_pct', 'line_total']
 
     def get_unit(self, obj) -> str:
         return _line_unit(obj)
@@ -217,13 +217,15 @@ class OutboundLineSerializer(serializers.ModelSerializer):
 class OutboundOrderSerializer(serializers.ModelSerializer):
     lines = OutboundLineSerializer(many=True, required=False)
     customer_name = serializers.CharField(source='customer.name', read_only=True, default='')
+    shipped_by_username = serializers.CharField(source='shipped_by.username', read_only=True, default='')
 
     class Meta:
         model  = OutboundOrder
         fields = ['id', 'code', 'warehouse', 'sales_order_code', 'customer', 'customer_name',
                   'rule', 'status', 'purpose', 'shipped_at', 'lines', 'notes',
+                  'delivered_by_name', 'shipped_by', 'shipped_by_username',
                   'is_active', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'status', 'shipped_at', 'created_at', 'updated_at']
+        read_only_fields = ['id', 'status', 'shipped_at', 'shipped_by', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (OUT-YYYY-NNN).
         extra_kwargs = {'code': {'required': False}}
 

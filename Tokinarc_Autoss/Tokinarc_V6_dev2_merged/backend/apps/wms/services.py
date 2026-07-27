@@ -285,7 +285,8 @@ def confirm_pick_and_ship(outbound: OutboundOrder, user=None) -> None:
     from django.utils import timezone
     outbound.status = 'shipped' if fully else 'partial'
     outbound.shipped_at = timezone.now()
-    outbound.save(update_fields=['status', 'shipped_at'])
+    outbound.shipped_by = user
+    outbound.save(update_fields=['status', 'shipped_at', 'shipped_by'])
     _sync_sales_order(outbound, user, fully)
 
 

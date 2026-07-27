@@ -347,6 +347,13 @@ class OutboundOrder(BaseModel):
                                   default=OutboundPurpose.SALE, db_index=True)
     shipped_at = models.DateTimeField(null=True, blank=True)
     notes      = models.TextField(blank=True)
+    # Người giao hàng thực tế (NV kho/tài xế) — text tự do, không có tài khoản hệ
+    # thống, khớp pattern InboundOrder.delivered_by_name.
+    delivered_by_name = models.CharField(max_length=100, blank=True)
+    # Người xác nhận giao (bấm nút "Giao hàng") — tự động điền, user thật trong hệ
+    # thống, khớp pattern InboundOrder.received_by.
+    shipped_by = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
+                                   on_delete=models.SET_NULL, related_name='outbounds_shipped')
     # "Xóa" = is_active=false (ẩn khỏi danh sách, giống Supplier/Part/Torch) — KHÔNG
     # xóa cứng phiếu vì đây là chứng từ đối chiếu tồn kho.
     is_active  = models.BooleanField(default=True, db_index=True)
@@ -368,6 +375,9 @@ class OutboundLine(models.Model):
     # Đơn giá/tổng dòng — copy từ SalesOrderLine lúc tạo phiếu (đồng bộ giá báo giá/đơn bán).
     unit_price  = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True)
     line_total  = models.DecimalField(max_digits=14, decimal_places=0, null=True, blank=True)
+    # Thuế VAT theo dòng (khớp pattern InboundLine.tax_pct — mỗi mặt hàng có thể
+    # khác thuế suất 8%/10%). Chỉ áp dụng ý nghĩa cho phiếu xuất mục đích "Hàng bán".
+    tax_pct     = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
     class Meta:
         db_table = 'wms_outbound_line'

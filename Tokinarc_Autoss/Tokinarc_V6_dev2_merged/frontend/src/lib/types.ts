@@ -244,6 +244,7 @@ export interface OutboundLine {
   qty_picked: number
   order_idx: number
   unit_price: string | null
+  tax_pct?: string | number | null
   line_total: string | null
 }
 
@@ -260,6 +261,9 @@ export interface OutboundOrder {
   shipped_at: string | null
   lines: OutboundLine[]
   notes: string
+  delivered_by_name?: string
+  shipped_by?: string | null
+  shipped_by_username?: string
   is_active: boolean
   created_at: string
   updated_at: string
