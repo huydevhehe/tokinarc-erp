@@ -11,6 +11,7 @@ import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useDebounced } from '@/lib/useDebounced'
+import { compactVnd, formatDate } from '@/lib/crm'
 import {
   OUTBOUND_STATUS_LABEL, OUTBOUND_STATUS_TONE, RULE_LABEL,
   OUTBOUND_PURPOSE_LABEL, OUTBOUND_PURPOSE_TONE,
@@ -97,6 +98,19 @@ export function OutboundPage() {
 
   const items = data?.results ?? []
 
+  // Gộp tên hàng hoá + tổng SL + tổng thành tiền từ các dòng của 1 đơn — phục vụ
+  // cột tổng quan trên danh sách (chi tiết đầy đủ từng dòng xem ở modal "Xem").
+  const summarize = (o: OutboundOrder) => {
+    const lines = o.lines ?? []
+    const names = lines.map((l) => l.part_name).filter(Boolean) as string[]
+    const itemsLabel = names.length === 0 ? '—'
+      : names.length === 1 ? names[0]
+      : `${names[0]} +${names.length - 1} mặt khác`
+    const qty = lines.reduce((s, l) => s + (l.qty_ordered || 0), 0)
+    const total = lines.reduce((s, l) => s + Number(l.line_total || 0), 0)
+    return { itemsLabel, itemsTitle: names.join(', '), qty, total }
+  }
+
   return (
     <div className="max-w-7xl">
       <PageHeader icon={<PackageCheck size={20} className="text-flame" />} title="Xuất kho"
@@ -120,20 +134,28 @@ export function OutboundPage() {
       <TableCard>
         <thead>
           <tr className="border-b border-line">
-            <Th>Mã đơn</Th><Th>Khách hàng</Th><Th>Mục đích</Th><Th className="text-right">Số dòng</Th>
+            <Th>Mã đơn</Th><Th>Ngày xuất</Th><Th>Khách hàng</Th><Th>Tên hàng hóa</Th><Th>Mục đích</Th>
+            <Th className="text-right">Số lượng</Th><Th className="text-right">Thành tiền</Th>
             <Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={6} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {data && items.length === 0 && <RowMsg colSpan={6}>Chưa có đơn xuất.</RowMsg>}
-          {items.map((o) => (
+          {isLoading && <RowMsg colSpan={9}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={9} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {data && items.length === 0 && <RowMsg colSpan={9}>Chưa có đơn xuất.</RowMsg>}
+          {items.map((o) => {
+            const { itemsLabel, itemsTitle, qty, total } = summarize(o)
+            return (
             <tr key={o.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{o.code}</Td>
+              <Td className="text-txt-2 whitespace-nowrap">{formatDate(o.shipped_at)}</Td>
               <Td className="text-txt-2">{o.customer_name || '—'}</Td>
+              <Td className="text-txt-2">
+                <span className="block truncate max-w-[220px]" title={itemsTitle}>{itemsLabel}</span>
+              </Td>
               <Td><Tag tone={OUTBOUND_PURPOSE_TONE[o.purpose]}>{OUTBOUND_PURPOSE_LABEL[o.purpose]}</Tag></Td>
-              <Td className="text-right tabular-nums">{o.lines?.length ?? 0}</Td>
+              <Td className="text-right tabular-nums">{qty}</Td>
+              <Td className="text-right tabular-nums whitespace-nowrap">{compactVnd(total)}</Td>
               <Td><Tag tone={OUTBOUND_STATUS_TONE[o.status]}>{OUTBOUND_STATUS_LABEL[o.status]}</Tag></Td>
               <Td className="text-right whitespace-nowrap">
                 <Button variant="ghost" size="sm" className="mr-1.5" onClick={() => setViewOrder(o)}>
@@ -179,7 +201,7 @@ export function OutboundPage() {
                 )}
               </Td>
             </tr>
-          ))}
+          )})}
         </tbody>
       </TableCard>
 
