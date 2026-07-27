@@ -29,6 +29,13 @@ CAPABILITY_SEED: dict[str, tuple[str, str, frozenset[str]]] = {
     'purchasing.po.delete': (
         'Xoá đơn mua hàng (PO nháp)', 'Mua hàng',
         frozenset({Role.ADMIN})),
+    'purchasing.supplier.create': (
+        # Yêu cầu 2026-07-26: NV kho (Role.WAREHOUSE) cần tự thêm NCC mới ngay
+        # trong lúc lập phiếu nhập kho (trước đó tạo NCC lẫn chung với capability
+        # purchasing.po.create nên NV kho thường bị chặn) — tách riêng capability
+        # này, KHÔNG dùng chung với tạo PO nữa.
+        'Tạo nhà cung cấp mới', 'Mua hàng',
+        frozenset({Role.WAREHOUSE, Role.WAREHOUSE_MANAGER, Role.MANAGER, Role.CEO})),
     'crm.lead.delete': (
         'Xoá Lead', 'CRM',
         frozenset({Role.ADMIN})),

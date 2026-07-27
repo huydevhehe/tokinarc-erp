@@ -66,12 +66,17 @@ class PurchasingPermission(permissions.BasePermission):
 class SupplierPermission(PurchasingPermission):
     """NCC: mở ĐỌC cho cả NV kho — phiếu nhập kho (#10/#11 biên bản) phải sổ
     (dropdown) tên NCC có sẵn thay vì gõ tay, nên vai trò kho cần đọc danh
-    sách. Ghi (tạo/sửa NCC) vẫn theo PurchasingPermission (QL kho trở lên)."""
+    sách. Tạo mới NCC: capability riêng 'purchasing.supplier.create' (2026-07-26
+    — NV kho cần tự thêm NCC ngay lúc lập phiếu nhập, KHÔNG dùng chung capability
+    tạo PO nữa vì đó vốn cố tình loại NV kho thường). Sửa/xoá NCC vẫn theo
+    PurchasingPermission gốc (QL kho trở lên)."""
 
     def has_permission(self, request, view):
         r = role_of(request.user) if request.user.is_authenticated else None
         if r in WMS_OP_ROLES and request.method in SAFE_METHODS:
             return True
+        if getattr(view, 'action', None) == 'create':
+            return has_capability(request.user, 'purchasing.supplier.create')
         return super().has_permission(request, view)
 
 

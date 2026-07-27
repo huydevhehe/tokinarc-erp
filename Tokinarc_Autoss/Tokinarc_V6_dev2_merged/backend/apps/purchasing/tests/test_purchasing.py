@@ -255,3 +255,13 @@ def test_supplier_edit_delete_forbidden_for_plain_warehouse_role(warehouse_user)
     c = APIClient(); c.force_authenticate(warehouse_user)
     assert c.patch(f'/api/v1/purchasing/suppliers/{sup.id}/', {'name': 'Z'}, format='json').status_code == 403
     assert c.patch(f'/api/v1/purchasing/suppliers/{sup.id}/', {'is_active': False}, format='json').status_code == 403
+
+
+@pytest.mark.django_db
+def test_supplier_create_allowed_for_plain_warehouse_role(warehouse_user):
+    """NV kho tự thêm NCC mới ngay lúc lập phiếu nhập (2026-07-26) — tách riêng
+    capability purchasing.supplier.create, không dùng chung với tạo PO nữa."""
+    c = APIClient(); c.force_authenticate(warehouse_user)
+    r = c.post('/api/v1/purchasing/suppliers/', {'name': 'NCC do NV kho tạo'}, format='json')
+    assert r.status_code == 201, r.data
+    assert r.data['tax_code'] == ''
