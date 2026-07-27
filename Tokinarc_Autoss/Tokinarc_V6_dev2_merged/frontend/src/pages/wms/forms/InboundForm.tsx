@@ -32,14 +32,14 @@ interface LineForm {
 }
 interface Form {
   warehouse: string; supplier: string; invoice_no: string; invoice_date: string
-  flow_type: '' | 'internal' | 'supplier'; purchase_order: string
+  flow_type: '' | 'internal' | 'supplier'; purchase_order: string; manual_po_no: string
   delivered_by_name: string; notes: string
   lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '', serials: '' }
 const EMPTY: Form = {
   warehouse: '', supplier: '', invoice_no: '', invoice_date: '',
-  flow_type: '', purchase_order: '', delivered_by_name: '', notes: '',
+  flow_type: '', purchase_order: '', manual_po_no: '', delivered_by_name: '', notes: '',
   lines: [{ ...EMPTY_LINE }],
 }
 
@@ -64,12 +64,14 @@ export function InboundForm({ open, onClose, editing }: {
   const watched = (useWatch({ control, name: 'lines' }) as LineForm[] | undefined) ?? []
   const flowType = useWatch({ control, name: 'flow_type' })
   const purchaseOrder = useWatch({ control, name: 'purchase_order' })
+  const manualPoNo = useWatch({ control, name: 'manual_po_no' })
   const watchedSupplier = (useWatch({ control, name: 'supplier' }) as string | undefined) ?? ''
   const [supplierModalOpen, setSupplierModalOpen] = useState(false)
 
   // Chọn 1 đơn mua → tự điền kho/NCC + dòng hàng (SL còn lại chưa nhận, đơn giá theo PO).
   const onPickPO = (poId: string) => {
     setValue('purchase_order', poId, { shouldValidate: true })
+    setValue('manual_po_no', '')
     const po = (pos.data?.items ?? []).find((p) => p.id === poId)
     if (!po) return
     setValue('warehouse', po.warehouse, { shouldValidate: true })
@@ -83,6 +85,14 @@ export function InboundForm({ open, onClose, editing }: {
         unit_cost: Number(l.unit_cost), tax_pct: '', serials: '',
       })))
     }
+  }
+  // Ô "Đơn mua" nhận giá trị từ SearchableSelect (allowCreate): nếu khớp 1 PO có
+  // sẵn → chọn như bình thường (tự điền kho/NCC/dòng hàng); nếu là chuỗi tự gõ
+  // (PO chưa nhập vào hệ thống) → chỉ lưu làm ghi chú tham chiếu (manual_po_no).
+  const onChangePOField = (v: string) => {
+    if ((pos.data?.items ?? []).some((p) => p.id === v)) { onPickPO(v); return }
+    setValue('purchase_order', '')
+    setValue('manual_po_no', v, { shouldValidate: true })
   }
   const itemLabel = (v: string) => items.find((o) => o.value === v)?.label ?? v
   const filled = watched.filter((l) => l?.item)
@@ -111,6 +121,7 @@ export function InboundForm({ open, onClose, editing }: {
       supplier: editing.supplier ?? '', invoice_no: editing.invoice_no ?? '',
       invoice_date: editing.invoice_date ?? '',
       flow_type: editing.flow_type ?? '', purchase_order: editing.purchase_order ?? '',
+      manual_po_no: editing.manual_po_no ?? '',
       delivered_by_name: editing.delivered_by_name ?? '', notes: editing.notes ?? '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
@@ -132,6 +143,7 @@ export function InboundForm({ open, onClose, editing }: {
         invoice_date: d.invoice_date || null,
         flow_type: d.flow_type || 'internal',
         purchase_order: d.flow_type === 'supplier' ? (d.purchase_order || null) : null,
+        manual_po_no: d.flow_type === 'supplier' ? d.manual_po_no : '',
         delivered_by_name: d.delivered_by_name, notes: d.notes,
         lines: d.lines.map((l) => ({
           ...splitItem(l.item),
@@ -156,8 +168,8 @@ export function InboundForm({ open, onClose, editing }: {
   })
 
   const onSubmit = (d: Form) => {
-    if (d.flow_type === 'supplier' && !d.purchase_order) {
-      toast.error('Phiếu nhập NCC phải chọn Đơn mua'); return
+    if (d.flow_type === 'supplier' && !d.purchase_order && !d.manual_po_no) {
+      toast.error('Phiếu nhập NCC phải chọn hoặc nhập số Đơn mua'); return
     }
     save.mutate(d)
   }
@@ -213,13 +225,17 @@ export function InboundForm({ open, onClose, editing }: {
           <FieldRow>
             <div className="col-span-2">
               <input type="hidden" {...register('purchase_order')} />
+              <input type="hidden" {...register('manual_po_no')} />
               <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Đơn mua *</label>
               <SearchableSelect
-                value={purchaseOrder ?? ''}
-                onChange={onPickPO}
-                options={poOptions} loading={pos.isLoading}
-                placeholder="Gõ mã PO/tên NCC để tìm đơn mua…" />
-              <p className="text-[11px] text-txt-2 mt-1">Chỉ đơn đã đặt (chưa nhận đủ) mới chọn được. Chọn đơn → tự điền kho/NCC/dòng hàng còn lại.</p>
+                value={purchaseOrder || manualPoNo || ''}
+                onChange={onChangePOField}
+                options={poOptions} loading={pos.isLoading} allowCreate
+                placeholder="Gõ mã PO/tên NCC để tìm, hoặc nhập số PO chưa có trong hệ thống…" />
+              <p className="text-[11px] text-txt-2 mt-1">
+                Chọn 1 đơn đã đặt (chưa nhận đủ) → tự điền kho/NCC/dòng hàng còn lại.
+                {' '}PO chưa có trong hệ thống → gõ số PO rồi bấm "+ Dùng ..." (chỉ lưu để đối chiếu, không tự điền).
+              </p>
             </div>
           </FieldRow>
         )}

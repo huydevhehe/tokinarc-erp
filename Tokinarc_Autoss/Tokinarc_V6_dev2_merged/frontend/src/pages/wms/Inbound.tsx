@@ -260,6 +260,9 @@ export function InboundPage() {
             <div>
               Trạng thái: <Tag tone={INBOUND_STATUS_TONE[viewOrder.status]}>{INBOUND_STATUS_LABEL[viewOrder.status]}</Tag>
               {viewOrder.po_code && <span className="ml-3">Từ đơn mua: <b className="text-txt font-mono">{viewOrder.po_code}</b></span>}
+              {!viewOrder.po_code && viewOrder.manual_po_no && (
+                <span className="ml-3">Số PO (chưa có trong hệ thống): <b className="text-txt font-mono">{viewOrder.manual_po_no}</b></span>
+              )}
               <span className="ml-3">Loại: <b className="text-txt">{viewOrder.flow_type === 'supplier' ? 'Nhà cung cấp' : 'Nội bộ'}</b></span>
               {viewOrder.supplier && <span className="ml-3">Nhà cung cấp: <b className="text-txt">{viewOrder.supplier}</b></span>}
             </div>

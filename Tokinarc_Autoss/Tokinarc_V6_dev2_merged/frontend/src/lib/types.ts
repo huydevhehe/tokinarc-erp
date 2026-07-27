@@ -212,6 +212,7 @@ export interface InboundOrder {
   asn: string | null
   purchase_order?: string | null
   po_code?: string
+  manual_po_no?: string
   status: InboundStatus
   supplier?: string
   invoice_no?: string
