@@ -17,6 +17,8 @@ import { Button } from '@/components/ui'
 import { FieldRow, TextInput, SelectInput, formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { SupplierFormModal } from '@/pages/purchasing/SupplierFormModal'
+import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
+import { useAuth, isWmsControl } from '@/lib/auth/store'
 import type { InboundOrder } from '@/lib/types'
 
 interface BinLite { id: string; full_code: string }
@@ -67,6 +69,9 @@ export function InboundForm({ open, onClose, editing }: {
   const manualPoNo = useWatch({ control, name: 'manual_po_no' })
   const watchedSupplier = (useWatch({ control, name: 'supplier' }) as string | undefined) ?? ''
   const [supplierModalOpen, setSupplierModalOpen] = useState(false)
+  const [addPartForLine, setAddPartForLine] = useState<number | null>(null)   // dòng đang thêm mặt hàng mới
+  const role = useAuth((s) => s.user?.role)
+  const canAddPart = isWmsControl(role)   // khớp PartTorchWritePermission backend
 
   // Chọn 1 đơn mua → tự điền kho/NCC + dòng hàng (SL còn lại chưa nhận, đơn giá theo PO).
   const onPickPO = (poId: string) => {
@@ -298,6 +303,13 @@ export function InboundForm({ open, onClose, editing }: {
                     onChange={(v) => setValue(`lines.${i}.item` as const, v, { shouldValidate: true })}
                     options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
                 </div>
+                {canAddPart && (
+                  <button type="button" onClick={() => setAddPartForLine(i)}
+                    className="text-txt-2 hover:text-flame p-1.5 shrink-0" aria-label="Thêm mặt hàng mới"
+                    title="Không tìm thấy? Thêm mặt hàng mới vào danh mục">
+                    <Plus size={15} />
+                  </button>
+                )}
                 <button type="button" onClick={() => fields.length > 1 && remove(i)}
                   className="text-txt-2 hover:text-danger p-1.5 shrink-0 disabled:opacity-30" disabled={fields.length <= 1} aria-label="Xóa">
                   <Trash2 size={15} />
@@ -369,6 +381,10 @@ export function InboundForm({ open, onClose, editing }: {
 
     <SupplierFormModal open={supplierModalOpen} onClose={() => setSupplierModalOpen(false)}
       onSaved={(s) => setValue('supplier', s.name, { shouldValidate: true })} />
+    <PartQuickAddModal open={addPartForLine != null} onClose={() => setAddPartForLine(null)}
+      onSaved={(p) => {
+        if (addPartForLine != null) setValue(`lines.${addPartForLine}.item`, `part:${p.tokin_part_no}`, { shouldValidate: true })
+      }} />
     </>
   )
 }
