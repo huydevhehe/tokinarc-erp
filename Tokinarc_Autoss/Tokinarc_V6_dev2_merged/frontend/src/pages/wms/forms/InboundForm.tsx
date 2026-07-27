@@ -17,6 +17,8 @@ import { Button } from '@/components/ui'
 import { FieldRow, TextInput, SelectInput, formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { SupplierFormModal } from '@/pages/purchasing/SupplierFormModal'
+import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
+import { useAuth, isWmsControl } from '@/lib/auth/store'
 import type { InboundOrder } from '@/lib/types'
 
 interface BinLite { id: string; full_code: string }
@@ -33,13 +35,13 @@ interface LineForm {
 interface Form {
   warehouse: string; supplier: string; invoice_no: string; invoice_date: string
   flow_type: '' | 'internal' | 'supplier'; purchase_order: string; manual_po_no: string
-  delivered_by_name: string; notes: string
+  delivered_by_name: string; received_at: string; notes: string
   lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '', serials: '' }
 const EMPTY: Form = {
   warehouse: '', supplier: '', invoice_no: '', invoice_date: '',
-  flow_type: '', purchase_order: '', manual_po_no: '', delivered_by_name: '', notes: '',
+  flow_type: '', purchase_order: '', manual_po_no: '', delivered_by_name: '', received_at: '', notes: '',
   lines: [{ ...EMPTY_LINE }],
 }
 
@@ -67,6 +69,9 @@ export function InboundForm({ open, onClose, editing }: {
   const manualPoNo = useWatch({ control, name: 'manual_po_no' })
   const watchedSupplier = (useWatch({ control, name: 'supplier' }) as string | undefined) ?? ''
   const [supplierModalOpen, setSupplierModalOpen] = useState(false)
+  const [addPartForLine, setAddPartForLine] = useState<number | null>(null)   // dòng đang thêm mặt hàng mới
+  const role = useAuth((s) => s.user?.role)
+  const canAddPart = isWmsControl(role)   // khớp PartTorchWritePermission backend
 
   // Chọn 1 đơn mua → tự điền kho/NCC + dòng hàng (SL còn lại chưa nhận, đơn giá theo PO).
   const onPickPO = (poId: string) => {
@@ -122,7 +127,8 @@ export function InboundForm({ open, onClose, editing }: {
       invoice_date: editing.invoice_date ?? '',
       flow_type: editing.flow_type ?? '', purchase_order: editing.purchase_order ?? '',
       manual_po_no: editing.manual_po_no ?? '',
-      delivered_by_name: editing.delivered_by_name ?? '', notes: editing.notes ?? '',
+      delivered_by_name: editing.delivered_by_name ?? '',
+      received_at: editing.received_at ? editing.received_at.slice(0, 10) : '', notes: editing.notes ?? '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
         qty_expected: l.qty_expected, target_bin: l.target_bin ?? '',
@@ -144,7 +150,7 @@ export function InboundForm({ open, onClose, editing }: {
         flow_type: d.flow_type || 'internal',
         purchase_order: d.flow_type === 'supplier' ? (d.purchase_order || null) : null,
         manual_po_no: d.flow_type === 'supplier' ? d.manual_po_no : '',
-        delivered_by_name: d.delivered_by_name, notes: d.notes,
+        delivered_by_name: d.delivered_by_name, received_at: d.received_at || null, notes: d.notes,
         lines: d.lines.map((l) => ({
           ...splitItem(l.item),
           qty_expected: Number(l.qty_expected) || 0,
@@ -246,9 +252,14 @@ export function InboundForm({ open, onClose, editing }: {
             {...register('invoice_date')} />
         </FieldRow>
         <FieldRow>
-          <TextInput label="Người giao hàng" placeholder="Tên nhân viên NCC/bên giao hàng" full
+          <TextInput label="Người giao hàng" placeholder="Tên nhân viên NCC/bên giao hàng"
             {...register('delivered_by_name')} />
+          <TextInput label="Ngày nhập kho" type="date"
+            {...register('received_at')} />
         </FieldRow>
+        <p className="text-[11px] text-txt-2 -mt-2 mb-3">
+          Để trống → hệ thống tự ghi ngày lúc xác nhận nhận hàng (có thể sửa lại sau ở danh sách).
+        </p>
         <div className="mb-3">
           <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Ghi chú</label>
           <textarea rows={2} placeholder="Ghi chú thêm cho phiếu nhập…"
@@ -292,6 +303,13 @@ export function InboundForm({ open, onClose, editing }: {
                     onChange={(v) => setValue(`lines.${i}.item` as const, v, { shouldValidate: true })}
                     options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
                 </div>
+                {canAddPart && (
+                  <button type="button" onClick={() => setAddPartForLine(i)}
+                    className="text-txt-2 hover:text-flame p-1.5 shrink-0" aria-label="Thêm mặt hàng mới"
+                    title="Không tìm thấy? Thêm mặt hàng mới vào danh mục">
+                    <Plus size={15} />
+                  </button>
+                )}
                 <button type="button" onClick={() => fields.length > 1 && remove(i)}
                   className="text-txt-2 hover:text-danger p-1.5 shrink-0 disabled:opacity-30" disabled={fields.length <= 1} aria-label="Xóa">
                   <Trash2 size={15} />
@@ -363,6 +381,10 @@ export function InboundForm({ open, onClose, editing }: {
 
     <SupplierFormModal open={supplierModalOpen} onClose={() => setSupplierModalOpen(false)}
       onSaved={(s) => setValue('supplier', s.name, { shouldValidate: true })} />
+    <PartQuickAddModal open={addPartForLine != null} onClose={() => setAddPartForLine(null)}
+      onSaved={(p) => {
+        if (addPartForLine != null) setValue(`lines.${addPartForLine}.item`, `part:${p.tokin_part_no}`, { shouldValidate: true })
+      }} />
     </>
   )
 }

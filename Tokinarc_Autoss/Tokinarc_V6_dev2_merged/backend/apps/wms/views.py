@@ -638,6 +638,16 @@ class InboundViewSet(viewsets.ModelViewSet):
                                            f"phải điền đủ trước khi xác nhận.",
                                  'code': 'MISSING_PRICE_OR_TAX'}, status=400)
         partial_flag = bool(request.data.get('partial'))
+        # Bug thật (2026-07-27): dòng thiếu Bin đích trước đây bị BỎ QUA ÂM THẦM ở
+        # dưới (không cộng tồn, qty_received không đổi) nhưng phiếu vẫn báo "đã xác
+        # nhận" — khiến hàng "biến mất" và trạng thái kẹt ở 'partial' dù đã bấm
+        # Nhận đủ. Chặn cứng ngay từ đầu, không cho xác nhận đủ khi còn thiếu bin.
+        if not partial_flag:
+            no_bin = [str(l.part_id or l.torch_id) for l in inbound.lines.all() if not l.target_bin_id]
+            if no_bin:
+                return Response({'detail': f"Còn dòng hàng chưa chọn Bin đích ({', '.join(no_bin)}) — "
+                                           f"phải chọn bin trước khi xác nhận Nhận đủ.",
+                                 'code': 'MISSING_BIN'}, status=400)
         shortage_note = str(request.data.get('shortage_note', '')).strip()
         fully = True
         for line in inbound.lines.all():
@@ -669,7 +679,9 @@ class InboundViewSet(viewsets.ModelViewSet):
             if line.qty_putaway < line.qty_expected:
                 fully = False
         inbound.status = 'putaway' if fully else 'partial'
-        if fully:
+        # Chỉ tự set = lúc confirm nếu chưa ai nhập tay lúc tạo/sửa phiếu — tránh
+        # ghi đè ngày nhập kho thực tế (VD nhập liệu trễ hơn ngày hàng về thật).
+        if fully and not inbound.received_at:
             inbound.received_at = timezone.now()
         if shortage_note:
             inbound.shortage_note = shortage_note

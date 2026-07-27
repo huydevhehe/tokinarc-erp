@@ -310,6 +310,24 @@ def test_build_zones_creates_taxonomy_and_relocates(wh_user):
     assert sn.bin.zone.code == 'SUNG' and sn.bin.rack == 'T3'
 
 
+@pytest.mark.django_db
+def test_inbound_confirm_blocked_when_line_missing_target_bin(auth, part, wh_user):
+    """Bug thật (2026-07-27): dòng thiếu Bin đích trước đây bị bỏ qua âm thầm khi
+    confirm (không cộng tồn, qty_received=0) nhưng phiếu vẫn "xác nhận thành công"
+    với trạng thái kẹt ở 'partial' dù người dùng bấm Nhận đủ — hàng coi như mất.
+    Giờ phải chặn cứng (400), không cho xác nhận đủ khi còn thiếu bin."""
+    from apps.wms.models import InboundLine, InboundOrder, Warehouse
+    wh = Warehouse.objects.create(code='RPR', name='K', is_active=True, is_default=True)
+    io = InboundOrder.objects.create(code='IN-RPR', warehouse=wh, flow_type='internal',
+                                     created_by=wh_user, updated_by=wh_user)
+    InboundLine.objects.create(inbound=io, part=part, qty_expected=10, target_bin=None)
+    r = auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
+    assert r.status_code == 400
+    assert r.data['code'] == 'MISSING_BIN'
+    io.refresh_from_db()
+    assert io.status == 'draft'   # không bị đổi trạng thái âm thầm
+
+
 # ─── Scan theo phiếu + kiểm kê (hoàn thiện scan) ─────────────────────────────
 @pytest.mark.django_db
 def test_inbound_scan_receive_then_confirm(auth, part, wh_user):
@@ -326,6 +344,27 @@ def test_inbound_scan_receive_then_confirm(auth, part, wh_user):
     # confirm → cộng tồn đúng số đã nhận
     auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
     assert InventoryItem.objects.get(bin=b, part=part).qty_on_hand == 10
+
+
+@pytest.mark.django_db
+def test_inbound_confirm_keeps_received_at_set_at_creation(auth, part, wh_user):
+    """Nếu người tạo phiếu đã tự nhập Ngày nhập kho (VD nhập liệu trễ hơn ngày
+    hàng về thật) thì confirm() KHÔNG được ghi đè thành thời điểm bấm nút —
+    chỉ tự set khi trước đó chưa có (received_at rỗng)."""
+    import datetime as dt
+    from django.utils import timezone
+    from apps.wms.models import Bin, InboundLine, InboundOrder, InventoryItem, Warehouse, Zone
+    wh = Warehouse.objects.create(code='HCM9', name='K9', is_active=True, is_default=True)
+    z = Zone.objects.create(warehouse=wh, code='A', name='A')
+    b = Bin.objects.create(zone=z, rack='R01', bin_code='B1', full_code='HCM9-A-R01-B1')
+    backdated = timezone.now() - dt.timedelta(days=3)
+    io = InboundOrder.objects.create(code='IN-9', warehouse=wh, received_at=backdated,
+                                     created_by=wh_user, updated_by=wh_user)
+    InboundLine.objects.create(inbound=io, part=part, qty_expected=5, target_bin=b)
+    auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
+    io.refresh_from_db()
+    assert InventoryItem.objects.get(bin=b, part=part).qty_on_hand == 5
+    assert io.received_at == backdated
 
 
 # ─── #11 biên bản: 2 luồng nhập kho (nội bộ vs NCC) ─────────────────────────
