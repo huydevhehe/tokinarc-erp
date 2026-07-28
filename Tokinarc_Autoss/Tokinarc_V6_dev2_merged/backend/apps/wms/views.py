@@ -624,18 +624,14 @@ class InboundViewSet(viewsets.ModelViewSet):
         if inbound.status not in ('draft', 'confirmed', 'partial'):
             return Response({'detail': 'Trạng thái không cho xác nhận.', 'code': 'CONFLICT'},
                             status=status.HTTP_409_CONFLICT)
-        # #11 biên bản: luồng NCC bắt buộc giá + thuế THEO TỪNG DÒNG trước khi xác
-        # nhận — chặn cứng, không chỉ cảnh báo. Thuế theo dòng (không phải cả phiếu)
-        # vì mỗi mặt hàng có thể khác thuế suất (8%/10%), khớp catalog.Part.tax_pct.
+        # #11 biên bản: luồng NCC bắt buộc giá THEO TỪNG DÒNG trước khi xác nhận —
+        # chặn cứng, không chỉ cảnh báo. Thuế (%) KHÔNG bắt buộc (feedback
+        # 2026-07-28): NCC nước ngoài không phát sinh VAT, để trống nghĩa là 0%,
+        # không phải thiếu dữ liệu — chỉ đơn giá là bắt buộc.
         if inbound.flow_type == InboundFlowType.SUPPLIER:
-            missing = []
-            if any(l.tax_pct is None for l in inbound.lines.all()):
-                missing.append('thuế (%)')
             if any(not l.unit_cost for l in inbound.lines.all()):
-                missing.append('đơn giá')
-            if missing:
-                return Response({'detail': f"Phiếu nhập NCC còn thiếu {', '.join(missing)} — "
-                                           f"phải điền đủ trước khi xác nhận.",
+                return Response({'detail': 'Phiếu nhập NCC còn thiếu đơn giá — '
+                                           'phải điền đủ trước khi xác nhận.',
                                  'code': 'MISSING_PRICE_OR_TAX'}, status=400)
         partial_flag = bool(request.data.get('partial'))
         # Bug thật (2026-07-27): dòng thiếu Bin đích trước đây bị BỎ QUA ÂM THẦM ở

@@ -268,7 +268,8 @@ export function InboundForm({ open, onClose, editing }: {
         </div>
         {flowType === 'supplier' && (
           <p className="text-[11px] text-warn mb-1.5">
-            Luồng NCC: cần điền đủ <b>Đơn giá</b> + <b>Thuế (%)</b> cho từng dòng trước khi Xác nhận nhận hàng.
+            Luồng NCC: cần điền đủ <b>Đơn giá</b> cho từng dòng trước khi Xác nhận nhận hàng.
+            Thuế (%) không bắt buộc — để trống nếu NCC nước ngoài không phát sinh VAT.
           </p>
         )}
         <div className="mb-1.5 flex items-center justify-between">

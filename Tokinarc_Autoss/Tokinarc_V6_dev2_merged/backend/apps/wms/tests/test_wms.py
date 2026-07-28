@@ -385,8 +385,8 @@ def test_inbound_default_flow_type_is_internal(auth, part, wh_user):
 
 
 @pytest.mark.django_db
-def test_inbound_supplier_flow_blocks_confirm_without_price_or_tax(auth, part, wh_user):
-    """Luồng NCC thiếu đơn giá/thuế → confirm() bị chặn cứng (400), không cộng tồn."""
+def test_inbound_supplier_flow_blocks_confirm_without_price(auth, part, wh_user):
+    """Luồng NCC thiếu đơn giá → confirm() bị chặn cứng (400), không cộng tồn."""
     from apps.wms.models import Bin, InboundLine, InboundOrder, InventoryItem, Warehouse, Zone
     wh = Warehouse.objects.create(code='HCM3', name='K3', is_active=True, is_default=True)
     z = Zone.objects.create(warehouse=wh, code='A', name='A')
@@ -398,13 +398,30 @@ def test_inbound_supplier_flow_blocks_confirm_without_price_or_tax(auth, part, w
     assert r.status_code == 400
     assert r.data['code'] == 'MISSING_PRICE_OR_TAX'
     assert not InventoryItem.objects.filter(bin=b, part=part).exists()
-    # Điền đủ giá + thuế (theo từng dòng) → confirm được, và received_by = người xác nhận.
+    # Điền đơn giá → confirm được, và received_by = người xác nhận.
     io.lines.update(unit_cost=1000, tax_pct=8)
     r = auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
     assert r.status_code == 200
     assert r.data['status'] == 'putaway'
     io.refresh_from_db()
     assert io.received_by_id == wh_user.id
+    assert InventoryItem.objects.get(bin=b, part=part).qty_on_hand == 5
+
+
+@pytest.mark.django_db
+def test_inbound_supplier_flow_allows_confirm_without_tax(auth, part, wh_user):
+    """Feedback 2026-07-28: NCC nước ngoài không phát sinh VAT — Thuế (%) để
+    trống (None) KHÔNG được chặn confirm nữa, chỉ đơn giá mới bắt buộc."""
+    from apps.wms.models import Bin, InboundLine, InboundOrder, InventoryItem, Warehouse, Zone
+    wh = Warehouse.objects.create(code='HCM5', name='K5', is_active=True, is_default=True)
+    z = Zone.objects.create(warehouse=wh, code='A', name='A')
+    b = Bin.objects.create(zone=z, rack='R01', bin_code='B1', full_code='HCM5-A-R01-B1')
+    io = InboundOrder.objects.create(code='IN-5', warehouse=wh, flow_type='supplier',
+                                     created_by=wh_user, updated_by=wh_user)
+    InboundLine.objects.create(inbound=io, part=part, qty_expected=5, target_bin=b,
+                               unit_cost=1000, tax_pct=None)
+    r = auth.post(f'/api/v1/wms/inbound/{io.id}/confirm/')
+    assert r.status_code == 200, r.data
     assert InventoryItem.objects.get(bin=b, part=part).qty_on_hand == 5
 
 
