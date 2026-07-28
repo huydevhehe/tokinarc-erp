@@ -51,7 +51,9 @@ export function OutboundForm({ open, onClose, editing }: {
   const [showCam, setShowCam] = useState(false)
   const [addPartForLine, setAddPartForLine] = useState<number | null>(null)   // dòng đang thêm mặt hàng mới
   const role = useAuth((s) => s.user?.role)
-  const canAddPart = isWmsControl(role)   // khớp PartTorchWritePermission backend
+  // khớp PartTorchWritePermission backend: action 'create' mở cho NV kho, không
+  // chỉ Quản lý kho trở lên (isWmsControl) — NV kho là người lập phiếu hàng ngày.
+  const canAddPart = isWmsControl(role) || role === 'warehouse'
 
   // Quét camera NGAY KHI TẠO PHIẾU XUẤT: quét mã → tự thêm dòng; cùng mã → +1 SL.
   const onScan = async (raw: string) => {
