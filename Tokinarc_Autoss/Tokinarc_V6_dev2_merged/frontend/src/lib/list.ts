@@ -19,19 +19,24 @@ export async function fetchPage<T>(
 
 /**
  * Gom toàn bộ bản ghi qua nhiều trang (lần theo `next`).
- * `maxPages` chặn trên để dashboard không quét quá nặng (mặc định 25 trang ≈ 500 bản ghi).
+ * `maxPages` chặn trên để dashboard không quét quá nặng (mặc định 25 trang).
+ * Mỗi trang xin `page_size` lớn (500, trừ khi caller tự truyền page_size khác)
+ * — tránh bug thật đã gặp: danh mục 944 phụ tùng cần 48 trang ở page_size mặc
+ * định (20) nên bị maxPages=25 cắt cụt ÂM THẦM giữa chừng (mất ~half, kể cả
+ * mặt hàng vừa tạo) trong khi backend cho phép page_size tới 2000/trang.
  */
 export async function fetchAll<T>(
   path: string,
   params: Record<string, unknown> = {},
   maxPages = 25,
 ): Promise<{ items: T[]; count: number; truncated: boolean }> {
-  const first = await fetchPage<T>(path, { ...params, page: 1 })
+  const p = { page_size: 500, ...params }
+  const first = await fetchPage<T>(path, { ...p, page: 1 })
   const items = [...first.results]
   let page = 1
   while (first.count > items.length && page < maxPages) {
     page += 1
-    const next = await fetchPage<T>(path, { ...params, page })
+    const next = await fetchPage<T>(path, { ...p, page })
     items.push(...next.results)
     if (next.results.length === 0) break
   }
