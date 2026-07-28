@@ -30,6 +30,9 @@ logs/
 _backups/
 _trash/
 
+# Local AI tool config (per-machine permissions, not shared)
+.claude/
+
 # IDE / OS
 .vscode/
 .idea/
