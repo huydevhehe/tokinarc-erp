@@ -144,22 +144,29 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
         <TableCard>
           <thead>
             <tr className="border-b border-line">
-              <Th>Loại</Th><Th>Nhóm hàng</Th>
+              <Th>Loại / Nhóm hàng</Th>
               <Th className="text-right">Tồn (SL)</Th><Th className="text-right">Giá trị</Th>
             </tr>
           </thead>
           <tbody>
-            {grouped.isLoading && <RowMsg colSpan={4}>Đang tải…</RowMsg>}
-            {grouped.isError && <RowMsg colSpan={4} danger>Lỗi: {apiError(grouped.error)}</RowMsg>}
-            {grouped.data?.length === 0 && <RowMsg colSpan={4}>Chưa có tồn kho.</RowMsg>}
-            {grouped.data?.map((r, i) => (
+            {grouped.isLoading && <RowMsg colSpan={3}>Đang tải…</RowMsg>}
+            {grouped.isError && <RowMsg colSpan={3} danger>Lỗi: {apiError(grouped.error)}</RowMsg>}
+            {grouped.data?.length === 0 && <RowMsg colSpan={3}>Chưa có tồn kho.</RowMsg>}
+            {grouped.data?.map((r, i) => {
+              const unclassified = r.group === '(chưa phân loại)'
+              return (
               <tr key={`${r.kind}-${r.group}-${i}`} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
-                <Td className="text-txt-2">{KIND_LABEL[r.kind]}</Td>
-                <Td className="font-medium">{r.group}</Td>
+                <Td className="font-medium">
+                  {KIND_LABEL[r.kind]}
+                  <span className="text-txt-2"> · </span>
+                  {unclassified
+                    ? <span className="text-warn">{r.group}</span>
+                    : r.group}
+                </Td>
                 <Td className="text-right tabular-nums">{r.qty}</Td>
                 <Td className="text-right tabular-nums text-flame">{formatVnd(r.value)}</Td>
               </tr>
-            ))}
+            )})}
           </tbody>
         </TableCard>
       )}
