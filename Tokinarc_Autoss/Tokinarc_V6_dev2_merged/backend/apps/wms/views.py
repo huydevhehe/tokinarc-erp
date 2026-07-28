@@ -593,25 +593,62 @@ class InboundViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='export-xlsx')
     def export_xlsx(self, request, pk=None):
-        """Xuất phiếu nhập kho ra Excel (đầu trang NCC nếu có + bảng dòng hàng)."""
-        from apps.common.excel import make_document_xlsx, supplier_party, xlsx_response
+        """Xuất phiếu nhập kho ra Excel — đầy đủ thông tin khớp với màn hình
+        "Xem chi tiết" (biên bản: dữ liệu xuất phải thống nhất với trên hệ thống,
+        không chỉ có mã/tên/SL)."""
+        from apps.common.excel import make_document_xlsx, xlsx_response
+        from .serializers import _line_item_name
         o = self.get_object()
         rows = []
+        total_value = 0
+        total_tax = 0
         for l in o.lines.all():
             item = l.part or l.torch
-            rows.append((str(item.pk) if item else '—',
-                         getattr(item, 'display_name_vi', '') if item else '',
-                         l.qty_expected, l.qty_received))
-        sup = getattr(o.asn, 'supplier', None) if o.asn_id else None
-        party = supplier_party(sup) if sup is not None and hasattr(sup, 'name') else None
+            unit_cost = l.unit_cost or 0
+            line_total = int(unit_cost) * l.qty_received
+            tax_pct = l.tax_pct
+            line_tax = int(line_total * float(tax_pct) / 100) if tax_pct else 0
+            total_value += line_total
+            total_tax += line_tax
+            rows.append((str(item.pk) if item else '—', _line_item_name(l), _line_unit(l),
+                         l.qty_expected, l.qty_received, int(unit_cost),
+                         f'{tax_pct}%' if tax_pct is not None else '—', line_total))
+        # NCC là text tự do trên phiếu (không FK Supplier) — hiện luôn trong khối
+        # đầu trang thay vì phải khớp đúng 1 Supplier model mới hiện được.
+        party = [('Tên NCC:', o.supplier)] if o.supplier else None
+        meta = [
+            ('Kho nhập:', o.warehouse.code),
+            ('Loại phiếu:', 'Nhà cung cấp (NCC)' if o.flow_type == InboundFlowType.SUPPLIER else 'Nội bộ'),
+            ('Trạng thái:', o.get_status_display()),
+        ]
+        if o.purchase_order_id:
+            meta.append(('Từ đơn mua:', o.purchase_order.code))
+        elif o.manual_po_no:
+            meta.append(('Số PO (chưa có trong hệ thống):', o.manual_po_no))
+        if o.invoice_no:
+            meta.append(('Số hóa đơn/phiếu NCC:', o.invoice_no))
+        if o.invoice_date:
+            meta.append(('Ngày xuất hóa đơn:', o.invoice_date.strftime('%d/%m/%Y')))
+        if o.delivered_by_name:
+            meta.append(('Người giao hàng:', o.delivered_by_name))
+        if o.received_at:
+            meta.append(('Ngày nhập kho:', o.received_at.strftime('%d/%m/%Y')))
+        if o.received_by_id:
+            meta.append(('Người nhận:', o.received_by.username))
+        if o.shortage_note:
+            meta.append(('Lý do nhận thiếu:', o.shortage_note))
+        if o.notes:
+            meta.append(('Ghi chú:', o.notes))
         data = make_document_xlsx(
             sheet_title='PhieuNhap', doc_title='PHIẾU NHẬP KHO', doc_code=o.code,
             doc_date=o.created_at.strftime('%d/%m/%Y'),
             party=party, party_label='NHÀ CUNG CẤP:',
-            meta=[('Kho nhập:', o.warehouse.code), ('Trạng thái:', o.get_status_display())],
-            columns=[('Mã', 16, 'text'), ('Tên hàng', 40, 'text'),
-                     ('SL dự kiến', 12, 'int'), ('Thực nhận', 12, 'int')],
+            meta=meta,
+            columns=[('Mã', 16, 'text'), ('Tên hàng', 32, 'text'), ('ĐVT', 8, 'text'),
+                     ('SL dự kiến', 10, 'int'), ('Thực nhận', 10, 'int'),
+                     ('Đơn giá', 14, 'money'), ('Thuế', 8, 'text'), ('Thành tiền', 16, 'money')],
             rows=rows,
+            total_label='Tổng tiền hàng (đã gồm thuế):', total_value=total_value + total_tax,
             signatures=['NGƯỜI GIAO', 'THỦ KHO', 'KẾ TOÁN'])
         return xlsx_response(data, f'phieu_nhap_{o.code}.xlsx')
 

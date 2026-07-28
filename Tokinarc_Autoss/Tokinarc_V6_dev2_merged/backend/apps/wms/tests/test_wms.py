@@ -866,3 +866,37 @@ def test_outbound_hide_via_is_active_works_at_any_status(auth, wh_user):
     codes = [o['code'] for o in auth.get('/api/v1/wms/outbound/').data['results']]
     assert 'OUT-HIDE1' not in codes
     assert auth.get(f'/api/v1/wms/outbound/{shipped.id}/').status_code == 200
+
+
+@pytest.mark.django_db
+def test_inbound_export_xlsx_includes_full_detail(auth, wh_user, part):
+    """Biên bản 2026-07-28: file xuất phiếu nhập từng thiếu NCC/ĐVT/đơn giá/thành
+    tiền/ghi chú so với màn hình Xem chi tiết — giờ phải khớp đầy đủ."""
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    from apps.wms.models import InboundOrder, InboundLine, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    inbound = InboundOrder.objects.create(
+        code='IN-XLS1', warehouse=wh, status='putaway', flow_type='supplier',
+        supplier='Cong ty ABC', invoice_no='HD-999', delivered_by_name='Anh Thai',
+        notes='Ghi chu test export', created_by=wh_user, updated_by=wh_user)
+    InboundLine.objects.create(inbound=inbound, part=part, qty_expected=10, qty_received=10,
+                               unit_cost=50000, tax_pct=8, order_idx=0)
+
+    r = auth.get(f'/api/v1/wms/inbound/{inbound.id}/export-xlsx/')
+    assert r.status_code == 200
+    assert r['Content-Type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+    wb = load_workbook(BytesIO(r.content))
+    ws = wb.active
+    text = '\n'.join(str(c.value) for row in ws.iter_rows() for c in row if c.value is not None)
+    assert 'Cong ty ABC' in text          # NCC — trước đây bị mất hoàn toàn
+    assert 'HD-999' in text               # số hóa đơn
+    assert 'Anh Thai' in text             # người giao
+    assert 'Ghi chu test export' in text  # ghi chú
+    assert part.tokin_part_no in text
+    assert 'cái' in text or part.pk in text   # ĐVT
+    assert 50000 in [c.value for row in ws.iter_rows() for c in row]   # đơn giá
+    assert 500000 in [c.value for row in ws.iter_rows() for c in row]  # thành tiền dòng (chưa thuế)
