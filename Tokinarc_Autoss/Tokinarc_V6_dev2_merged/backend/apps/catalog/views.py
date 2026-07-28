@@ -38,8 +38,10 @@ from apps.catalog.serializers import (
 
 class PartTorchWritePermission(BasePermission):
     """Đọc: công khai (giữ nguyên AllowAny — trang tra cứu/chatbot phụ thuộc).
-    Ghi (tạo/sửa/"xóa" = is_active=false): chỉ Quản lý kho trở lên."""
-    message = "Chỉ Quản lý kho trở lên được tạo/sửa sản phẩm."
+    Tạo mới: NV kho trở lên (thêm nhanh mặt hàng ngay khi lập phiếu nhập kho).
+    Sửa/"xóa" (is_active=false): chỉ Quản lý kho trở lên — tránh dữ liệu giá/thuế
+    đã có bị NV kho thường chỉnh sai ngoài kiểm soát."""
+    message = "Không đủ quyền tạo/sửa sản phẩm."
 
     def has_permission(self, request, view) -> bool:
         if request.method in SAFE_METHODS:
@@ -47,8 +49,11 @@ class PartTorchWritePermission(BasePermission):
         u = request.user
         if not (u and u.is_authenticated):
             return False
-        from apps.accounts.roles import WMS_CONTROL_ROLES, role_of
-        return role_of(u) in WMS_CONTROL_ROLES
+        from apps.accounts.roles import WMS_CONTROL_ROLES, Role, role_of
+        role = role_of(u)
+        if view.action == 'create':
+            return role in WMS_CONTROL_ROLES or role == Role.WAREHOUSE
+        return role in WMS_CONTROL_ROLES
 
 
 # ─── ProcedureQA — tra cứu lắp đặt / sửa chữa (nội bộ) ────────────────────────

@@ -50,11 +50,20 @@ def test_wh_manager_can_create_update_deactivate_part(wh_mgr):
 
 
 @pytest.mark.django_db
-def test_warehouse_staff_and_anonymous_cannot_write_part(nv_kho, db):
+def test_warehouse_staff_can_create_but_not_edit_or_deactivate_part(nv_kho, db):
+    """NV kho được thêm nhanh mặt hàng mới (lúc lập phiếu nhập kho gõ không thấy
+    mã), nhưng KHÔNG được sửa/"xóa" mặt hàng đã có — tránh giá/thuế bị chỉnh
+    ngoài kiểm soát của Quản lý kho."""
     c = APIClient(); c.force_authenticate(nv_kho)
     r = c.post('/api/v1/catalog/parts/', {
         'tokin_part_no': 'TST-002', 'category': 'Tip', 'display_name_vi': 'X',
     }, format='json')
+    assert r.status_code == 201, r.data
+    assert Part.objects.filter(pk='TST-002').exists()
+
+    r = c.patch('/api/v1/catalog/parts/TST-002/', {'display_name_vi': 'Y'}, format='json')
+    assert r.status_code == 403
+    r = c.patch('/api/v1/catalog/parts/TST-002/', {'is_active': False}, format='json')
     assert r.status_code == 403
 
     anon = APIClient()
@@ -97,9 +106,13 @@ def test_wh_manager_can_create_update_deactivate_torch(wh_mgr):
 
 
 @pytest.mark.django_db
-def test_warehouse_staff_cannot_write_torch(nv_kho):
+def test_warehouse_staff_can_create_but_not_edit_torch(nv_kho):
     c = APIClient(); c.force_authenticate(nv_kho)
     r = c.post('/api/v1/catalog/torches/', {
         'model_code': 'TST-TORCH-02', 'display_name_vi': 'X',
     }, format='json')
+    assert r.status_code == 201, r.data
+    assert Torch.objects.filter(pk='TST-TORCH-02').exists()
+
+    r = c.patch('/api/v1/catalog/torches/TST-TORCH-02/', {'display_name_vi': 'Y'}, format='json')
     assert r.status_code == 403

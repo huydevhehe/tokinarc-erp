@@ -1,9 +1,10 @@
 /**
  * Tokinarc frontend — src/pages/crm/PartQuickAddModal.tsx
  * Thêm nhanh 1 Phụ tùng mới vào danh mục — dùng khi đang tạo phiếu nhập kho mà
- * gõ tên hàng không tìm thấy (chỉ Quản lý kho trở lên, khớp PartTorchWritePermission
- * backend). Chỉ các trường tối thiểu; sửa đầy đủ (giá bán, thuế…) vẫn làm ở
- * trang Danh mục sản phẩm.
+ * gõ tên hàng không tìm thấy (NV kho trở lên, khớp PartTorchWritePermission
+ * backend — action 'create' mở cho NV kho, sửa/xóa vẫn cần Quản lý kho trở lên).
+ * Chỉ các trường tối thiểu; sửa đầy đủ (giá bán, thuế…) vẫn làm ở trang Danh
+ * mục sản phẩm.
  */
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'

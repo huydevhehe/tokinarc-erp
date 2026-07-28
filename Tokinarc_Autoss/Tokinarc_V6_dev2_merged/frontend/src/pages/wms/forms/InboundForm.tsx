@@ -71,7 +71,9 @@ export function InboundForm({ open, onClose, editing }: {
   const [supplierModalOpen, setSupplierModalOpen] = useState(false)
   const [addPartForLine, setAddPartForLine] = useState<number | null>(null)   // dòng đang thêm mặt hàng mới
   const role = useAuth((s) => s.user?.role)
-  const canAddPart = isWmsControl(role)   // khớp PartTorchWritePermission backend
+  // Thêm nhanh mặt hàng mới: NV kho trở lên (khớp PartTorchWritePermission backend
+  // — chỉ nới action 'create', sửa/xóa sản phẩm vẫn cần Quản lý kho trở lên).
+  const canAddPart = isWmsControl(role) || role === 'warehouse'
 
   // Chọn 1 đơn mua → tự điền kho/NCC + dòng hàng (SL còn lại chưa nhận, đơn giá theo PO).
   const onPickPO = (poId: string) => {
