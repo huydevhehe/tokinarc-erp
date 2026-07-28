@@ -924,26 +924,52 @@ class OutboundViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='export-xlsx')
     def export_xlsx(self, request, pk=None):
-        """Xuất phiếu xuất kho ra Excel (đầu trang thông tin KH + bảng dòng hàng)."""
+        """Xuất phiếu xuất kho ra Excel — đầy đủ thông tin khớp với màn hình
+        "Xem chi tiết" (khớp cấu trúc phiếu nhập kho: NCC/KH, ĐVT, đơn giá, thuế,
+        thành tiền, người giao/nhận, ghi chú...)."""
         from apps.common.excel import customer_party, make_document_xlsx, xlsx_response
+        from .serializers import _line_item_name
         o = self.get_object()
         rows = []
+        total_value = 0
+        total_tax = 0
         for l in o.lines.all():
             item = l.part or l.torch
-            rows.append((str(item.pk) if item else '—',
-                         getattr(item, 'display_name_vi', '') if item else '',
-                         l.qty_ordered, l.qty_picked, l.unit_price, l.line_total))
+            unit_price = int(l.unit_price or 0)
+            line_total = int(l.line_total) if l.line_total is not None else unit_price * l.qty_picked
+            tax_pct = l.tax_pct
+            line_tax = int(line_total * float(tax_pct) / 100) if tax_pct else 0
+            total_value += line_total
+            total_tax += line_tax
+            rows.append((str(item.pk) if item else '—', _line_item_name(l), _line_unit(l),
+                         l.qty_ordered, l.qty_picked, unit_price,
+                         f'{tax_pct}%' if tax_pct is not None else '—', line_total))
         party = customer_party(o.customer) if o.customer_id else None
+        meta = [
+            ('Kho xuất:', o.warehouse.code),
+            ('Đơn bán:', o.sales_order_code or '—'),
+            ('Trạng thái:', o.get_status_display()),
+            ('Mục đích:', o.get_purpose_display()),
+            ('Rule soạn hàng:', o.get_rule_display()),
+        ]
+        if o.shipped_at:
+            meta.append(('Ngày giao hàng:', o.shipped_at.strftime('%d/%m/%Y')))
+        if o.delivered_by_name:
+            meta.append(('Người giao hàng:', o.delivered_by_name))
+        if o.shipped_by_id:
+            meta.append(('Người xác nhận giao:', o.shipped_by.username))
+        if o.notes:
+            meta.append(('Ghi chú:', o.notes))
         data = make_document_xlsx(
             sheet_title='PhieuXuat', doc_title='PHIẾU XUẤT KHO', doc_code=o.code,
             doc_date=o.created_at.strftime('%d/%m/%Y'),
             party_label='NGƯỜI NHẬN / KHÁCH HÀNG:', party=party,
-            meta=[('Kho xuất:', o.warehouse.code), ('Đơn bán:', o.sales_order_code or '—'),
-                  ('Trạng thái:', o.get_status_display()), ('Mục đích:', o.get_purpose_display())],
-            columns=[('Mã', 16, 'text'), ('Tên hàng', 40, 'text'),
-                     ('SL đặt', 12, 'int'), ('Thực soạn', 12, 'int'),
-                     ('Đơn giá', 14, 'money'), ('Thành tiền', 16, 'money')],
+            meta=meta,
+            columns=[('Mã', 16, 'text'), ('Tên hàng', 32, 'text'), ('ĐVT', 8, 'text'),
+                     ('SL đặt', 10, 'int'), ('Thực soạn', 10, 'int'),
+                     ('Đơn giá', 14, 'money'), ('Thuế', 8, 'text'), ('Thành tiền', 16, 'money')],
             rows=rows,
+            total_label='Tổng tiền hàng (đã gồm thuế):', total_value=total_value + total_tax,
             signatures=['THỦ KHO', 'NGƯỜI VẬN CHUYỂN', 'NGƯỜI NHẬN'])
         return xlsx_response(data, f'phieu_xuat_{o.code}.xlsx')
 

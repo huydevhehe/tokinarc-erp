@@ -900,3 +900,35 @@ def test_inbound_export_xlsx_includes_full_detail(auth, wh_user, part):
     assert 'cái' in text or part.pk in text   # ĐVT
     assert 50000 in [c.value for row in ws.iter_rows() for c in row]   # đơn giá
     assert 500000 in [c.value for row in ws.iter_rows() for c in row]  # thành tiền dòng (chưa thuế)
+
+
+@pytest.mark.django_db
+def test_outbound_export_xlsx_includes_full_detail(auth, wh_user, part):
+    """Cùng biên bản với phiếu nhập: file xuất phiếu xuất kho từng thiếu ĐVT/thuế/
+    thành tiền/rule soạn/ghi chú so với màn hình Xem chi tiết — giờ phải khớp đầy đủ."""
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    from apps.wms.models import OutboundOrder, OutboundLine, Warehouse
+    wh = Warehouse.objects.create(code='HCM', name='K', is_active=True, is_default=True)
+    outbound = OutboundOrder.objects.create(
+        code='OUT-XLS1', warehouse=wh, status='shipped', rule='FEFO', purpose='sale',
+        delivered_by_name='Anh Thai', notes='Ghi chu test export xuat',
+        created_by=wh_user, updated_by=wh_user)
+    OutboundLine.objects.create(outbound=outbound, part=part, qty_ordered=10, qty_picked=10,
+                                unit_price=60000, line_total=600000, tax_pct=8, order_idx=0)
+
+    r = auth.get(f'/api/v1/wms/outbound/{outbound.id}/export-xlsx/')
+    assert r.status_code == 200
+    assert r['Content-Type'] == 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+
+    wb = load_workbook(BytesIO(r.content))
+    ws = wb.active
+    text = '\n'.join(str(c.value) for row in ws.iter_rows() for c in row if c.value is not None)
+    assert 'Anh Thai' in text
+    assert 'Ghi chu test export xuat' in text
+    assert 'Hết hạn trước xuất trước' in text   # rule FEFO hiển thị đúng nhãn
+    assert part.tokin_part_no in text
+    assert 60000 in [c.value for row in ws.iter_rows() for c in row]
+    assert 600000 in [c.value for row in ws.iter_rows() for c in row]
