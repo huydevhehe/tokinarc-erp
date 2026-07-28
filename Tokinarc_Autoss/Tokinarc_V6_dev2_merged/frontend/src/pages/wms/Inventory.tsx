@@ -117,15 +117,17 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
                 {groupOptions.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
             )}
-            <Button variant="ghost"
-              onClick={() => {
-                const g = groupOptions.find((o) => String(o.id) === groupFilter)
-                const fname = g ? `ton_kho_${g.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx` : 'ton_kho_theo_nhom.xlsx'
-                downloadFile(
-                  `/wms/inventory/export-by-category/${groupFilter ? `?group=${groupFilter}` : ''}`, fname)
-              }}>
-              <Download size={14} /> Xuất Excel theo nhóm
-            </Button>
+            {groupView && (
+              <Button variant="ghost"
+                onClick={() => {
+                  const g = groupOptions.find((o) => String(o.id) === groupFilter)
+                  const fname = g ? `ton_kho_${g.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx` : 'ton_kho_theo_nhom.xlsx'
+                  downloadFile(
+                    `/wms/inventory/export-by-category/${groupFilter ? `?group=${groupFilter}` : ''}`, fname)
+                }}>
+                <Download size={14} /> Xuất Excel theo nhóm
+              </Button>
+            )}
             {!groupView && (
               <>
                 <button onClick={() => { setLowStock((v) => !v); setPage(1) }}
@@ -134,6 +136,16 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
                   <AlertTriangle size={14} /> Chỉ sắp hết{lowCount.data ? ` (${lowCount.data})` : ''}
                 </button>
                 <SearchInput value={search} onChange={setSearch} placeholder="Tìm mặt hàng, vị trí…" />
+                <Button variant="ghost"
+                  onClick={() => {
+                    const params = new URLSearchParams()
+                    if (debounced) params.set('search', debounced)
+                    if (lowStock) params.set('low_stock', 'true')
+                    const qs = params.toString()
+                    downloadFile(`/wms/inventory/export-xlsx/${qs ? `?${qs}` : ''}`, 'ton_kho.xlsx')
+                  }}>
+                  <Download size={14} /> Xuất Excel
+                </Button>
               </>
             )}
           </>

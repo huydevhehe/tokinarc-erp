@@ -258,6 +258,35 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
                       'qty': r['qty'] or 0, 'value': r['value'] or 0} for r in torch_rows]
         return rows
 
+    @action(detail=False, methods=['get'], url_path='export-xlsx')
+    def export_xlsx(self, request):
+        """Xuất Excel tồn kho theo TỪNG mặt hàng/vị trí — đúng bộ lọc đang xem
+        trên danh sách (tìm kiếm, kho, sắp hết). Khác export-by-category (gộp
+        theo nhóm) — đây là bản chi tiết từng dòng như bảng trên màn hình."""
+        from apps.common.excel import xlsx_response
+        from openpyxl import Workbook
+        qs = self.filter_queryset(self.get_queryset())
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'TonKho'
+        ws.append(['Mã số', 'Tên hàng hóa', 'ĐVT', 'Giá vốn', 'Vị trí', 'Kho',
+                   'Tồn', 'Giữ', 'Khả dụng', 'Tối thiểu'])
+        for item in qs:
+            o = item.part or item.torch
+            ws.append([
+                item.part_id or item.torch_id,
+                getattr(o, 'display_name_vi', '') if o else '',
+                getattr(o, 'price_unit', '') if o else '',
+                getattr(o, 'cost_vnd', None) if o else None,
+                item.bin.full_code,
+                item.bin.zone.warehouse.code,
+                item.qty_on_hand, item.qty_reserved,
+                item.qty_on_hand - item.qty_reserved, item.min_level,
+            ])
+        buf = io.BytesIO()
+        wb.save(buf)
+        return xlsx_response(buf.getvalue(), 'ton_kho.xlsx')
+
     @action(detail=False, methods=['get'], url_path='by-category')
     def by_category(self, request):
         """Tồn kho gộp theo nhóm hàng (không theo mã lẻ) — phục vụ lên đơn đặt NCC.
