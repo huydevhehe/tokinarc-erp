@@ -932,3 +932,55 @@ def test_outbound_export_xlsx_includes_full_detail(auth, wh_user, part):
     assert part.tokin_part_no in text
     assert 60000 in [c.value for row in ws.iter_rows() for c in row]
     assert 600000 in [c.value for row in ws.iter_rows() for c in row]
+
+
+@pytest.mark.django_db
+def test_inventory_by_category_with_group_returns_item_detail_not_summary(auth, wh_user):
+    """Biên bản 2026-07-28 #25: chọn 1 Nhóm cụ thể phải trả về danh sách từng mã
+    trong nhóm đó, KHÔNG được gộp về 1 dòng số tổng như trước (bug tester báo)."""
+    from apps.catalog.models import Part, ProductCategory, ProductGroup
+
+    group = ProductGroup.objects.create(name='Tokinarc')
+    cat = ProductCategory.objects.create(group=group, name='Béc hàn')
+    p1 = Part.objects.create(tokin_part_no='TK-001', category='Tip',
+                             display_name_vi='Bec han A', product_category=cat, cost_vnd=1000)
+    p2 = Part.objects.create(tokin_part_no='TK-002', category='Tip',
+                             display_name_vi='Bec han B', product_category=cat, cost_vnd=2000)
+    b = BinFactory(full_code='HCM-A-R01-B99')
+    services.receive_stock(bin_obj=b, part=p1, qty=10, user=wh_user)
+    services.receive_stock(bin_obj=b, part=p2, qty=5, user=wh_user)
+
+    r = auth.get('/api/v1/wms/inventory/by-category/', {'group': group.id})
+    assert r.status_code == 200
+    codes = {row['code'] for row in r.data}
+    assert codes == {'TK-001', 'TK-002'}   # danh sách TỪNG mã, không phải 1 dòng tổng
+    by_code = {row['code']: row for row in r.data}
+    assert by_code['TK-001']['qty'] == 10
+    assert by_code['TK-001']['value'] == 10000
+    assert by_code['TK-002']['qty'] == 5
+    assert by_code['TK-002']['value'] == 10000
+
+
+@pytest.mark.django_db
+def test_inventory_export_by_category_with_group_lists_items(auth, wh_user):
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    from apps.catalog.models import Part, ProductCategory, ProductGroup
+
+    group = ProductGroup.objects.create(name='Tokinarc')
+    cat = ProductCategory.objects.create(group=group, name='Béc hàn')
+    p1 = Part.objects.create(tokin_part_no='TK-101', category='Tip',
+                             display_name_vi='Bec han C', product_category=cat, cost_vnd=5000)
+    b = BinFactory(full_code='HCM-A-R01-B98')
+    services.receive_stock(bin_obj=b, part=p1, qty=20, user=wh_user)
+
+    r = auth.get('/api/v1/wms/inventory/export-by-category/', {'group': group.id})
+    assert r.status_code == 200
+    wb = load_workbook(BytesIO(r.content))
+    ws = wb.active
+    text = '\n'.join(str(c.value) for row in ws.iter_rows() for c in row if c.value is not None)
+    assert 'TK-101' in text
+    assert 'Bec han C' in text
+    assert 20 in [c.value for row in ws.iter_rows() for c in row]

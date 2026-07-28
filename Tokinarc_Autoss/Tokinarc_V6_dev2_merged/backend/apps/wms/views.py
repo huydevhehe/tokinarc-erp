@@ -258,6 +258,23 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
                       'qty': r['qty'] or 0, 'value': r['value'] or 0} for r in torch_rows]
         return rows
 
+    def _group_detail_rows(self, group_id):
+        """Chi tiết TỪNG mặt hàng (Part) trong 1 Nhóm sản phẩm cụ thể — tổng tồn
+        gộp theo mã trên toàn bộ kho. Biên bản 2026-07-28 #25: khi CHỌN 1 nhóm cụ
+        thể (VD "Tokinarc"), phải trả về danh sách từng mã trong nhóm đó, không
+        phải 1 dòng số tổng như _category_rows (đó là view tổng quan TẤT CẢ nhóm)."""
+        parts = (Part.objects
+                 .filter(product_category__group_id=group_id, is_active=True)
+                 .annotate(qty=Sum('inventory__qty_on_hand'))
+                 .order_by('tokin_part_no'))
+        rows = []
+        for p in parts:
+            qty = p.qty or 0
+            cost = int(p.cost_vnd or 0)
+            rows.append({'code': p.tokin_part_no, 'name': p.display_name_vi,
+                        'unit': p.price_unit or 'cái', 'qty': qty, 'cost': cost, 'value': qty * cost})
+        return rows
+
     @action(detail=False, methods=['get'], url_path='export-xlsx')
     def export_xlsx(self, request):
         """Xuất Excel tồn kho theo TỪNG mặt hàng/vị trí — đúng bộ lọc đang xem
@@ -289,25 +306,40 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='by-category')
     def by_category(self, request):
-        """Tồn kho gộp theo nhóm hàng (không theo mã lẻ) — phục vụ lên đơn đặt NCC.
-        ?group=<id ProductGroup> để chỉ xem đúng 1 Nhóm sản phẩm."""
-        return Response(self._category_rows(group_id=request.query_params.get('group')))
+        """?group trống → tổng quan tất cả Nhóm (gộp theo tên nhóm).
+        ?group=<id ProductGroup> → chi tiết TỪNG mã trong đúng nhóm đó."""
+        group_id = request.query_params.get('group')
+        if group_id:
+            return Response(self._group_detail_rows(group_id))
+        return Response(self._category_rows())
 
     @action(detail=False, methods=['get'], url_path='export-by-category')
     def export_by_category(self, request):
-        """Xuất Excel tồn kho theo nhóm sản phẩm. ?group=<id ProductGroup> để
-        chỉ xuất đúng 1 Nhóm."""
+        """Xuất Excel tồn kho theo nhóm sản phẩm. Không chọn nhóm → tổng quan tất
+        cả nhóm (gộp). Chọn đúng 1 Nhóm (?group=<id>) → danh sách chi tiết từng
+        mã hàng trong nhóm đó (biên bản #25 — trước đây trả nhầm về số tổng)."""
         from apps.common.excel import xlsx_response
         from openpyxl import Workbook
+        from openpyxl.styles import Font
         group_id = request.query_params.get('group')
-        rows = self._category_rows(group_id=group_id)
         wb = Workbook()
         ws = wb.active
-        ws.title = 'TonKhoTheoNhom'
-        ws.append(['Loại', 'Nhóm hàng', 'Tồn (SL)', 'Giá trị (VNĐ)'])
-        kind_label = {'part': 'Phụ tùng', 'torch': 'Súng hàn'}
-        for r in rows:
-            ws.append([kind_label.get(r['kind'], r['kind']), r['group'], r['qty'], r['value']])
+        if group_id:
+            ws.title = 'TonKhoNhom'
+            ws.append(['Mã', 'Tên hàng hóa', 'ĐVT', 'Tồn (SL)', 'Giá vốn', 'Giá trị (VNĐ)'])
+            rows = self._group_detail_rows(group_id)
+            for r in rows:
+                ws.append([r['code'], r['name'], r['unit'], r['qty'], r['cost'], r['value']])
+            total_row = ['', '', 'Tổng', sum(r['qty'] for r in rows), '', sum(r['value'] for r in rows)]
+            ws.append(total_row)
+            for c in ws[ws.max_row]:
+                c.font = Font(bold=True)
+        else:
+            ws.title = 'TonKhoTheoNhom'
+            ws.append(['Loại', 'Nhóm hàng', 'Tồn (SL)', 'Giá trị (VNĐ)'])
+            kind_label = {'part': 'Phụ tùng', 'torch': 'Súng hàn'}
+            for r in self._category_rows():
+                ws.append([kind_label.get(r['kind'], r['kind']), r['group'], r['qty'], r['value']])
         buf = io.BytesIO()
         wb.save(buf)
         fname = 'ton_kho_theo_nhom.xlsx'

@@ -23,6 +23,9 @@ import { TransferForm } from '@/pages/wms/forms/TransferForm'
 
 interface BinLite { id: string; full_code: string }
 interface CategoryRow { kind: 'part' | 'torch'; group: string; qty: number; value: number }
+// Khi chọn ĐÚNG 1 Nhóm cụ thể — danh sách từng mã trong nhóm đó (không phải
+// số tổng gộp như CategoryRow, xem biên bản #25).
+interface GroupItemRow { code: string; name: string; unit: string; qty: number; cost: number; value: number }
 interface ProductGroupLite { id: number; name: string }
 const KIND_LABEL: Record<CategoryRow['kind'], string> = { part: 'Phụ tùng', torch: 'Súng hàn' }
 
@@ -41,13 +44,17 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
   const [minDraft, setMinDraft] = useState('')
   const debounced = useDebounced(search, 350, () => setPage(1))
 
+  // Không chọn nhóm → tổng quan gộp (CategoryRow); chọn đúng 1 Nhóm → danh sách
+  // từng mã trong nhóm đó (GroupItemRow) — 2 hình dạng khác nhau tuỳ groupFilter.
   const grouped = useQuery({
     queryKey: ['wms-inventory-by-category', groupFilter],
-    queryFn: async () => (await api.get<CategoryRow[]>('/wms/inventory/by-category/', {
+    queryFn: async () => (await api.get<CategoryRow[] | GroupItemRow[]>('/wms/inventory/by-category/', {
       params: { group: groupFilter || undefined },
     })).data,
     enabled: groupView,
   })
+  const groupItemRows = groupFilter ? (grouped.data as GroupItemRow[] | undefined) : undefined
+  const categoryRows = !groupFilter ? (grouped.data as CategoryRow[] | undefined) : undefined
 
   const productGroups = useQuery({
     queryKey: ['product-groups'],
@@ -100,7 +107,9 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
         title="Tồn kho"
         subtitle={
           groupView
-            ? (grouped.data ? `${grouped.data.length} nhóm hàng` : undefined)
+            ? (groupFilter
+                ? (groupItemRows ? `${groupItemRows.length} mã hàng trong nhóm` : undefined)
+                : (categoryRows ? `${categoryRows.length} nhóm hàng` : undefined))
             : (data ? `${data.count} dòng tồn${lowStock ? ' · đang lọc sắp hết' : ''}` : undefined)
         }
         actions={
@@ -152,7 +161,34 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
         }
       />
 
-      {groupView && (
+      {groupView && groupFilter && (
+        <TableCard>
+          <thead>
+            <tr className="border-b border-line">
+              <Th>Mã số</Th><Th>Tên hàng hóa</Th><Th>ĐVT</Th>
+              <Th className="text-right">Tồn (SL)</Th>
+              <Th className="text-right">Giá vốn</Th><Th className="text-right">Giá trị</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {grouped.isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
+            {grouped.isError && <RowMsg colSpan={6} danger>Lỗi: {apiError(grouped.error)}</RowMsg>}
+            {groupItemRows?.length === 0 && <RowMsg colSpan={6}>Nhóm này chưa có mã hàng nào.</RowMsg>}
+            {groupItemRows?.map((r) => (
+              <tr key={r.code} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
+                <Td className="font-mono text-flame">{r.code}</Td>
+                <Td className="font-medium">{r.name}</Td>
+                <Td className="text-txt-2">{r.unit}</Td>
+                <Td className="text-right tabular-nums">{r.qty}</Td>
+                <Td className="text-right tabular-nums text-txt-2">{formatVnd(r.cost)}</Td>
+                <Td className="text-right tabular-nums text-flame">{formatVnd(r.value)}</Td>
+              </tr>
+            ))}
+          </tbody>
+        </TableCard>
+      )}
+
+      {groupView && !groupFilter && (
         <TableCard>
           <thead>
             <tr className="border-b border-line">
@@ -163,8 +199,8 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
           <tbody>
             {grouped.isLoading && <RowMsg colSpan={3}>Đang tải…</RowMsg>}
             {grouped.isError && <RowMsg colSpan={3} danger>Lỗi: {apiError(grouped.error)}</RowMsg>}
-            {grouped.data?.length === 0 && <RowMsg colSpan={3}>Chưa có tồn kho.</RowMsg>}
-            {grouped.data?.map((r, i) => {
+            {categoryRows?.length === 0 && <RowMsg colSpan={3}>Chưa có tồn kho.</RowMsg>}
+            {categoryRows?.map((r, i) => {
               const unclassified = r.group === '(chưa phân loại)'
               return (
               <tr key={`${r.kind}-${r.group}-${i}`} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
