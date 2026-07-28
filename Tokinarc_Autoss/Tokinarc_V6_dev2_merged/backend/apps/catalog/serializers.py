@@ -58,7 +58,7 @@ class PartWriteSerializer(serializers.ModelSerializer):
         model = Part
         fields = [
             'tokin_part_no', 'category', 'display_name_vi', 'display_name_en',
-            'price_vnd', 'tax_pct', 'is_contact_price', 'is_active',
+            'price_vnd', 'tax_pct', 'is_contact_price', 'is_active', 'product_category',
         ]
 
 

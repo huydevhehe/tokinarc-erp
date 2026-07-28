@@ -74,6 +74,24 @@ def test_warehouse_staff_can_create_but_not_edit_or_deactivate_part(nv_kho, db):
 
 
 @pytest.mark.django_db
+def test_part_create_can_set_product_category(wh_mgr):
+    """Thêm mặt hàng mới (kể cả từ modal thêm nhanh lúc lập phiếu nhập kho) phải
+    gắn được Nhóm hàng (product_category) ngay lúc tạo — nếu không, hàng rơi
+    vào "chưa phân loại" và không lọc được theo Nhóm hàng ở Tồn kho."""
+    from apps.catalog.models import ProductCategory, ProductGroup
+    group = ProductGroup.objects.create(name='Tokinarc')
+    cat = ProductCategory.objects.create(group=group, name='Tip')
+    c = APIClient(); c.force_authenticate(wh_mgr)
+    r = c.post('/api/v1/catalog/parts/', {
+        'tokin_part_no': 'TST-005', 'category': 'Tip', 'display_name_vi': 'Z',
+        'product_category': cat.id,
+    }, format='json')
+    assert r.status_code == 201, r.data
+    part = Part.objects.get(pk='TST-005')
+    assert part.product_category_id == cat.id
+
+
+@pytest.mark.django_db
 def test_part_list_public_read_still_works_without_auth(db):
     """Đọc (list/detail) vẫn AllowAny — không đổi hành vi cũ (chatbot/trang tra cứu)."""
     Part.objects.create(tokin_part_no='TST-004', category='Tip', display_name_vi='Y')

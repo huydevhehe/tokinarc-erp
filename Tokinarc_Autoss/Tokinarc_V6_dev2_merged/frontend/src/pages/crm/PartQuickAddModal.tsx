@@ -7,17 +7,20 @@
  * mục sản phẩm.
  */
 import { useEffect } from 'react'
-import { useForm } from 'react-hook-form'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useForm, Controller } from 'react-hook-form'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { PackagePlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
 import { TextInput } from '@/components/form'
+import { SearchableSelect } from '@/components/SearchableSelect'
 
 export interface NewPart { tokin_part_no: string; display_name_vi: string }
-interface Form { tokin_part_no: string; category: string; display_name_vi: string }
+interface Form { tokin_part_no: string; category: string; display_name_vi: string; product_category: string }
+interface ProductCategoryLite { id: number; name: string }
+interface ProductGroupLite { id: number; name: string; categories: ProductCategoryLite[] }
 
 export function PartQuickAddModal({ open, onClose, onSaved }: {
   open: boolean; onClose: () => void
@@ -25,14 +28,27 @@ export function PartQuickAddModal({ open, onClose, onSaved }: {
   onSaved?: (p: NewPart) => void
 }) {
   const qc = useQueryClient()
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Form>()
+  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<Form>()
+
+  const groups = useQuery({
+    queryKey: ['product-groups-opt'],
+    queryFn: async () => (await api.get<{ results: ProductGroupLite[] } | ProductGroupLite[]>('/catalog/product-groups/')).data,
+    enabled: open,
+  })
+  const groupList: ProductGroupLite[] = Array.isArray(groups.data) ? groups.data : (groups.data?.results ?? [])
+  // Gộp Nhóm + Danh mục thành 1 ô chọn duy nhất (mặt hàng gắn thẳng vào Danh mục,
+  // không phải Nhóm) — gọn hơn 2 tầng chọn cho 1 modal "thêm nhanh".
+  const categoryOptions = groupList.flatMap((g) =>
+    g.categories.map((c) => ({ value: String(c.id), label: `${g.name} — ${c.name}` })))
 
   useEffect(() => {
-    if (open) reset({ tokin_part_no: '', category: '', display_name_vi: '' })
+    if (open) reset({ tokin_part_no: '', category: '', display_name_vi: '', product_category: '' })
   }, [open, reset])
 
   const save = useMutation({
-    mutationFn: (d: Form) => api.post<NewPart>('/catalog/parts/', d),
+    mutationFn: (d: Form) => api.post<NewPart>('/catalog/parts/', {
+      ...d, product_category: d.product_category || null,
+    }),
     onSuccess: (r) => {
       toast.success(`Đã thêm mặt hàng ${r.data.tokin_part_no} vào danh mục`)
       qc.invalidateQueries({ queryKey: ['catalog-parts-opt'] })
@@ -64,6 +80,19 @@ export function PartQuickAddModal({ open, onClose, onSaved }: {
         <TextInput label="Loại *" full placeholder="VD: Tip, Nozzle, Cổ cong…"
           error={errors.category?.message}
           {...register('category', { required: 'Bắt buộc' })} />
+        <div className="mb-3">
+          <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">
+            Nhóm hàng
+          </label>
+          <Controller name="product_category" control={control} render={({ field }) => (
+            <SearchableSelect value={field.value ?? ''} onChange={field.onChange}
+              options={categoryOptions} loading={groups.isLoading}
+              placeholder="— Chưa phân loại — (VD: Tokinarc, OTC, Binzel…)" />
+          )} />
+          <p className="text-[11px] text-txt-2 mt-1">
+            Để trống thì hàng sẽ ở trạng thái "chưa phân loại" — lọc theo Nhóm hàng ở Tồn kho sẽ không thấy.
+          </p>
+        </div>
         <p className="text-[11px] text-txt-2 -mt-1">
           Thêm xong sẽ tự chọn vào dòng hàng ngay. Vào trang Danh mục sản phẩm để bổ sung giá bán/thuế đầy đủ sau.
         </p>
