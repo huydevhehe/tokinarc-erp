@@ -984,3 +984,35 @@ def test_inventory_export_by_category_with_group_lists_items(auth, wh_user):
     assert 'TK-101' in text
     assert 'Bec han C' in text
     assert 20 in [c.value for row in ws.iter_rows() for c in row]
+
+
+@pytest.mark.django_db
+def test_inventory_export_by_category_month_year_label_only(auth, wh_user):
+    """month/year chỉ GHI NHÃN lên báo cáo (tồn kho luôn là số hiện tại) — dữ
+    liệu dòng hàng không đổi, chỉ thêm dòng tiêu đề + tên file có mốc thời gian."""
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    from apps.catalog.models import Part, ProductCategory, ProductGroup
+
+    group = ProductGroup.objects.create(name='Tokinarc')
+    cat = ProductCategory.objects.create(group=group, name='Béc hàn')
+    p1 = Part.objects.create(tokin_part_no='TK-201', category='Tip',
+                             display_name_vi='Bec han D', product_category=cat, cost_vnd=3000)
+    b = BinFactory(full_code='HCM-A-R01-B97')
+    services.receive_stock(bin_obj=b, part=p1, qty=7, user=wh_user)
+
+    r = auth.get('/api/v1/wms/inventory/export-by-category/',
+                {'group': group.id, 'month': '7', 'year': '2026'})
+    assert r.status_code == 200
+    assert 'thang' not in r['Content-Disposition'] or '2026' in r['Content-Disposition']
+    assert '2026' in r['Content-Disposition']
+
+    wb = load_workbook(BytesIO(r.content))
+    ws = wb.active
+    text = '\n'.join(str(c.value) for row in ws.iter_rows() for c in row if c.value is not None)
+    assert 'TOKINARC' in text.upper()
+    assert 'THÁNG 7 NĂM 2026' in text.upper()
+    assert 'TK-201' in text   # dòng hàng vẫn còn, không bị mất khi thêm tiêu đề
+    assert 7 in [c.value for row in ws.iter_rows() for c in row]

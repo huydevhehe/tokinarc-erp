@@ -317,15 +317,34 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
     def export_by_category(self, request):
         """Xuất Excel tồn kho theo nhóm sản phẩm. Không chọn nhóm → tổng quan tất
         cả nhóm (gộp). Chọn đúng 1 Nhóm (?group=<id>) → danh sách chi tiết từng
-        mã hàng trong nhóm đó (biên bản #25 — trước đây trả nhầm về số tổng)."""
+        mã hàng trong nhóm đó (biên bản #25 — trước đây trả nhầm về số tổng).
+        ?month=&year= (chỉ áp dụng khi có group): tồn kho luôn là số HIỆN TẠI
+        (không có "sổ cái" theo ngày để dựng lại quá khứ) — 2 tham số này CHỈ
+        để ghi nhãn mốc thời gian lên báo cáo (VD "Tháng 7 năm 2026"), không
+        làm thay đổi số liệu."""
         from apps.common.excel import xlsx_response
         from openpyxl import Workbook
         from openpyxl.styles import Font
         group_id = request.query_params.get('group')
+        month = request.query_params.get('month')
+        year = request.query_params.get('year')
+        g = None
+        if group_id:
+            from apps.catalog.models import ProductGroup
+            g = ProductGroup.objects.filter(pk=group_id).first()
         wb = Workbook()
         ws = wb.active
         if group_id:
             ws.title = 'TonKhoNhom'
+            ncols = 6
+            if month or year:
+                period = f"Tháng {month} năm {year}" if month and year else (f"Năm {year}" if year else f"Tháng {month}")
+                ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ncols)
+                title = ws.cell(1, 1, f"BÁO CÁO TỒN KHO NHÓM HÀNG {(g.name if g else '').upper()} — {period.upper()}")
+                title.font = Font(bold=True, size=13)
+                ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ncols)
+                note = ws.cell(2, 1, '(Số liệu tồn kho hiện tại tại thời điểm xuất báo cáo)')
+                note.font = Font(italic=True, size=9, color='777777')
             ws.append(['Mã', 'Tên hàng hóa', 'ĐVT', 'Tồn (SL)', 'Giá vốn', 'Giá trị (VNĐ)'])
             rows = self._group_detail_rows(group_id)
             for r in rows:
@@ -344,11 +363,13 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
         wb.save(buf)
         fname = 'ton_kho_theo_nhom.xlsx'
         if group_id:
-            from apps.catalog.models import ProductGroup
-            g = ProductGroup.objects.filter(pk=group_id).first()
             if g:
                 safe = ''.join(c for c in g.name if c.isalnum() or c in ' _-').strip().replace(' ', '_')
                 fname = f'ton_kho_{safe or group_id}.xlsx'
+            if year:
+                fname = fname.replace('.xlsx', f"_{year}{'_' + month.zfill(2) if month else ''}.xlsx")
+            elif month:
+                fname = fname.replace('.xlsx', f'_thang{month}.xlsx')
         return xlsx_response(buf.getvalue(), fname)
 
     @action(detail=False, methods=['post'], url_path='adjust')

@@ -38,6 +38,10 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
   const [lowStock, setLowStock] = useState(initialLow)
   const [groupView, setGroupView] = useState(false)
   const [groupFilter, setGroupFilter] = useState('')
+  // Chỉ dùng để GHI NHÃN mốc thời gian lên báo cáo xuất — tồn kho luôn là số
+  // hiện tại, không có "sổ cái" để dựng lại đúng số của tháng/năm đã qua.
+  const [reportMonth, setReportMonth] = useState('')
+  const [reportYear, setReportYear] = useState('')
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null)
   const [transferItem, setTransferItem] = useState<InventoryItem | null>(null)
   const [editMinId, setEditMinId] = useState<string | null>(null)
@@ -120,19 +124,46 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
               <Layers size={14} /> Xem theo nhóm hàng
             </button>
             {groupView && (
-              <select value={groupFilter} onChange={(e) => setGroupFilter(e.target.value)}
+              <select value={groupFilter}
+                onChange={(e) => { setGroupFilter(e.target.value); if (!e.target.value) { setReportMonth(''); setReportYear('') } }}
                 className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
                 <option value="">Tất cả nhóm SP</option>
                 {groupOptions.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
             )}
+            {groupView && groupFilter && (
+              <>
+                <select value={reportMonth} onChange={(e) => setReportMonth(e.target.value)}
+                  title="Tháng (chỉ để ghi nhãn lên báo cáo — tồn kho luôn là số hiện tại)"
+                  className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+                  <option value="">— Tháng —</option>
+                  {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                    <option key={m} value={m}>Tháng {m}</option>
+                  ))}
+                </select>
+                <select value={reportYear} onChange={(e) => setReportYear(e.target.value)}
+                  title="Năm (chỉ để ghi nhãn lên báo cáo — tồn kho luôn là số hiện tại)"
+                  className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
+                  <option value="">— Năm —</option>
+                  {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
+                    <option key={y} value={y}>Năm {y}</option>
+                  ))}
+                </select>
+              </>
+            )}
             {groupView && (
               <Button variant="ghost"
                 onClick={() => {
                   const g = groupOptions.find((o) => String(o.id) === groupFilter)
-                  const fname = g ? `ton_kho_${g.name.replace(/[^a-zA-Z0-9_-]/g, '_')}.xlsx` : 'ton_kho_theo_nhom.xlsx'
-                  downloadFile(
-                    `/wms/inventory/export-by-category/${groupFilter ? `?group=${groupFilter}` : ''}`, fname)
+                  let fname = g ? `ton_kho_${g.name.replace(/[^a-zA-Z0-9_-]/g, '_')}` : 'ton_kho_theo_nhom'
+                  if (groupFilter && reportYear) fname += `_${reportYear}${reportMonth ? `_${reportMonth.padStart(2, '0')}` : ''}`
+                  else if (groupFilter && reportMonth) fname += `_thang${reportMonth}`
+                  const params = new URLSearchParams()
+                  if (groupFilter) params.set('group', groupFilter)
+                  if (groupFilter && reportMonth) params.set('month', reportMonth)
+                  if (groupFilter && reportYear) params.set('year', reportYear)
+                  const qs = params.toString()
+                  downloadFile(`/wms/inventory/export-by-category/${qs ? `?${qs}` : ''}`, `${fname}.xlsx`)
                 }}>
                 <Download size={14} /> Xuất Excel theo nhóm
               </Button>
