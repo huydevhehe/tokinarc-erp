@@ -54,6 +54,10 @@ class InventoryItemSerializer(serializers.ModelSerializer):
     warehouse_code = serializers.CharField(source='bin.zone.warehouse.code', read_only=True)
     qty_available  = serializers.IntegerField(read_only=True)
     item_name      = serializers.SerializerMethodField()
+    # Tên hàng hóa RIÊNG (không kèm mã) — cho FE tách cột "Mã số" / "Tên hàng
+    # hóa" trên bảng Tồn kho thay vì gộp chung 1 cột (item_name giữ nguyên,
+    # vẫn dùng ở chỗ khác nếu có).
+    display_name   = serializers.SerializerMethodField()
     category       = serializers.SerializerMethodField()
     unit           = serializers.SerializerMethodField()
     cost_vnd       = serializers.SerializerMethodField()
@@ -62,14 +66,18 @@ class InventoryItemSerializer(serializers.ModelSerializer):
     class Meta:
         model  = InventoryItem
         fields = ['id', 'bin', 'bin_code', 'warehouse_code', 'part', 'torch',
-                  'item_name', 'category', 'unit', 'cost_vnd', 'qty_on_hand', 'qty_reserved',
-                  'qty_available', 'min_level', 'is_low', 'updated_at']
+                  'item_name', 'display_name', 'category', 'unit', 'cost_vnd', 'qty_on_hand',
+                  'qty_reserved', 'qty_available', 'min_level', 'is_low', 'updated_at']
         read_only_fields = ['id', 'updated_at']
 
     def get_item_name(self, obj) -> str:
         if obj.part_id:
             return f"{obj.part_id} — {getattr(obj.part, 'display_name_vi', '')}"
         return f"{obj.torch_id} — {getattr(obj.torch, 'display_name_vi', '')}"
+
+    def get_display_name(self, obj) -> str:
+        o = obj.part or obj.torch
+        return getattr(o, 'display_name_vi', '') if o else ''
 
     def get_category(self, obj) -> str:
         # Loại sản phẩm (đặt tên kệ): category cho phụ tùng, family cho súng hàn.

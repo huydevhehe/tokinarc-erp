@@ -175,7 +175,7 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
       <TableCard>
         <thead>
           <tr className="border-b border-line">
-            <Th>Mặt hàng</Th><Th>ĐVT</Th><Th className="text-right">Giá vốn</Th>
+            <Th>Mã số</Th><Th>Tên hàng hóa</Th><Th>ĐVT</Th><Th className="text-right">Giá vốn</Th>
             <Th>Vị trí</Th><Th>Kho</Th>
             <Th className="text-right">Tồn</Th><Th className="text-right">Giữ</Th>
             <Th className="text-right">Khả dụng</Th><Th className="text-right">Tối thiểu</Th>
@@ -183,16 +183,17 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={10}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={10} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {isLoading && <RowMsg colSpan={11}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={11} danger>Lỗi: {apiError(error)}</RowMsg>}
           {data?.results.length === 0 && (
-            <RowMsg colSpan={10}>{lowStock ? 'Không có mặt hàng sắp hết. 🎉' : 'Chưa có tồn kho.'}</RowMsg>
+            <RowMsg colSpan={11}>{lowStock ? 'Không có mặt hàng sắp hết. 🎉' : 'Chưa có tồn kho.'}</RowMsg>
           )}
           {data?.results.map((i) => {
             const low = i.is_low
             return (
               <tr key={i.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
-                <Td className="font-medium">{i.item_name}</Td>
+                <Td className="font-mono text-flame">{i.part ?? i.torch ?? '—'}</Td>
+                <Td className="font-medium">{i.display_name ?? i.item_name}</Td>
                 <Td className="text-txt-2">{i.unit || '—'}</Td>
                 <Td className="text-right tabular-nums text-txt-2">{i.cost_vnd != null ? formatVnd(i.cost_vnd) : '—'}</Td>
                 <Td className="font-mono text-txt-2">{i.bin_code}</Td>

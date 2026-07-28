@@ -143,6 +143,7 @@ export interface InventoryItem {
   part: string | null
   torch: string | null
   item_name: string
+  display_name?: string
   category?: string
   unit?: string
   cost_vnd?: string | number | null
