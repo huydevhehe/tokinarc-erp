@@ -6,10 +6,10 @@
  * Chỉ các trường tối thiểu; sửa đầy đủ (giá bán, thuế…) vẫn làm ở trang Danh
  * mục sản phẩm.
  */
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, Controller } from 'react-hook-form'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { PackagePlus } from 'lucide-react'
+import { PackagePlus, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { Modal } from '@/components/Modal'
@@ -28,7 +28,8 @@ export function PartQuickAddModal({ open, onClose, onSaved }: {
   onSaved?: (p: NewPart) => void
 }) {
   const qc = useQueryClient()
-  const { register, handleSubmit, reset, control, formState: { errors } } = useForm<Form>()
+  const { register, handleSubmit, reset, control, setValue, formState: { errors } } = useForm<Form>()
+  const [addCatOpen, setAddCatOpen] = useState(false)
 
   const groups = useQuery({
     queryKey: ['product-groups-opt'],
@@ -60,6 +61,7 @@ export function PartQuickAddModal({ open, onClose, onSaved }: {
   })
 
   return (
+    <>
     <Modal open={open} onClose={onClose} title="Thêm mặt hàng mới vào danh mục"
       icon={<PackagePlus size={18} className="text-flame" />}
       footer={
@@ -84,19 +86,92 @@ export function PartQuickAddModal({ open, onClose, onSaved }: {
           <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">
             Nhóm hàng
           </label>
-          <Controller name="product_category" control={control} render={({ field }) => (
-            <SearchableSelect value={field.value ?? ''} onChange={field.onChange}
-              options={categoryOptions} loading={groups.isLoading}
-              placeholder="— Chưa phân loại — (VD: Tokinarc, OTC, Binzel…)" />
-          )} />
+          <div className="flex gap-1.5">
+            <div className="flex-1">
+              <Controller name="product_category" control={control} render={({ field }) => (
+                <SearchableSelect value={field.value ?? ''} onChange={field.onChange}
+                  options={categoryOptions} loading={groups.isLoading}
+                  placeholder="— Chưa phân loại — (VD: Tokinarc, OTC, Binzel…)" />
+              )} />
+            </div>
+            <Button type="button" variant="ghost" onClick={() => setAddCatOpen(true)} aria-label="Thêm nhóm hàng mới">
+              <Plus size={15} />
+            </Button>
+          </div>
           <p className="text-[11px] text-txt-2 mt-1">
             Để trống thì hàng sẽ ở trạng thái "chưa phân loại" — lọc theo Nhóm hàng ở Tồn kho sẽ không thấy.
+            Không thấy nhóm cần dùng? Bấm "+" để tự đặt tên Nhóm/Danh mục mới theo cách sắp xếp của kho
+            (sửa/xóa các nhóm có sẵn ở trang "Nhóm & Danh mục SP").
           </p>
         </div>
         <p className="text-[11px] text-txt-2 -mt-1">
           Thêm xong sẽ tự chọn vào dòng hàng ngay. Vào trang Danh mục sản phẩm để bổ sung giá bán/thuế đầy đủ sau.
         </p>
       </form>
+    </Modal>
+
+    <QuickAddCategoryModal open={addCatOpen} onClose={() => setAddCatOpen(false)} groupList={groupList}
+      onCreated={(categoryId) => setValue('product_category', categoryId, { shouldValidate: true })} />
+    </>
+  )
+}
+
+function QuickAddCategoryModal({ open, onClose, groupList, onCreated }: {
+  open: boolean; onClose: () => void; groupList: ProductGroupLite[]
+  onCreated: (categoryId: string) => void
+}) {
+  const qc = useQueryClient()
+  const [groupValue, setGroupValue] = useState('')
+  const [catName, setCatName] = useState('')
+
+  useEffect(() => {
+    if (open) { setGroupValue(''); setCatName('') }
+  }, [open])
+
+  const groupOptions = groupList.map((g) => ({ value: String(g.id), label: g.name }))
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const existing = groupList.find((g) => String(g.id) === groupValue)
+      let groupId = existing?.id
+      if (!groupId) {
+        if (!groupValue.trim()) throw new Error('Chọn hoặc gõ tên Nhóm')
+        const r = await api.post<{ id: number }>('/catalog/product-groups/', { name: groupValue.trim() })
+        groupId = r.data.id
+      }
+      const rc = await api.post<{ id: number }>('/catalog/product-categories/', { group: groupId, name: catName.trim() })
+      return rc.data.id
+    },
+    onSuccess: (id) => {
+      toast.success('Đã thêm Nhóm hàng mới')
+      qc.invalidateQueries({ queryKey: ['product-groups-opt'] })
+      onCreated(String(id))
+      onClose()
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
+  return (
+    <Modal open={open} onClose={onClose} title="Thêm Nhóm hàng mới"
+      icon={<PackagePlus size={18} className="text-flame" />}
+      footer={
+        <>
+          <Button variant="ghost" onClick={onClose}>Hủy</Button>
+          <Button onClick={() => save.mutate()} disabled={save.isPending || !groupValue.trim() || !catName.trim()}>
+            {save.isPending ? 'Đang lưu…' : 'Lưu'}
+          </Button>
+        </>
+      }>
+      <div className="mb-3">
+        <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Nhóm *</label>
+        <SearchableSelect value={groupValue} onChange={setGroupValue} options={groupOptions}
+          allowCreate placeholder="Chọn nhóm có sẵn hoặc gõ tên nhóm mới…" />
+      </div>
+      <TextInput label="Danh mục *" full placeholder="VD: Đầu tum, Vật tư tiêu hao…"
+        value={catName} onChange={(e) => setCatName(e.target.value)} />
+      <p className="text-[11px] text-txt-2 -mt-1">
+        Ví dụ: Nhóm "Tokinarc" → Danh mục "Đầu tum" — gõ theo cách kho tự sắp xếp, không bắt buộc theo tên có sẵn.
+      </p>
     </Modal>
   )
 }

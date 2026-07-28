@@ -23,6 +23,7 @@ from rest_framework.decorators import action
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 from rest_framework.response import Response
 
+from apps.accounts.capabilities import has_capability
 from apps.accounts.roles import Role, WMS_CONTROL_ROLES, role_of
 
 from .models import Part, ProductCategory, ProductGroup
@@ -37,6 +38,10 @@ class ProductTaxonomyPermission(BasePermission):
             return False
         if request.method in SAFE_METHODS:
             return True
+        # Feedback 2026-07-28: TẠO MỚI Nhóm/Danh mục mở thêm cho NV kho qua
+        # capability riêng (không đụng sửa/xóa — vẫn wh_manager trở lên).
+        if getattr(view, 'action', None) == 'create':
+            return has_capability(u, 'catalog.product_taxonomy.create')
         return role_of(u) in WMS_CONTROL_ROLES
 
 

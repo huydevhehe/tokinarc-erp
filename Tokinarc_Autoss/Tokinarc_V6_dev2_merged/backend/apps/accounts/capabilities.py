@@ -37,6 +37,14 @@ CAPABILITY_SEED: dict[str, tuple[str, str, frozenset[str]]] = {
         # CustomerPermission nhưng KHÔNG check capability này).
         'NV kho tự tạo khách hàng lẻ', 'CRM',
         frozenset({Role.WAREHOUSE, Role.WAREHOUSE_MANAGER})),
+    'catalog.product_taxonomy.create': (
+        # Feedback 2026-07-28: NV kho cần tự đặt Nhóm/Danh mục SP mới ngay lúc
+        # thêm nhanh mặt hàng (không có sẵn theo cách kho sắp xếp) — ProductTaxonomy
+        # Permission gốc chỉ cho wh_manager trở lên GHI (kể cả tạo). Capability
+        # riêng này CHỈ mở thêm hành động TẠO MỚI; sửa/xóa Nhóm/Danh mục vẫn
+        # nguyên như cũ (wh_manager trở lên), tránh NV kho lỡ tay xóa nhầm.
+        'NV kho tự tạo Nhóm/Danh mục SP', 'Kho',
+        frozenset({Role.WAREHOUSE, Role.WAREHOUSE_MANAGER, Role.MANAGER, Role.CEO})),
     'purchasing.supplier.create': (
         # Yêu cầu 2026-07-26: NV kho (Role.WAREHOUSE) cần tự thêm NCC mới ngay
         # trong lúc lập phiếu nhập kho (trước đó tạo NCC lẫn chung với capability

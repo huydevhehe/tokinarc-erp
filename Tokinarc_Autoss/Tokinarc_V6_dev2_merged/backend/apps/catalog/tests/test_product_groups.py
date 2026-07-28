@@ -45,10 +45,16 @@ def test_wh_manager_full_crud_group_and_category(wh_mgr):
 
 
 @pytest.mark.django_db
-def test_warehouse_staff_and_customer_cannot_write(nv_kho, db):
-    """NV kho thường/khách KHÔNG được tạo Nhóm (chỉ Quản lý kho trở lên)."""
+def test_warehouse_staff_can_create_but_not_edit_delete(nv_kho, db):
+    """Feedback 2026-07-28: NV kho được TẠO MỚI Nhóm/Danh mục (để tự đặt tên
+    theo cách kho sắp xếp ngay lúc thêm nhanh mặt hàng) qua capability riêng,
+    nhưng KHÔNG được sửa/xóa — vẫn chỉ Quản lý kho trở lên."""
     c = APIClient(); c.force_authenticate(nv_kho)
-    assert c.post('/api/v1/catalog/product-groups/', {'name': 'X'}, format='json').status_code == 403
+    r = c.post('/api/v1/catalog/product-groups/', {'name': 'X'}, format='json')
+    assert r.status_code == 201, r.data
+    gid = r.data['id']
+    assert c.patch(f'/api/v1/catalog/product-groups/{gid}/', {'name': 'Y'}, format='json').status_code == 403
+    assert c.delete(f'/api/v1/catalog/product-groups/{gid}/').status_code == 403
     # đọc thì được (để hiển thị giao diện)
     assert c.get('/api/v1/catalog/product-groups/').status_code == 200
 
