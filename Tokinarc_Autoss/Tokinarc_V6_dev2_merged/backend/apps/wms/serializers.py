@@ -225,7 +225,9 @@ class OutboundOrderSerializer(serializers.ModelSerializer):
                   'rule', 'status', 'purpose', 'shipped_at', 'lines', 'notes',
                   'delivered_by_name', 'shipped_by', 'shipped_by_username',
                   'is_active', 'created_at', 'updated_at']
-        read_only_fields = ['id', 'status', 'shipped_at', 'shipped_by', 'created_at', 'updated_at']
+        # shipped_at: hệ thống tự set khi ship() giao hàng, nhưng vẫn cho SỬA LẠI
+        # sau đó (đối chiếu đúng ngày giao thực tế, giống received_at bên Inbound).
+        read_only_fields = ['id', 'status', 'shipped_by', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (OUT-YYYY-NNN).
         extra_kwargs = {'code': {'required': False}}
 
@@ -237,6 +239,10 @@ class OutboundOrderSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         is_active = validated_data.pop('is_active', None)
+        # Ngày xuất (shipped_at) là mốc đối chiếu, KHÔNG phải SL/tồn kho — cho sửa
+        # lại ở mọi trạng thái đã giao (giống is_active), để chỉnh đúng ngày giao
+        # thực tế khi ngày bấm "Giao" trên hệ thống lệch thực tế.
+        shipped_at = validated_data.pop('shipped_at', None)
         # "Xóa" (is_active=false) chỉ đổi hiển thị, không đụng nội dung/tồn kho →
         # cho phép ở MỌI trạng thái (giống Supplier/Part/Torch). Sửa NỘI DUNG
         # (kho/dòng hàng/...) vẫn chỉ cho phiếu Nháp (chưa soạn) để tránh lệch tồn.
@@ -250,6 +256,8 @@ class OutboundOrderSerializer(serializers.ModelSerializer):
             setattr(instance, k, v)
         if is_active is not None:
             instance.is_active = is_active
+        if shipped_at is not None:
+            instance.shipped_at = shipped_at
         instance.save()
         if lines is not None:   # thay toàn bộ dòng (draft chưa soạn nên an toàn)
             instance.lines.all().delete()

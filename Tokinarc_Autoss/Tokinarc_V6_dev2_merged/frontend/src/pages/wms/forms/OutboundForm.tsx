@@ -15,20 +15,22 @@ import { RULE_LABEL, OUTBOUND_PURPOSE_LABEL } from '@/lib/wms'
 import { CameraScanner } from '@/components/CameraScanner'
 import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
-import { FieldRow, TextInput, SelectInput } from '@/components/form'
+import { FieldRow, TextInput, SelectInput, formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
+import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
+import { useAuth, isWmsControl } from '@/lib/auth/store'
 import type { OutboundOrder } from '@/lib/types'
 
 interface LineForm { item: string; qty_ordered: number; unit_price: number; tax_pct: string }
 interface Form {
   warehouse: string; customer: string
   sales_order_code: string; rule: string; purpose: string; notes: string
-  delivered_by_name: string; lines: LineForm[]
+  delivered_by_name: string; shipped_at: string; lines: LineForm[]
 }
 const EMPTY_LINE: LineForm = { item: '', qty_ordered: 1, unit_price: 0, tax_pct: '' }
 const EMPTY: Form = {
   warehouse: '', customer: '', sales_order_code: '', rule: 'FIFO', purpose: 'sale', notes: '',
-  delivered_by_name: '', lines: [{ ...EMPTY_LINE }],
+  delivered_by_name: '', shipped_at: '', lines: [{ ...EMPTY_LINE }],
 }
 
 export function OutboundForm({ open, onClose, editing }: {
@@ -47,6 +49,9 @@ export function OutboundForm({ open, onClose, editing }: {
   const filled = watched.filter((l) => l?.item)
   const totalQty = filled.reduce((s, l) => s + (Number(l.qty_ordered) || 0), 0)
   const [showCam, setShowCam] = useState(false)
+  const [addPartForLine, setAddPartForLine] = useState<number | null>(null)   // dòng đang thêm mặt hàng mới
+  const role = useAuth((s) => s.user?.role)
+  const canAddPart = isWmsControl(role)   // khớp PartTorchWritePermission backend
 
   // Quét camera NGAY KHI TẠO PHIẾU XUẤT: quét mã → tự thêm dòng; cùng mã → +1 SL.
   const onScan = async (raw: string) => {
@@ -69,6 +74,7 @@ export function OutboundForm({ open, onClose, editing }: {
       warehouse: editing.warehouse, customer: editing.customer ?? '',
       sales_order_code: editing.sales_order_code ?? '', rule: editing.rule, purpose: editing.purpose,
       notes: editing.notes ?? '', delivered_by_name: editing.delivered_by_name ?? '',
+      shipped_at: editing.shipped_at ? editing.shipped_at.slice(0, 10) : '',
       lines: (editing.lines ?? []).map((l) => ({
         item: l.part ? `part:${l.part}` : (l.torch ? `torch:${l.torch}` : ''),
         qty_ordered: l.qty_ordered,
@@ -90,7 +96,7 @@ export function OutboundForm({ open, onClose, editing }: {
         rule: d.rule,
         purpose: d.purpose,
         notes: d.notes,
-        delivered_by_name: d.delivered_by_name,
+        delivered_by_name: d.delivered_by_name, shipped_at: d.shipped_at || null,
         lines: d.lines.map((l) => ({
           ...splitItem(l.item),
           qty_ordered: Number(l.qty_ordered) || 0,
@@ -112,6 +118,7 @@ export function OutboundForm({ open, onClose, editing }: {
   })
 
   return (
+    <>
     <Modal open={open} onClose={onClose} xwide
       title={editing ? `Sửa phiếu xuất ${editing.code}` : 'Tạo đơn xuất kho'}
       icon={<PackageCheck size={18} className="text-flame" />}
@@ -156,6 +163,14 @@ export function OutboundForm({ open, onClose, editing }: {
           <TextInput label="Người giao hàng" placeholder="Tên NV kho/tài xế giao hàng"
             {...register('delivered_by_name')} />
         </FieldRow>
+        <FieldRow>
+          <TextInput label="Ngày xuất" type="date"
+            {...register('shipped_at')} />
+          <div />
+        </FieldRow>
+        <p className="text-[11px] text-txt-2 -mt-2 mb-3">
+          Để trống → hệ thống tự ghi ngày lúc xác nhận giao hàng (có thể sửa lại sau ở danh sách).
+        </p>
         <div className="mb-3">
           <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Ghi chú</label>
           <textarea rows={2} placeholder="Ghi chú thêm cho phiếu xuất…"
@@ -194,6 +209,13 @@ export function OutboundForm({ open, onClose, editing }: {
                     onChange={(v) => setValue(`lines.${i}.item` as const, v, { shouldValidate: true })}
                     options={items} loading={itemsLoading} placeholder="Gõ mã/tên để tìm mặt hàng…" />
                 </div>
+                {canAddPart && (
+                  <button type="button" onClick={() => setAddPartForLine(i)}
+                    className="text-txt-2 hover:text-flame p-1.5 shrink-0" aria-label="Thêm mặt hàng mới"
+                    title="Không tìm thấy? Thêm mặt hàng mới vào danh mục">
+                    <Plus size={15} />
+                  </button>
+                )}
                 <div className="w-28 shrink-0">
                   <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">
                     SL{unitByValue[watched[i]?.item ?? ''] ? ` (${unitByValue[watched[i]?.item ?? '']})` : ''}
@@ -212,14 +234,17 @@ export function OutboundForm({ open, onClose, editing }: {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Đơn giá</label>
-                    <input type="number" min={0} placeholder="Đơn giá"
-                      {...register(`lines.${i}.unit_price` as const, { valueAsNumber: true })}
+                    <input type="text" inputMode="numeric" placeholder="Đơn giá"
+                      value={formatMoneyDisplay(watched[i]?.unit_price ?? 0)}
+                      onFocus={(e) => e.target.select()}
+                      onChange={(e) => setValue(`lines.${i}.unit_price` as const, parseMoneyInput(e.target.value))}
                       className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                   </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Thuế %</label>
                     <input type="number" min={0} max={100} step="0.01" placeholder="Thuế %"
                       {...register(`lines.${i}.tax_pct` as const)}
+                      onFocus={(e) => e.target.select()}
                       className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                   </div>
                 </div>
@@ -245,5 +270,11 @@ export function OutboundForm({ open, onClose, editing }: {
         )}
       </form>
     </Modal>
+
+    <PartQuickAddModal open={addPartForLine != null} onClose={() => setAddPartForLine(null)}
+      onSaved={(p) => {
+        if (addPartForLine != null) setValue(`lines.${addPartForLine}.item`, `part:${p.tokin_part_no}`, { shouldValidate: true })
+      }} />
+    </>
   )
 }

@@ -284,7 +284,10 @@ def confirm_pick_and_ship(outbound: OutboundOrder, user=None) -> None:
         raise ValueError("Chưa soạn (pick) sản phẩm nào để giao.")
     from django.utils import timezone
     outbound.status = 'shipped' if fully else 'partial'
-    outbound.shipped_at = timezone.now()
+    # Giữ ngày xuất nếu nhân viên đã tự điền lúc tạo/sửa phiếu (đối chiếu đúng
+    # ngày giao thực tế) — chỉ tự set khi còn trống, giống Inbound.confirm().
+    if not outbound.shipped_at:
+        outbound.shipped_at = timezone.now()
     outbound.shipped_by = user
     outbound.save(update_fields=['status', 'shipped_at', 'shipped_by'])
     _sync_sales_order(outbound, user, fully)
