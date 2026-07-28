@@ -433,3 +433,26 @@ class TestCustomerDuplicateCheck:
         assert r.status_code == 200
         assert r.data['will_create'] == 0
         assert any('trùng' in e['message'] for e in r.data['errors'])
+
+
+@pytest.mark.django_db
+class TestCustomerCreateByWarehouse:
+    """2026-07-28: NV kho tự thêm nhanh KH lẻ ngay lúc lập phiếu xuất kho —
+    capability riêng 'crm.customer.create_by_warehouse', KHÔNG dùng WRITE_ROLES
+    chung (vốn cố tình loại vai trò kho khỏi CRM)."""
+
+    def test_warehouse_role_can_create_customer_without_tax_code(self):
+        wh_user = UserFactory(role='warehouse')
+        c = APIClient(); c.force_authenticate(wh_user)
+        r = c.post('/api/v1/crm/customers/', {'name': 'Khach le Nguyen Van A'}, format='json')
+        assert r.status_code == 201, r.data
+        assert r.data['code'].startswith('KH-')   # tự sinh, không cần gõ tay
+        assert r.data['tax_code'] == ''
+
+    def test_warehouse_role_still_forbidden_from_lead_or_quote(self):
+        """Capability chỉ mở cho Customer — không lan sang model khác dùng chung
+        CustomerPermission (Lead/Opportunity/Quote/...)."""
+        wh_user = UserFactory(role='warehouse')
+        c = APIClient(); c.force_authenticate(wh_user)
+        r = c.post('/api/v1/crm/leads/', {'name': 'Lead la', 'source': 'other'}, format='json')
+        assert r.status_code == 403

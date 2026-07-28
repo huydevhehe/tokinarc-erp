@@ -18,6 +18,7 @@ import { Button } from '@/components/ui'
 import { FieldRow, TextInput, SelectInput, formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
+import { CustomerForm } from '@/pages/crm/forms/CustomerForm'
 import { useAuth, isWmsControl } from '@/lib/auth/store'
 import type { OutboundOrder } from '@/lib/types'
 
@@ -50,6 +51,7 @@ export function OutboundForm({ open, onClose, editing }: {
   const totalQty = filled.reduce((s, l) => s + (Number(l.qty_ordered) || 0), 0)
   const [showCam, setShowCam] = useState(false)
   const [addPartForLine, setAddPartForLine] = useState<number | null>(null)   // dòng đang thêm mặt hàng mới
+  const [customerModalOpen, setCustomerModalOpen] = useState(false)
   const role = useAuth((s) => s.user?.role)
   // khớp PartTorchWritePermission backend: action 'create' mở cho NV kho, không
   // chỉ Quản lý kho trở lên (isWmsControl) — NV kho là người lập phiếu hàng ngày.
@@ -148,10 +150,17 @@ export function OutboundForm({ open, onClose, editing }: {
           <div>
             <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Khách hàng</label>
             <input type="hidden" {...register('customer')} />
-            <SearchableSelect
-              value={watchedCustomer}
-              onChange={(v) => setValue('customer', v)}
-              options={customers} loading={customersLoading} placeholder="— (tùy chọn) — gõ mã/tên để tìm…" />
+            <div className="flex gap-1.5">
+              <div className="flex-1">
+                <SearchableSelect
+                  value={watchedCustomer}
+                  onChange={(v) => setValue('customer', v)}
+                  options={customers} loading={customersLoading} placeholder="— (tùy chọn) — gõ mã/tên để tìm…" />
+              </div>
+              <Button type="button" variant="ghost" onClick={() => setCustomerModalOpen(true)} aria-label="Thêm khách hàng mới">
+                <Plus size={15} />
+              </Button>
+            </div>
           </div>
           <SelectInput label="Rule soạn hàng"
             options={(Object.keys(RULE_LABEL) as (keyof typeof RULE_LABEL)[]).map((k) => ({ value: k, label: RULE_LABEL[k] }))}
@@ -277,6 +286,8 @@ export function OutboundForm({ open, onClose, editing }: {
       onSaved={(p) => {
         if (addPartForLine != null) setValue(`lines.${addPartForLine}.item`, `part:${p.tokin_part_no}`, { shouldValidate: true })
       }} />
+    <CustomerForm open={customerModalOpen} onClose={() => setCustomerModalOpen(false)}
+      onSaved={(c) => setValue('customer', c.id, { shouldValidate: true })} />
     </>
   )
 }

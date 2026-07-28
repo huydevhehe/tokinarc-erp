@@ -1,7 +1,9 @@
 /**
  * Tokinarc frontend — src/pages/crm/forms/CustomerForm.tsx
  * Modal tạo/sửa Khách hàng. POST /crm/customers/ hoặc PATCH /crm/customers/{id}/.
- * (owner do backend tự gán; code phải bắt đầu 'KH-'.)
+ * (owner do backend tự gán; tạo mới không cần gõ mã — backend tự sinh KH-XXXX,
+ * khớp pattern SupplierFormModal — dùng lại được cho cả trang KH lẫn thêm nhanh
+ * KH lẻ ngay lúc lập phiếu xuất kho.)
  */
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
@@ -18,12 +20,12 @@ import { Button } from '@/components/ui'
 import { FieldRow, TextInput, TextArea, SelectInput } from '@/components/form'
 
 interface Form {
-  code: string; name: string; tax_code: string
+  name: string; tax_code: string
   segment: string; region: string; status: string; notes: string
 }
 
 const EMPTY: Form = {
-  code: '', name: '', tax_code: '', segment: 'factory', region: '', status: 'new', notes: '',
+  name: '', tax_code: '', segment: 'factory', region: '', status: 'new', notes: '',
 }
 
 interface DupMatch { id: string; code: string; name: string }
@@ -32,7 +34,7 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
   open: boolean
   onClose: () => void
   editing?: Customer | CustomerDetail | null
-  onSaved?: () => void
+  onSaved?: (c: Customer) => void
 }) {
   const qc = useQueryClient()
   const { register, handleSubmit, reset, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
@@ -42,7 +44,7 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
     if (!open) return
     setDupMatches(null)
     reset(editing ? {
-      code: editing.code, name: editing.name, tax_code: editing.tax_code,
+      name: editing.name, tax_code: editing.tax_code,
       segment: editing.segment, region: editing.region, status: editing.status,
       notes: (editing as CustomerDetail).notes ?? '',
     } : EMPTY)
@@ -50,15 +52,16 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
 
   const save = useMutation({
     mutationFn: (data: Form) => editing
-      ? api.patch(`/crm/customers/${editing.id}/`, data)
-      : api.post('/crm/customers/', data),
-    onSuccess: () => {
+      ? api.patch<Customer>(`/crm/customers/${editing.id}/`, data)
+      : api.post<Customer>('/crm/customers/', data),
+    onSuccess: (r) => {
       toast.success(editing ? 'Đã cập nhật khách hàng' : 'Đã tạo khách hàng')
       qc.invalidateQueries({ queryKey: ['customers'] })
       qc.invalidateQueries({ queryKey: ['customer-options'] })
+      qc.invalidateQueries({ queryKey: ['customer-options-wms'] })
       qc.invalidateQueries({ queryKey: ['customer-360'] })
       qc.invalidateQueries({ queryKey: ['dash'] })
-      onSaved?.()
+      onSaved?.(r.data)
       onClose()
     },
     onError: (e) => {
@@ -87,16 +90,16 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
       }
     >
       <form onSubmit={handleSubmit((d) => save.mutate(d))}>
-        <FieldRow>
-          <TextInput label="Mã KH *" placeholder="KH-0001" error={errors.code?.message}
-            disabled={!!editing}
-            {...register('code', {
-              required: 'Bắt buộc',
-              pattern: { value: /^KH-/, message: "Mã phải bắt đầu bằng 'KH-'" },
-            })} />
-          <TextInput label="Mã số thuế" {...register('tax_code')} />
-        </FieldRow>
-        <TextInput label="Tên công ty *" full error={errors.name?.message}
+        {editing && (
+          <FieldRow>
+            <TextInput label="Mã KH" value={editing.code} disabled readOnly />
+            <TextInput label="Mã số thuế" {...register('tax_code')} />
+          </FieldRow>
+        )}
+        {!editing && (
+          <TextInput label="Mã số thuế" full placeholder="Không bắt buộc — bỏ trống nếu KH lẻ" {...register('tax_code')} />
+        )}
+        <TextInput label="Tên công ty/khách hàng *" full error={errors.name?.message}
           {...register('name', { required: 'Bắt buộc' })} />
         <FieldRow>
           <SelectInput label="Phân khúc" options={optionsFromLabels(SEGMENT_LABEL)} {...register('segment')} />

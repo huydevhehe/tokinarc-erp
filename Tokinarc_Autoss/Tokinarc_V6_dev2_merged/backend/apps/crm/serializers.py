@@ -79,7 +79,9 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'created_at', 'updated_at']
         # owner do viewset.perform_create gán mặc định = user hiện tại;
         # manager có thể truyền owner trong payload để gán cho sale khác.
-        extra_kwargs = {'owner': {'required': False}}
+        # code: nếu client không gửi → view tự sinh (KH-XXXX) — khớp pattern
+        # thêm nhanh KH lẻ ngay lúc lập phiếu xuất kho (2026-07-28).
+        extra_kwargs = {'owner': {'required': False}, 'code': {'required': False}}
 
     # ── Validation ──────────────────────────────────────────────────────────
     def validate_contacts(self, value):

@@ -23,7 +23,7 @@ from apps.common.models import AuditLog
 
 from .models import Customer
 from .permissions import (
-    CustomerPermission,
+    CustomerCreatePermission,
     IsAuthenticatedWithRole,
     filter_customers_for_user,
 )
@@ -79,7 +79,7 @@ class CustomerViewSet(viewsets.ModelViewSet):
       DELETE /api/v1/crm/customers/{id}/      (soft delete)
       GET    /api/v1/crm/customers/{id}/360/
     """
-    permission_classes = [IsAuthenticatedWithRole, CustomerPermission]
+    permission_classes = [IsAuthenticatedWithRole, CustomerCreatePermission]
     filter_backends    = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields   = ['segment', 'status', 'region', 'owner']
     search_fields      = ['code', 'name', 'tax_code']
@@ -154,11 +154,13 @@ class CustomerViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         # Mặc định owner = user hiện tại; manager có thể override qua payload
         from .permissions import is_manager
+        from .views_ext import _next_code
         owner = serializer.validated_data.get('owner') or self.request.user
         if not is_manager(self.request.user):
             owner = self.request.user
+        code = serializer.validated_data.get('code') or _next_code(Customer, 'KH')
         instance = serializer.save(
-            owner=owner, created_by=self.request.user, updated_by=self.request.user,
+            code=code, owner=owner, created_by=self.request.user, updated_by=self.request.user,
         )
         AuditLog.record(
             user=self.request.user, action='create',

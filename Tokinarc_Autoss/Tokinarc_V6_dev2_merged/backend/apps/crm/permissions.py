@@ -63,6 +63,19 @@ class CustomerPermission(permissions.BasePermission):
         return has_capability(request.user, key) or obj.owner_id == request.user.id
 
 
+class CustomerCreatePermission(CustomerPermission):
+    """CHỈ dùng cho CustomerViewSet (không phải Lead/Opportunity/Quote/... — các
+    model đó vẫn dùng CustomerPermission gốc). Nới thêm: NV kho/QL kho tự tạo
+    KH lẻ ngay lúc lập phiếu xuất kho (2026-07-28), qua capability riêng
+    'crm.customer.create_by_warehouse' — không đụng WRITE_ROLES chung."""
+
+    def has_permission(self, request, view) -> bool:
+        if (request.method not in SAFE_METHODS and getattr(view, 'action', None) == 'create'
+                and has_capability(request.user, 'crm.customer.create_by_warehouse')):
+            return True
+        return super().has_permission(request, view)
+
+
 def filter_customers_for_user(qs, user):
     """Manager+ xem hết; sale/service/warehouse chỉ KH của mình."""
     if has_capability(user, 'crm.customer.view_all'):

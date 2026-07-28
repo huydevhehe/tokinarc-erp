@@ -29,6 +29,14 @@ CAPABILITY_SEED: dict[str, tuple[str, str, frozenset[str]]] = {
     'purchasing.po.delete': (
         'Xoá đơn mua hàng (PO nháp)', 'Mua hàng',
         frozenset({Role.ADMIN})),
+    'crm.customer.create_by_warehouse': (
+        # Yêu cầu 2026-07-28: NV kho/QL kho cần tự tạo nhanh KH lẻ (bán lẻ,
+        # không cần MST) ngay lúc lập phiếu xuất kho — CustomerPermission gốc
+        # (WRITE_ROLES = sale/manager/ceo) không cho vai trò kho tạo KH, capability
+        # riêng này KHÔNG áp dụng cho Lead/Opportunity/Quote/... (dùng chung
+        # CustomerPermission nhưng KHÔNG check capability này).
+        'NV kho tự tạo khách hàng lẻ', 'CRM',
+        frozenset({Role.WAREHOUSE, Role.WAREHOUSE_MANAGER})),
     'purchasing.supplier.create': (
         # Yêu cầu 2026-07-26: NV kho (Role.WAREHOUSE) cần tự thêm NCC mới ngay
         # trong lúc lập phiếu nhập kho (trước đó tạo NCC lẫn chung với capability
