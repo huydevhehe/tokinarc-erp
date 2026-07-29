@@ -29,7 +29,7 @@ from rest_framework.response import Response
 
 from rest_framework import serializers as drf_serializers
 
-from apps.catalog.models import Part, Torch, ProcedureQA
+from apps.catalog.models import Part, PartBarcode, Torch, ProcedureQA
 from apps.catalog.serializers import (
     PartDetailSerializer, PartLiteSerializer, PartWriteSerializer,
     TorchDetailSerializer, TorchLiteSerializer, TorchWriteSerializer,
@@ -101,13 +101,17 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     filter_backends   = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields  = ['category', 'ecosystem', 'current_class', 'is_priority_sell',
                          'product_category', 'product_category__group']
-    search_fields     = ['tokin_part_no', 'display_name_vi', 'display_name_en', 'category', 'barcode']
+    search_fields     = ['tokin_part_no', 'display_name_vi', 'display_name_en', 'category', 'barcodes__code']
     ordering_fields   = ['tokin_part_no', 'category', 'price_vnd']
 
     def get_queryset(self):
         qs = super().get_queryset()
         if self.action == 'list':
             qs = qs.filter(is_active=True)
+            # search_fields join qua barcodes__code (reverse FK) → distinct() để
+            # tránh 1 Part lặp nhiều dòng nếu khớp nhiều mã (hiếm nhưng có thể).
+            if self.request.query_params.get('search'):
+                qs = qs.distinct()
         return qs
 
     def get_serializer_class(self):
@@ -143,21 +147,23 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     @action(detail=True, methods=['post'], url_path='set-barcode', permission_classes=[IsAuthenticated])
     def set_barcode(self, request, tokin_part_no=None):
         """Quét-gán: gán barcode/QR (EAN, mã Tokin) trên tem cho part này → lần sau quét ra ngay.
-        Chỉ nhân viên nội bộ. Nếu mã đã gán cho part KHÁC → báo lỗi (tránh trùng)."""
+        Chỉ nhân viên nội bộ. Nếu mã đã gán cho part KHÁC → báo lỗi (tránh trùng).
+        1 part gán được NHIỀU mã (Barcode + QR khác nội dung trên cùng 1 hộp) —
+        gán thêm mã mới KHÔNG xoá các mã đã gán trước đó."""
         from apps.accounts.roles import Role, role_of
         if role_of(request.user) == Role.CUSTOMER:
             return Response({'detail': 'Chỉ nhân viên nội bộ được gán mã.'}, status=403)
         code = (request.data.get('barcode') or '').strip()
         if not code:
             return Response({'detail': 'Thiếu mã barcode.'}, status=400)
-        clash = Part.objects.filter(barcode=code).exclude(pk=tokin_part_no).first()
+        clash = PartBarcode.objects.filter(code=code).exclude(part_id=tokin_part_no).first()
         if clash is not None:
-            return Response({'detail': f'Mã "{code}" đã gán cho {clash.pk} ({clash.display_name_vi}).',
+            return Response({'detail': f'Mã "{code}" đã gán cho {clash.part_id} ({clash.part.display_name_vi}).',
                              'code': 'BARCODE_TAKEN'}, status=409)
         part = self.get_object()
-        part.barcode = code
-        part.save(update_fields=['barcode'])
-        return Response({'part_no': part.pk, 'name': part.display_name_vi, 'barcode': code})
+        PartBarcode.objects.get_or_create(code=code, defaults={'part': part})
+        return Response({'part_no': part.pk, 'name': part.display_name_vi, 'barcode': code,
+                         'barcodes': list(part.barcodes.values_list('code', flat=True))})
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def compatibility(self, request):

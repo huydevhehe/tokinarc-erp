@@ -6,7 +6,7 @@
 import { api } from '@/lib/api'
 
 interface Opt { value: string; label: string }
-interface PartLite { tokin_part_no: string; barcode?: string }
+interface PartLite { tokin_part_no: string; barcodes?: string[] }
 
 export async function resolveScanToItem(code: string, options: Opt[]): Promise<string | null> {
   const c = code.trim()
@@ -18,7 +18,7 @@ export async function resolveScanToItem(code: string, options: Opt[]): Promise<s
   try {
     const r = await api.get<{ results?: PartLite[] } | PartLite[]>('/catalog/parts/', { params: { search: c } })
     const rows: PartLite[] = Array.isArray(r.data) ? r.data : (r.data.results ?? [])
-    const exact = rows.find((p) => p.tokin_part_no === c || p.barcode === c)
+    const exact = rows.find((p) => p.tokin_part_no === c || (p.barcodes ?? []).includes(c))
     const hit = exact ?? (rows.length === 1 ? rows[0] : undefined)
     if (hit) return `part:${hit.tokin_part_no}`
   } catch { /* mạng lỗi → coi như không tìm thấy */ }

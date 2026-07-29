@@ -320,6 +320,9 @@ export interface CatalogPart {
   product_category: number | null
   group_name: string | null
   category_name: string | null
+  // Mã vạch/QR đã gán — 1 sản phẩm có thể có nhiều mã (Barcode + QR khác nội
+  // dung nhau trên cùng 1 hộp).
+  barcodes: string[]
 }
 
 // Nhóm sản phẩm > Danh mục (do Quản lý kho quản lý qua giao diện).

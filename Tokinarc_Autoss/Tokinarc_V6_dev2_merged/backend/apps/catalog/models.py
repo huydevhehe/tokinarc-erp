@@ -119,9 +119,10 @@ class Part(models.Model):
     display_name_vi = models.CharField(max_length=200)
     display_name_en = models.CharField(max_length=200, blank=True)
 
-    # Barcode/QR nhà SX (EAN-13 / mã Tokin trên tem) → map về part_no nội bộ.
-    # Học dần bằng "quét-gán": lần đầu quét tem lạ → gán cho 1 part → lưu vĩnh viễn.
-    barcode         = models.CharField(max_length=64, blank=True, db_index=True)
+    # Barcode/QR nhà SX → map về part_no nội bộ, xem model PartBarcode bên dưới
+    # (2026-07-28: đổi từ 1 field đơn sang bảng riêng — 1 sản phẩm thường có CẢ
+    # Barcode lẫn QR khác nội dung nhau trên cùng 1 hộp, field đơn cũ gán mã thứ
+    # 2 sẽ ghi đè mất mã thứ 1).
 
     # Spec promoted
     wire_size_mm    = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
@@ -188,6 +189,21 @@ class Part(models.Model):
 
     def __str__(self) -> str:
         return f"{self.tokin_part_no} — {self.display_name_vi}"
+
+
+# ─── Barcode/QR — 1 sản phẩm gắn được NHIỀU mã (Barcode + QR khác nội dung
+# nhau trên cùng 1 hộp là chuyện thường gặp; field đơn cũ chỉ giữ được 1 mã).
+class PartBarcode(models.Model):
+    part       = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='barcodes')
+    code       = models.CharField(max_length=64, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'catalog_part_barcode'
+        ordering = ['-created_at']
+
+    def __str__(self) -> str:
+        return f"{self.code} → {self.part_id}"
 
 
 # ─── Nhóm / Danh mục sản phẩm (do Quản lý kho tự quản lý) ────────────────────

@@ -83,7 +83,7 @@ def _resolve_part_code(code: str) -> str:
     trả part_no nội bộ để khớp dòng phiếu. Không gán → giữ nguyên (khớp trực tiếp part_no)."""
     if not code:
         return code
-    p = Part.objects.filter(barcode=code).only('tokin_part_no').first()
+    p = Part.objects.filter(barcodes__code=code).only('tokin_part_no').first()
     return p.pk if p else code
 
 

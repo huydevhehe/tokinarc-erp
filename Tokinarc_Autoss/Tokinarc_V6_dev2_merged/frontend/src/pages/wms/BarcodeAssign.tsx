@@ -12,6 +12,8 @@ import { Barcode, Search, Link2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { CameraScanner } from '@/components/CameraScanner'
+import { SearchableSelect } from '@/components/SearchableSelect'
+import { usePartOptions } from '@/lib/useWmsOptions'
 import type { CatalogPart, SerialNumber } from '@/lib/types'
 import { PageHeader, Card, Button, Tag } from '@/components/ui'
 
@@ -20,6 +22,7 @@ export function BarcodeAssignPage() {
   const [lookupQ, setLookupQ] = useState('')
   const [assigning, setAssigning] = useState(false)   // quét-gán: mã lạ → gán cho 1 SP
   const [assignPick, setAssignPick] = useState('')
+  const { options: partOptions, isLoading: partsLoading } = usePartOptions()
 
   // Quét/nhập mã → tìm phụ tùng (catalog, có cả barcode) + serial (WMS).
   const lookup = useQuery({
@@ -34,12 +37,6 @@ export function BarcodeAssignPage() {
     enabled: lookupQ.trim().length >= 2,
   })
 
-  // Quét-gán: tìm SP để gán mã lạ vào.
-  const assignSearch = useQuery({
-    queryKey: ['assign-search', assignPick],
-    queryFn: async () => (await api.get<{ results: CatalogPart[] }>('/catalog/parts/', { params: { search: assignPick.trim() } })).data.results.slice(0, 6),
-    enabled: assigning && assignPick.trim().length >= 2,
-  })
   const assignMut = useMutation({
     mutationFn: (partNo: string) => api.post(`/catalog/parts/${encodeURIComponent(partNo)}/set-barcode/`, { barcode: lookupQ.trim() }),
     onSuccess: (r) => {
@@ -76,18 +73,11 @@ export function BarcodeAssignPage() {
             ) : (
               <div className="space-y-2">
                 <p className="text-[11px] text-txt-2">Tìm & chọn sản phẩm để gán mã <span className="font-mono">{lookupQ.trim()}</span>:</p>
-                <input value={assignPick} onChange={(e) => setAssignPick(e.target.value)} autoFocus
-                  placeholder="Tên hoặc mã sản phẩm…"
-                  className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
-                {(assignSearch.data ?? []).map((p) => (
-                  <button key={p.tokin_part_no} disabled={assignMut.isPending}
-                    onClick={() => assignMut.mutate(p.tokin_part_no)}
-                    className="w-full text-left flex items-center gap-2 border border-line rounded-md px-3 py-1.5 text-sm hover:border-flame transition-colors">
-                    <span className="font-mono text-flame">{p.tokin_part_no}</span>
-                    <span className="flex-1">{p.display_name_vi}</span>
-                    <Link2 size={13} className="text-txt-2" />
-                  </button>
-                ))}
+                <SearchableSelect
+                  value={assignPick}
+                  onChange={(v) => { setAssignPick(v); assignMut.mutate(v) }}
+                  options={partOptions} loading={partsLoading}
+                  placeholder="Gõ tên hoặc mã sản phẩm để tìm…" />
                 <button onClick={() => { setAssigning(false); setAssignPick('') }} className="text-xs text-txt-2 hover:text-txt">Hủy</button>
               </div>
             )}
