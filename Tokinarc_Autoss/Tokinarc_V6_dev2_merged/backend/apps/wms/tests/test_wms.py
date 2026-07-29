@@ -1053,3 +1053,41 @@ def test_inventory_export_by_category_matches_accounting_template(auth, wh_user)
     # Đơn giá = giá vốn (12000), KHÔNG phải giá bán (99999).
     assert 12000 in [c.value for row in ws.iter_rows() for c in row]
     assert 99999 not in [c.value for row in ws.iter_rows() for c in row]
+
+
+@pytest.mark.django_db
+def test_inventory_export_xlsx_matches_accounting_template_and_merges_bins(auth, wh_user):
+    """#26 biên bản: nút "Xuất Excel" thường (không chọn nhóm, theo tìm kiếm/mã)
+    phải khớp CÙNG mẫu kế toán như export-by-category — không phải bản chi
+    tiết vận hành (Vị trí/Kho/Giữ/Khả dụng) như trước. Cùng 1 mã ở 2 bin khác
+    nhau phải GỘP lại thành 1 dòng tổng (đúng nghĩa "tổng hợp")."""
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    from apps.catalog.models import Part
+    from apps.common.company import COMPANY
+
+    p1 = Part.objects.create(tokin_part_no='TK-401', category='Tip',
+                             display_name_vi='Bec han F', cost_vnd=8000, price_vnd=50000)
+    b1 = BinFactory(full_code='HCM-A-R01-B95')
+    b2 = BinFactory(full_code='HCM-A-R01-B94')
+    services.receive_stock(bin_obj=b1, part=p1, qty=4, user=wh_user)
+    services.receive_stock(bin_obj=b2, part=p1, qty=6, user=wh_user)
+
+    r = auth.get('/api/v1/wms/inventory/export-xlsx/')
+    assert r.status_code == 200
+    wb = load_workbook(BytesIO(r.content))
+    ws = wb.active
+    text = '\n'.join(str(c.value) for row in ws.iter_rows() for c in row if c.value is not None)
+    assert COMPANY['name'] in text
+    assert 'BÁO CÁO TỔNG HỢP TỒN KHO' in text
+    assert 'Tài khoản: 156' in text
+    header = [c.value for c in ws[9]]
+    assert header == ['STT', 'Tên vật tư, hàng hóa', 'ĐVT', 'Số lượng', 'Đơn giá', 'Thành tiền']
+    assert 'Vị trí' not in text and 'Khả dụng' not in text
+    # 2 bin cùng mã phải gộp thành 1 dòng SL=10 (không phải 2 dòng riêng).
+    values = [c.value for row in ws.iter_rows() for c in row]
+    assert 10 in values
+    assert 8000 in values
+    assert 50000 not in values

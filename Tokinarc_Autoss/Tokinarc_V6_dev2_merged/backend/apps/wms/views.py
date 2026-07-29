@@ -277,29 +277,61 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='export-xlsx')
     def export_xlsx(self, request):
-        """Xuất Excel tồn kho theo TỪNG mặt hàng/vị trí — đúng bộ lọc đang xem
-        trên danh sách (tìm kiếm, kho, sắp hết). Khác export-by-category (gộp
-        theo nhóm) — đây là bản chi tiết từng dòng như bảng trên màn hình."""
+        """Xuất Excel tồn kho — GỘP theo mặt hàng (tổng trên mọi bin/kho đang
+        lọc), đúng bộ lọc đang xem trên danh sách (tìm kiếm, kho, sắp hết).
+        #26 biên bản: khớp cùng 1 mẫu báo cáo kế toán như export-by-category
+        (đơn vị/địa chỉ + "Tài khoản: 156" + STT/Tên/ĐVT/Số lượng/Đơn giá/Thành
+        tiền) — dù xuất theo nhóm hay theo mã tìm kiếm cũng phải cùng 1 dạng."""
+        from apps.common.company import COMPANY
         from apps.common.excel import xlsx_response
         from openpyxl import Workbook
+        from openpyxl.styles import Alignment, Font
         qs = self.filter_queryset(self.get_queryset())
+        part_rows = (qs.filter(part__isnull=False)
+                     .values(code=F('part_id'), name=F('part__display_name_vi'),
+                             unit=F('part__price_unit'), cost=F('part__cost_vnd'))
+                     .annotate(qty=Sum('qty_on_hand')).order_by('name'))
+        torch_rows = (qs.filter(torch__isnull=False)
+                      .values(code=F('torch_id'), name=F('torch__display_name_vi'),
+                              unit=F('torch__price_unit'), cost=F('torch__cost_vnd'))
+                      .annotate(qty=Sum('qty_on_hand')).order_by('name'))
+        rows = []
+        for r in list(part_rows) + list(torch_rows):
+            qty = r['qty'] or 0
+            cost = int(r['cost'] or 0)
+            rows.append({'code': r['code'], 'name': r['name'] or '', 'unit': r['unit'] or 'cái',
+                         'qty': qty, 'cost': cost, 'value': qty * cost})
+
         wb = Workbook()
         ws = wb.active
         ws.title = 'TonKho'
-        ws.append(['Mã số', 'Tên hàng hóa', 'ĐVT', 'Giá vốn', 'Vị trí', 'Kho',
-                   'Tồn', 'Giữ', 'Khả dụng', 'Tối thiểu'])
-        for item in qs:
-            o = item.part or item.torch
-            ws.append([
-                item.part_id or item.torch_id,
-                getattr(o, 'display_name_vi', '') if o else '',
-                getattr(o, 'price_unit', '') if o else '',
-                getattr(o, 'cost_vnd', None) if o else None,
-                item.bin.full_code,
-                item.bin.zone.warehouse.code,
-                item.qty_on_hand, item.qty_reserved,
-                item.qty_on_hand - item.qty_reserved, item.min_level,
-            ])
+        ncols = 6
+        ws.cell(1, 1, f"Đơn vị :  {COMPANY['name']}").font = Font(bold=True)
+        ws.cell(2, 1, f"Địa chỉ :  {COMPANY['address']}")
+        ws.append([])
+        ws.merge_cells(start_row=4, start_column=1, end_row=4, end_column=ncols)
+        title = ws.cell(4, 1, 'BÁO CÁO TỔNG HỢP TỒN KHO')
+        title.font = Font(bold=True, size=16, color='1F4E78')
+        title.alignment = Alignment(horizontal='center')
+        ws.merge_cells(start_row=6, start_column=1, end_row=6, end_column=ncols)
+        ws.cell(6, 1, 'Tài khoản: 156 (Hàng hoá)')
+        ws.merge_cells(start_row=7, start_column=1, end_row=7, end_column=ncols)
+        unit_note = ws.cell(7, 1, 'Đơn vị tính : Đồng')
+        unit_note.alignment = Alignment(horizontal='right')
+        ws.append([])
+        header_row = 9
+        ws.append(['STT', 'Tên vật tư, hàng hóa', 'ĐVT', 'Số lượng', 'Đơn giá', 'Thành tiền'])
+        for c in ws[header_row]:
+            c.font = Font(bold=True)
+            c.alignment = Alignment(horizontal='center')
+        for i, r in enumerate(rows, start=1):
+            ws.append([i, f"{r['name']} - {r['code']}", r['unit'], r['qty'], r['cost'], r['value']])
+        ws.append(['', 'Tổng cộng', '', sum(r['qty'] for r in rows), '', sum(r['value'] for r in rows)])
+        for c in ws[ws.max_row]:
+            c.font = Font(bold=True)
+        widths = [6, 42, 8, 12, 14, 16]
+        for ci, w in enumerate(widths, start=1):
+            ws.column_dimensions[ws.cell(1, ci).column_letter].width = w
         buf = io.BytesIO()
         wb.save(buf)
         return xlsx_response(buf.getvalue(), 'ton_kho.xlsx')
