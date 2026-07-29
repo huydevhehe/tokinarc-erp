@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from apps.catalog.models import Part, Torch
+from apps.catalog.models import Part, ProductCategory, ProductGroup, Torch
 from apps.catalog.pricing import format_price_vi, get_effective_price
 
 
@@ -54,12 +54,29 @@ class PartWriteSerializer(serializers.ModelSerializer):
     """Tạo/sửa Part qua UI (Sản phẩm > Phụ tùng). Chỉ các trường cơ bản — thông
     số kỹ thuật sâu (specs, compatibility...) vẫn chỉ sửa qua Import Excel."""
 
+    # Modal "Thêm nhanh": 1 ô nhập tay duy nhất thay vì chọn Nhóm+Danh mục 2 tầng
+    # — tự tìm hoặc tạo Nhóm VÀ Danh mục CÙNG TÊN này (get_or_create cả 2 tầng).
+    # Bỏ trống hoặc đã có product_category (chọn từ danh sách có sẵn) thì bỏ qua.
+    product_category_name = serializers.CharField(required=False, allow_blank=True, write_only=True)
+
     class Meta:
         model = Part
         fields = [
             'tokin_part_no', 'category', 'display_name_vi', 'display_name_en',
             'price_vnd', 'tax_pct', 'is_contact_price', 'is_active', 'product_category',
+            'product_category_name',
         ]
+        # #: "Loại" (category) không còn bắt buộc ở modal thêm nhanh — chỉ NV kho
+        # gõ tối thiểu mã+tên là tạo được, phân loại đầy đủ bổ sung sau.
+        extra_kwargs = {'category': {'required': False, 'allow_blank': True}}
+
+    def create(self, validated_data):
+        name = validated_data.pop('product_category_name', '').strip()
+        if name and not validated_data.get('product_category'):
+            group, _ = ProductGroup.objects.get_or_create(name=name)
+            category, _ = ProductCategory.objects.get_or_create(group=group, name=name)
+            validated_data['product_category'] = category
+        return super().create(validated_data)
 
 
 class TorchLiteSerializer(serializers.ModelSerializer):
