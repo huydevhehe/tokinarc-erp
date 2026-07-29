@@ -1016,3 +1016,40 @@ def test_inventory_export_by_category_month_year_label_only(auth, wh_user):
     assert 'THÁNG 7 NĂM 2026' in text.upper()
     assert 'TK-201' in text   # dòng hàng vẫn còn, không bị mất khi thêm tiêu đề
     assert 7 in [c.value for row in ws.iter_rows() for c in row]
+
+
+@pytest.mark.django_db
+def test_inventory_export_by_category_matches_accounting_template(auth, wh_user):
+    """#26 biên bản (feedback tồn kho): xuất Excel theo nhóm phải khớp mẫu báo
+    cáo kế toán "Tổng hợp tồn kho" (tài khoản 156) — có đơn vị/địa chỉ công ty,
+    tiêu đề đúng chữ, dòng "Tài khoản: 156", và cột Đơn giá lấy GIÁ VỐN (không
+    phải giá bán) — chuẩn kế toán VN định giá hàng tồn kho theo giá vốn."""
+    from io import BytesIO
+
+    from openpyxl import load_workbook
+
+    from apps.catalog.models import Part, ProductCategory, ProductGroup
+    from apps.common.company import COMPANY
+
+    group = ProductGroup.objects.create(name='Tokinarc')
+    cat = ProductCategory.objects.create(group=group, name='Béc hàn')
+    p1 = Part.objects.create(tokin_part_no='TK-301', category='Tip',
+                             display_name_vi='Bec han E', product_category=cat,
+                             cost_vnd=12000, price_vnd=99999)   # giá bán khác hẳn giá vốn
+    b = BinFactory(full_code='HCM-A-R01-B96')
+    services.receive_stock(bin_obj=b, part=p1, qty=3, user=wh_user)
+
+    r = auth.get('/api/v1/wms/inventory/export-by-category/', {'group': group.id})
+    assert r.status_code == 200
+    wb = load_workbook(BytesIO(r.content))
+    ws = wb.active
+    text = '\n'.join(str(c.value) for row in ws.iter_rows() for c in row if c.value is not None)
+    assert COMPANY['name'] in text
+    assert COMPANY['address'] in text
+    assert 'BÁO CÁO TỔNG HỢP TỒN KHO' in text
+    assert 'Tài khoản: 156' in text
+    header = [c.value for c in ws[9]]
+    assert header == ['STT', 'Tên vật tư, hàng hóa', 'ĐVT', 'Số lượng', 'Đơn giá', 'Thành tiền']
+    # Đơn giá = giá vốn (12000), KHÔNG phải giá bán (99999).
+    assert 12000 in [c.value for row in ws.iter_rows() for c in row]
+    assert 99999 not in [c.value for row in ws.iter_rows() for c in row]

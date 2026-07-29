@@ -323,8 +323,9 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
         để ghi nhãn mốc thời gian lên báo cáo (VD "Tháng 7 năm 2026"), không
         làm thay đổi số liệu."""
         from apps.common.excel import xlsx_response
+        from apps.common.company import COMPANY
         from openpyxl import Workbook
-        from openpyxl.styles import Font
+        from openpyxl.styles import Alignment, Font
         group_id = request.query_params.get('group')
         month = request.query_params.get('month')
         year = request.query_params.get('year')
@@ -335,24 +336,49 @@ class InventoryViewSet(viewsets.ReadOnlyModelViewSet):
         wb = Workbook()
         ws = wb.active
         if group_id:
+            # #26 biên bản: khớp đúng mẫu "Báo cáo tổng hợp tồn kho" kế toán đang
+            # dùng ở phần mềm cũ (tài khoản 156 - Hàng hoá) — đơn vị/địa chỉ +
+            # tiêu đề + "Tài khoản: 156" + cột STT/Tên/ĐVT/Số lượng/Đơn giá/Thành
+            # tiền. "Đơn giá" = giá vốn bình quân (cost_vnd), KHÔNG phải giá bán —
+            # chuẩn kế toán VN định giá tồn kho tài khoản 156 theo giá vốn.
             ws.title = 'TonKhoNhom'
             ncols = 6
+            gname = (g.name if g else '').upper()
+            ws.cell(1, 1, f"Đơn vị :  {COMPANY['name']}").font = Font(bold=True)
+            ws.cell(2, 1, f"Địa chỉ :  {COMPANY['address']}")
+            ws.append([])
+            ws.merge_cells(start_row=4, start_column=1, end_row=4, end_column=ncols)
+            title = ws.cell(4, 1, 'BÁO CÁO TỔNG HỢP TỒN KHO')
+            title.font = Font(bold=True, size=16, color='1F4E78')
+            title.alignment = Alignment(horizontal='center')
             if month or year:
                 period = f"Tháng {month} năm {year}" if month and year else (f"Năm {year}" if year else f"Tháng {month}")
-                ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=ncols)
-                title = ws.cell(1, 1, f"BÁO CÁO TỒN KHO NHÓM HÀNG {(g.name if g else '').upper()} — {period.upper()}")
-                title.font = Font(bold=True, size=13)
-                ws.merge_cells(start_row=2, start_column=1, end_row=2, end_column=ncols)
-                note = ws.cell(2, 1, '(Số liệu tồn kho hiện tại tại thời điểm xuất báo cáo)')
-                note.font = Font(italic=True, size=9, color='777777')
-            ws.append(['Mã', 'Tên hàng hóa', 'ĐVT', 'Tồn (SL)', 'Giá vốn', 'Giá trị (VNĐ)'])
+                ws.merge_cells(start_row=5, start_column=1, end_row=5, end_column=ncols)
+                p = ws.cell(5, 1, period)
+                p.font = Font(bold=True, size=11)
+                p.alignment = Alignment(horizontal='center')
+            ws.merge_cells(start_row=6, start_column=1, end_row=6, end_column=ncols)
+            ws.cell(6, 1, f"Tài khoản: 156 (Hàng hoá)     Nhóm hàng: {gname} ({gname})")
+            ws.merge_cells(start_row=7, start_column=1, end_row=7, end_column=ncols)
+            unit_note = ws.cell(7, 1, 'Đơn vị tính : Đồng')
+            unit_note.alignment = Alignment(horizontal='right')
+            ws.append([])
+            header_row = 9
+            ws.append(['STT', 'Tên vật tư, hàng hóa', 'ĐVT', 'Số lượng', 'Đơn giá', 'Thành tiền'])
+            for c in ws[header_row]:
+                c.font = Font(bold=True)
+                c.alignment = Alignment(horizontal='center')
             rows = self._group_detail_rows(group_id)
-            for r in rows:
-                ws.append([r['code'], r['name'], r['unit'], r['qty'], r['cost'], r['value']])
-            total_row = ['', '', 'Tổng', sum(r['qty'] for r in rows), '', sum(r['value'] for r in rows)]
-            ws.append(total_row)
+            for i, r in enumerate(rows, start=1):
+                # Không có cột "Mã" riêng theo mẫu — vẫn giữ mã hàng trong tên
+                # (khớp ảnh mẫu "Bánh răng - T74805") để còn tra cứu được.
+                ws.append([i, f"{r['name']} - {r['code']}", r['unit'], r['qty'], r['cost'], r['value']])
+            ws.append(['', 'Tổng cộng', '', sum(r['qty'] for r in rows), '', sum(r['value'] for r in rows)])
             for c in ws[ws.max_row]:
                 c.font = Font(bold=True)
+            widths = [6, 42, 8, 12, 14, 16]
+            for ci, w in enumerate(widths, start=1):
+                ws.column_dimensions[ws.cell(1, ci).column_letter].width = w
         else:
             ws.title = 'TonKhoTheoNhom'
             ws.append(['Loại', 'Nhóm hàng', 'Tồn (SL)', 'Giá trị (VNĐ)'])
