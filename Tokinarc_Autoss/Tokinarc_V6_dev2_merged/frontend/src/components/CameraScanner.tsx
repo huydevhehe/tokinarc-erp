@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { readBarcodes, prepareZXingModule } from 'zxing-wasm/reader'
 import wasmUrl from 'zxing-wasm/reader/zxing_reader.wasm?url'
-import { Camera, CameraOff } from 'lucide-react'
+import { Camera, CameraOff, Upload } from 'lucide-react'
 import { Button } from '@/components/ui'
 
 // Nạp WASM từ bundle local (kho có thể offline — không phụ thuộc CDN).
@@ -22,6 +22,8 @@ export function CameraScanner({ onScan }: { onScan: (code: string) => void }) {
   const [scanning, setScanning] = useState(false)
   const [camError, setCamError] = useState('')
   const [hit, setHit] = useState('')   // mã vừa quét — flash "✓ đã quét"
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Camera chỉ chạy ở "secure context" (HTTPS / localhost).
   const cameraReady = typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia
@@ -76,6 +78,28 @@ export function CameraScanner({ onScan }: { onScan: (code: string) => void }) {
       rafRef.current = requestAnimationFrame(tick)
     }
     rafRef.current = requestAnimationFrame(tick)
+  }
+
+  // Tải ảnh có sẵn lên (chụp trước đó / ảnh chép từ máy khác) — đọc thẳng mã
+  // vạch/QR trong ảnh tĩnh, không cần camera trực tiếp. Dùng chung 1 luồng
+  // readBarcodes như quét camera (zxing-wasm nhận Blob/File luôn).
+  const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''   // cho chọn lại đúng file cũ nếu cần
+    if (!file) return
+    setUploading(true)
+    try {
+      const results = await readBarcodes(file, { tryHarder: true, maxNumberOfSymbols: 1 })
+      const text = results[0]?.text
+      if (!text) { setCamError('Không đọc được mã vạch/QR trong ảnh này — thử ảnh rõ nét hơn.'); return }
+      setCamError('')
+      beep(); setHit(text); setTimeout(() => setHit(''), 1300)
+      onScanRef.current(text)
+    } catch {
+      setCamError('Không đọc được mã vạch/QR trong ảnh này — thử ảnh rõ nét hơn.')
+    } finally {
+      setUploading(false)
+    }
   }
 
   const start = async () => {
@@ -140,11 +164,15 @@ export function CameraScanner({ onScan }: { onScan: (code: string) => void }) {
         )}
       </div>
       {camError && <p className="text-danger text-xs mt-1.5">{camError}</p>}
-      {scanning && (
-        <div className="mt-1.5 text-right">
+      <div className="mt-1.5 flex items-center justify-between gap-2">
+        <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={onUpload} />
+        <Button variant="ghost" size="sm" disabled={uploading} onClick={() => fileInputRef.current?.click()}>
+          <Upload size={13} /> {uploading ? 'Đang đọc ảnh…' : 'Tải ảnh lên'}
+        </Button>
+        {scanning && (
           <Button variant="ghost" size="sm" onClick={stop}><CameraOff size={13} /> Dừng camera</Button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

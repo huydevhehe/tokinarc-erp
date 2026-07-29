@@ -8,7 +8,7 @@ import {
   Flame, LogOut, LayoutDashboard, TrendingUp, Building2,
   Radar, Target, FileText, ScrollText, MapPin, Phone,
   Ticket as TicketIcon, ShieldCheck, Wrench, Sparkles, Menu, X, Wallet,
-  Package, Barcode, History, PackageCheck,
+  Package, Barcode, ScanLine, History, PackageCheck,
   Warehouse, Map as MapIcon, Crown, Bot, ClipboardCheck,
   ShoppingCart, Building, Undo2, CalendarDays, UserCog, MessageSquare, FolderTree,
   PanelLeftClose, PanelLeftOpen,
@@ -91,7 +91,8 @@ const WMS_NAV: NavGroup[] = [
     { to: '/wms/movements', icon: <History size={16} />, label: 'Lịch sử kho' },
   ]},
   { group: 'Cấu hình & công cụ', items: [
-    { to: '/wms/cycle-count', icon: <ClipboardCheck size={16} />, label: 'Kiểm kê & Tra cứu' },
+    { to: '/wms/cycle-count', icon: <ClipboardCheck size={16} />, label: 'Kiểm kê' },
+    { to: '/wms/barcode-assign', icon: <ScanLine size={16} />, label: 'Gán mã vạch/QR' },
     { to: '/wms/warehouses', icon: <Warehouse size={16} />, label: 'Kho & vị trí' },
     { to: '/wms/map', icon: <MapIcon size={16} />, label: 'Bản đồ kho' },
     // #3 biên bản (2026-07-22): trước đây khu Kho không có đường vào trang Sản

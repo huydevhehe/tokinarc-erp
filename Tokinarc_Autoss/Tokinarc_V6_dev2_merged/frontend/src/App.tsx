@@ -30,6 +30,7 @@ import { SalesPerformancePage } from '@/pages/crm/SalesPerformance'
 import { WarrantyPage } from '@/pages/crm/Warranty'
 import { ProceduresPage } from '@/pages/crm/Procedures'
 import { WmsCycleCountPage } from '@/pages/wms/CycleCount'
+import { BarcodeAssignPage } from '@/pages/wms/BarcodeAssign'
 import { TracePage } from '@/pages/wms/Trace'
 import { PurchaseOrdersPage } from '@/pages/purchasing/PurchaseOrders'
 import { SuppliersPage } from '@/pages/purchasing/Suppliers'
@@ -131,6 +132,7 @@ export function App() {
           <Route path="wms/map" element={<WarehouseMapPage />} />
           <Route path="wms/scan" element={<Navigate to="/wms/cycle-count" replace />} />
           <Route path="wms/cycle-count" element={<WmsCycleCountPage />} />
+          <Route path="wms/barcode-assign" element={<BarcodeAssignPage />} />
           <Route path="wms/lots" element={<Navigate to="/wms/trace" replace />} />
           <Route path="wms/ops-kpi" element={<Navigate to="/wms/dashboard" replace />} />
           <Route path="wms/product-groups" element={<RequireRole roles={[...WMS_CTRL]}><ProductTaxonomyPage /></RequireRole>} />
