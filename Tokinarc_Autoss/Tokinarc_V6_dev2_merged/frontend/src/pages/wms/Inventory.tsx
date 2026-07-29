@@ -104,7 +104,7 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
               <select value={groupFilter}
                 onChange={(e) => { setGroupFilter(e.target.value); if (!e.target.value) { setReportMonth(''); setReportYear('') } }}
                 className="bg-ink-2 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame">
-                <option value="">Tất cả nhóm SP</option>
+                <option value="">— Chọn nhóm hàng để xuất —</option>
                 {groupOptions.map((g) => <option key={g.id} value={g.id}>{g.name}</option>)}
               </select>
             )}
@@ -128,19 +128,18 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
                 </select>
               </>
             )}
-            {groupView && (
+            {groupView && groupFilter && (
               <Button variant="ghost"
                 onClick={() => {
                   const g = groupOptions.find((o) => String(o.id) === groupFilter)
                   let fname = g ? `ton_kho_${g.name.replace(/[^a-zA-Z0-9_-]/g, '_')}` : 'ton_kho_theo_nhom'
-                  if (groupFilter && reportYear) fname += `_${reportYear}${reportMonth ? `_${reportMonth.padStart(2, '0')}` : ''}`
-                  else if (groupFilter && reportMonth) fname += `_thang${reportMonth}`
+                  if (reportYear) fname += `_${reportYear}${reportMonth ? `_${reportMonth.padStart(2, '0')}` : ''}`
+                  else if (reportMonth) fname += `_thang${reportMonth}`
                   const params = new URLSearchParams()
-                  if (groupFilter) params.set('group', groupFilter)
-                  if (groupFilter && reportMonth) params.set('month', reportMonth)
-                  if (groupFilter && reportYear) params.set('year', reportYear)
-                  const qs = params.toString()
-                  downloadFile(`/wms/inventory/export-by-category/${qs ? `?${qs}` : ''}`, `${fname}.xlsx`)
+                  params.set('group', groupFilter)
+                  if (reportMonth) params.set('month', reportMonth)
+                  if (reportYear) params.set('year', reportYear)
+                  downloadFile(`/wms/inventory/export-by-category/?${params.toString()}`, `${fname}.xlsx`)
                 }}>
                 <Download size={14} /> Xuất Excel theo nhóm
               </Button>
