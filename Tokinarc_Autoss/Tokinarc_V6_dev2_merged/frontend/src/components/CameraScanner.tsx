@@ -53,7 +53,13 @@ export function CameraScanner({ onScan }: { onScan: (code: string) => void }) {
   const scanLoop = () => {
     const canvas = canvasRef.current ?? (canvasRef.current = document.createElement('canvas'))
     let reading = false
-    let lastText = ''; let lastAt = 0
+    // Chống quét trùng theo VỊ TRÍ (còn thấy mã hay không), không theo thời gian:
+    // giữ camera đứng yên trên cùng 1 mã bao lâu cũng chỉ tính 1 lần — phải đưa
+    // mã ra khỏi khung (hoặc đổi mã khác) rồi đưa lại mới tính là quét mới. Trước
+    // đây chống trùng theo mốc 1.5s nên cầm yên tem ~4-5s là bắn lại onScan, gây
+    // trùng/nhân đôi (VD +1 SL 2 lần) dù người dùng không quét thêm gì.
+    let lastText = ''
+    let missStreak = 0   // số khung liên tiếp KHÔNG thấy mã — chờ vài khung mới coi là "đã rời mã", tránh 1 khung mờ/rung làm rớt rồi bắn lại ngay chính mã đó
     const tick = async () => {
       const v = videoRef.current
       if (!v || v.readyState < 2 || !streamRef.current) { rafRef.current = requestAnimationFrame(tick); return }
@@ -66,11 +72,15 @@ export function CameraScanner({ onScan }: { onScan: (code: string) => void }) {
           const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
           const results = await readBarcodes(img, { tryHarder: true, maxNumberOfSymbols: 1 })
           const text = results[0]?.text
-          // Chống quét trùng liên tục: cùng mã trong 1.5s thì bỏ qua.
-          if (text && !(text === lastText && Date.now() - lastAt < 1500)) {
-            lastText = text; lastAt = Date.now()
-            beep(); setHit(text); setTimeout(() => setHit(''), 1300)
-            onScanRef.current(text)
+          if (text) {
+            missStreak = 0
+            if (text !== lastText) {
+              lastText = text
+              beep(); setHit(text); setTimeout(() => setHit(''), 1300)
+              onScanRef.current(text)
+            }
+          } else if (lastText && ++missStreak > 5) {
+            lastText = ''
           }
         } catch { /* bỏ qua frame lỗi */ }
         reading = false
