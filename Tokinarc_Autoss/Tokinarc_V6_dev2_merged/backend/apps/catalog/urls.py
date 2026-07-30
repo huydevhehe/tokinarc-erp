@@ -10,10 +10,11 @@ from rest_framework.routers import DefaultRouter
 from .imports import PartImportTemplateView, PartImportView
 from .product_groups import ProductCategoryViewSet, ProductGroupViewSet
 from .stock_availability import StockAvailabilityView
-from .views import PartViewSet, TorchViewSet, ProcedureViewSet
+from .views import PartBarcodeViewSet, PartViewSet, TorchViewSet, ProcedureViewSet
 
 router = DefaultRouter()
 router.register(r'parts',      PartViewSet,      basename='part')
+router.register(r'part-barcodes', PartBarcodeViewSet, basename='part-barcode')
 router.register(r'torches',    TorchViewSet,     basename='torch')
 router.register(r'procedures', ProcedureViewSet, basename='procedure')
 router.register(r'product-groups',     ProductGroupViewSet,    basename='product-group')

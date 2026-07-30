@@ -31,7 +31,7 @@ from rest_framework import serializers as drf_serializers
 
 from apps.catalog.models import Part, PartBarcode, Torch, ProcedureQA
 from apps.catalog.serializers import (
-    PartDetailSerializer, PartLiteSerializer, PartWriteSerializer,
+    PartBarcodeSerializer, PartDetailSerializer, PartLiteSerializer, PartWriteSerializer,
     TorchDetailSerializer, TorchLiteSerializer, TorchWriteSerializer,
 )
 
@@ -52,6 +52,26 @@ class PartTorchWritePermission(BasePermission):
         from apps.accounts.roles import WMS_CONTROL_ROLES, Role, role_of
         role = role_of(u)
         if view.action == 'create':
+            return role in WMS_CONTROL_ROLES or role == Role.WAREHOUSE
+        return role in WMS_CONTROL_ROLES
+
+
+class PartBarcodeWritePermission(BasePermission):
+    """Danh sách mã vạch/QR đã gán (trang "Gán mã vạch/QR" > tab "Danh sách đã
+    gán"): CHỈ nhân viên nội bộ xem được (không public như Part/Torch). Tạo
+    mới: NV kho trở lên. Sửa/xóa: chỉ Quản lý kho trở lên — tránh gán/xóa nhầm
+    mã đang dùng thật ngoài kiểm soát (khớp pattern PartTorchWritePermission)."""
+    message = "Không đủ quyền thao tác danh sách mã vạch/QR."
+
+    def has_permission(self, request, view) -> bool:
+        u = request.user
+        if not (u and u.is_authenticated):
+            return False
+        from apps.accounts.roles import WMS_CONTROL_ROLES, Role, role_of
+        role = role_of(u)
+        if role == Role.CUSTOMER:
+            return False
+        if request.method in SAFE_METHODS or view.action == 'create':
             return role in WMS_CONTROL_ROLES or role == Role.WAREHOUSE
         return role in WMS_CONTROL_ROLES
 
@@ -241,6 +261,18 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         qs = qs.order_by('-is_priority_sell', 'tokin_part_no')[:top_k]
         data = PartLiteSerializer(qs, many=True).data
         return Response({'results': data, 'count': len(data), 'query': q})
+
+
+# ─── PartBarcodeViewSet — quản lý danh sách mã đã gán (thêm/sửa/xóa) ─────────
+class PartBarcodeViewSet(viewsets.ModelViewSet):
+    """CRUD đầy đủ cho danh sách mã vạch/QR đã gán — trang "Gán mã vạch/QR" >
+    tab "Danh sách đã gán". Khác action set-barcode (quét-gán nhanh, chỉ tạo
+    không sửa/xóa) — ở đây cho sửa (đổi sản phẩm) và xóa (bỏ gán) hẳn hoi."""
+    queryset = PartBarcode.objects.select_related('part').order_by('-created_at')
+    serializer_class = PartBarcodeSerializer
+    permission_classes = [PartBarcodeWritePermission]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['code', 'part__tokin_part_no', 'part__display_name_vi']
 
 
 # ─── TorchViewSet ────────────────────────────────────────────────────────────

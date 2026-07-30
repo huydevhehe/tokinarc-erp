@@ -16,7 +16,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from apps.catalog.models import Part, ProductCategory, ProductGroup, Torch
+from apps.catalog.models import Part, PartBarcode, ProductCategory, ProductGroup, Torch
 from apps.catalog.pricing import format_price_vi, get_effective_price
 
 
@@ -51,6 +51,28 @@ class PartLiteSerializer(serializers.ModelSerializer):
         if obj.is_contact_price:
             return 'Liên hệ'
         return format_price_vi(get_effective_price(obj))
+
+
+class PartBarcodeSerializer(serializers.ModelSerializer):
+    """Quản lý danh sách mã đã gán (trang "Gán mã vạch/QR" > tab "Danh sách đã
+    gán") — thêm/sửa/xóa từng mã, khác với action set-barcode (quét-gán nhanh
+    1 chiều, không cho sửa/xóa)."""
+    part_name = serializers.CharField(source='part.display_name_vi', read_only=True)
+
+    class Meta:
+        model = PartBarcode
+        fields = ['id', 'part', 'part_name', 'code', 'created_at']
+        read_only_fields = ['id', 'created_at']
+
+    def validate_code(self, value):
+        qs = PartBarcode.objects.filter(code=value)
+        if self.instance:
+            qs = qs.exclude(pk=self.instance.pk)
+        clash = qs.select_related('part').first()
+        if clash:
+            raise serializers.ValidationError(
+                f'Mã "{value}" đã gán cho {clash.part_id} ({clash.part.display_name_vi}).')
+        return value
 
 
 class PartWriteSerializer(serializers.ModelSerializer):
