@@ -38,9 +38,9 @@ from apps.catalog.serializers import (
 
 class PartTorchWritePermission(BasePermission):
     """Đọc: công khai (giữ nguyên AllowAny — trang tra cứu/chatbot phụ thuộc).
-    Tạo mới: NV kho trở lên (thêm nhanh mặt hàng ngay khi lập phiếu nhập kho).
-    Sửa/"xóa" (is_active=false): chỉ Quản lý kho trở lên — tránh dữ liệu giá/thuế
-    đã có bị NV kho thường chỉnh sai ngoài kiểm soát."""
+    Tạo/sửa/"xóa" (is_active=false): NV kho trở lên (2026-07-31 — trước đây
+    sửa/xóa chỉ Quản lý kho, NV kho chỉ tạo được; nới ra cho NV kho tự quản lý
+    trọn vẹn Danh mục sản phẩm luôn, không cần chờ Quản lý kho)."""
     message = "Không đủ quyền tạo/sửa sản phẩm."
 
     def has_permission(self, request, view) -> bool:
@@ -51,9 +51,7 @@ class PartTorchWritePermission(BasePermission):
             return False
         from apps.accounts.roles import WMS_CONTROL_ROLES, Role, role_of
         role = role_of(u)
-        if view.action == 'create':
-            return role in WMS_CONTROL_ROLES or role == Role.WAREHOUSE
-        return role in WMS_CONTROL_ROLES
+        return role in WMS_CONTROL_ROLES or role == Role.WAREHOUSE
 
 
 class PartBarcodeWritePermission(BasePermission):

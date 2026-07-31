@@ -29,10 +29,16 @@ import {
 
 type TabKey = 'parts' | 'torches'
 
-/** Quản lý Nhóm/Danh mục + gắn SP: Quản lý kho trở lên (khớp backend WMS_CONTROL). */
+/** Quản lý Nhóm/Danh mục + gắn SP vào Danh mục: Quản lý kho trở lên (khớp backend WMS_CONTROL). */
 function useCanManageTaxonomy(): boolean {
   const role = useAuth((s) => s.user?.role)
   return role === 'wh_manager' || role === 'manager' || role === 'ceo'
+}
+
+/** Thêm/sửa/xoá phụ tùng, súng hàn: NV kho trở lên (2026-07-31 — nới từ Quản lý kho). */
+function useCanManageProducts(): boolean {
+  const role = useAuth((s) => s.user?.role)
+  return role === 'warehouse' || role === 'wh_manager' || role === 'manager' || role === 'ceo'
 }
 
 export function ProductsPage() {
@@ -51,6 +57,7 @@ export function ProductsPage() {
   const importRole = useAuth((s) => s.user?.role)
   const canImport = isManager(importRole) || importRole === 'warehouse' || importRole === 'wh_manager'
   const canManage = useCanManageTaxonomy()
+  const canManageProducts = useCanManageProducts()
   const debounced = useDebounced(search, 350, () => setPage(1))
 
   const openCreate = () => {
@@ -87,7 +94,7 @@ export function ProductsPage() {
             {tab === 'parts' && canImport && (
               <Button variant="ghost" onClick={() => setImportOpen(true)}><Upload size={14} /> Import</Button>
             )}
-            {canManage && (
+            {canManageProducts && (
               <Button onClick={openCreate}>
                 <Plus size={14} /> Thêm {tab === 'parts' ? 'phụ tùng' : 'súng hàn'}
               </Button>
@@ -134,9 +141,10 @@ export function ProductsPage() {
 
       {tab === 'parts'
         ? <PartsTable search={debounced} page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize}
-            group={groupFilter} category={catFilter} groupList={groupList} canManage={canManage} onEdit={openEditPart} />
+            group={groupFilter} category={catFilter} groupList={groupList}
+            canManage={canManageProducts} canAssignCategory={canManage} onEdit={openEditPart} />
         : <TorchesTable search={debounced} page={page} setPage={setPage} pageSize={pageSize} setPageSize={setPageSize}
-            canManage={canManage} onEdit={openEditTorch} />}
+            canManage={canManageProducts} onEdit={openEditTorch} />}
 
       <ImportModal open={importOpen} onClose={() => setImportOpen(false)} spec={{
         title: 'Import danh mục phụ tùng (Kho)',
@@ -203,10 +211,10 @@ function AssignCell({ part, groupList }: { part: CatalogPart; groupList: Product
   )
 }
 
-function PartsTable({ search, page, setPage, pageSize, setPageSize, group, category, groupList, canManage, onEdit }: {
+function PartsTable({ search, page, setPage, pageSize, setPageSize, group, category, groupList, canManage, canAssignCategory, onEdit }: {
   search: string; page: number; setPage: (f: (p: number) => number) => void
   pageSize: number; setPageSize: (n: number) => void
-  group?: string; category?: string; groupList: ProductGroupNode[]; canManage: boolean
+  group?: string; category?: string; groupList: ProductGroupNode[]; canManage: boolean; canAssignCategory: boolean
   onEdit: (p: CatalogPart) => void
 }) {
   const qc = useQueryClient()
@@ -228,14 +236,14 @@ function PartsTable({ search, page, setPage, pageSize, setPageSize, group, categ
     onError: (e) => toast.error(apiError(e)),
   })
   // cột: Mã, Tên, Nhóm, Danh mục, [Gắn], Giá bán, Thuế, [Giá vốn], [Hành động]
-  const cols = 6 + (canManage ? 2 : 0) + (canSeeCost ? 1 : 0)
+  const cols = 6 + (canAssignCategory ? 1 : 0) + (canManage ? 1 : 0) + (canSeeCost ? 1 : 0)
   return (
     <>
       {data && <p className="text-xs text-txt-2 mb-2">{data.count} phụ tùng</p>}
       <TableCard>
         <thead><tr className="border-b border-line">
           <Th>Mã</Th><Th>Tên</Th><Th>Nhóm SP</Th><Th>Danh mục</Th>
-          {canManage && <Th>Gắn danh mục</Th>}
+          {canAssignCategory && <Th>Gắn danh mục</Th>}
           <Th className="text-right">Giá bán</Th>
           <Th className="text-right">Thuế</Th>
           {canSeeCost && <Th className="text-right">Giá vốn</Th>}
@@ -251,7 +259,7 @@ function PartsTable({ search, page, setPage, pageSize, setPageSize, group, categ
               <Td className="font-medium">{p.display_name_vi || p.display_name_en || '—'}</Td>
               <Td className="text-txt-2">{p.group_name || '—'}</Td>
               <Td className="text-txt-2">{p.category_name || '—'}</Td>
-              {canManage && <Td><AssignCell part={p} groupList={groupList} /></Td>}
+              {canAssignCategory && <Td><AssignCell part={p} groupList={groupList} /></Td>}
               <Td className="text-right"><PriceCell display={p.price_display} contact={p.is_contact_price} /></Td>
               <Td className="text-right text-txt-2 tabular-nums">{p.tax_pct != null ? `${p.tax_pct}%` : '—'}</Td>
               {canSeeCost && (
