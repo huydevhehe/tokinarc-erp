@@ -4,14 +4,17 @@
  * (owner do backend tự gán; tạo mới không cần gõ mã — backend tự sinh KH-XXXX,
  * khớp pattern SupplierFormModal — dùng lại được cho cả trang KH lẫn thêm nhanh
  * KH lẻ ngay lúc lập phiếu xuất kho.)
+ * Gõ MST tự tra cứu tên công ty (giống SupplierFormModal) — không bắt buộc vì
+ * có khách hàng bán lẻ không có MST.
  */
 import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import type { AxiosError } from 'axios'
-import { Building2, AlertTriangle } from 'lucide-react'
+import { Building2, AlertTriangle, Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
+import { useDebounced } from '@/lib/useDebounced'
 import { SEGMENT_LABEL, CUSTOMER_STATUS_LABEL } from '@/lib/crm'
 import { optionsFromLabels } from '@/lib/useCustomerOptions'
 import type { Customer, CustomerDetail } from '@/lib/types'
@@ -37,18 +40,44 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
   onSaved?: (c: Customer) => void
 }) {
   const qc = useQueryClient()
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
+  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<Form>({ defaultValues: EMPTY })
   const [dupMatches, setDupMatches] = useState<DupMatch[] | null>(null)
+  const taxCodeInput = watch('tax_code')
+  const dTaxCodeLookup = useDebounced(taxCodeInput, 600)
+  const [lookup, setLookup] = useState<'idle' | 'loading' | 'found' | 'notfound'>('idle')
 
   useEffect(() => {
     if (!open) return
     setDupMatches(null)
+    setLookup('idle')
     reset(editing ? {
       name: editing.name, tax_code: editing.tax_code,
       segment: editing.segment, region: editing.region, status: editing.status,
       notes: (editing as CustomerDetail).notes ?? '',
     } : EMPTY)
   }, [open, editing, reset])
+
+  // Gõ MST -> tự tra cứu tên doanh nghiệp (API công khai, không cần key).
+  // Chỉ chạy khi THÊM MỚI KH; MST không bắt buộc (khách lẻ bỏ trống là được).
+  useEffect(() => {
+    const mst = (dTaxCodeLookup || '').trim()
+    if (!open || editing || mst.length < 10) { setLookup('idle'); return }
+    let cancelled = false
+    setLookup('loading')
+    fetch(`https://api.vietqr.io/v2/business/${mst}`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (cancelled) return
+        if (j?.code === '00' && j.data) {
+          if (j.data.name) setValue('name', j.data.name)
+          setLookup('found')
+        } else {
+          setLookup('notfound')
+        }
+      })
+      .catch(() => { if (!cancelled) setLookup('notfound') })
+    return () => { cancelled = true }
+  }, [dTaxCodeLookup, open, editing, setValue])
 
   const save = useMutation({
     mutationFn: (data: Form) => editing
@@ -97,7 +126,21 @@ export function CustomerForm({ open, onClose, editing, onSaved }: {
           </FieldRow>
         )}
         {!editing && (
-          <TextInput label="Mã số thuế" full placeholder="Không bắt buộc — bỏ trống nếu KH lẻ" {...register('tax_code')} />
+          <div className="mb-3">
+            <TextInput label="Mã số thuế" full placeholder="Không bắt buộc — bỏ trống nếu KH lẻ, gõ MST để tự điền tên công ty…"
+              {...register('tax_code')} />
+            {lookup === 'loading' && (
+              <p className="text-[11px] text-txt-2 mt-1 flex items-center gap-1">
+                <Loader2 size={11} className="animate-spin" /> Đang tra cứu…
+              </p>
+            )}
+            {lookup === 'found' && (
+              <p className="text-[11px] text-ok mt-1">✓ Đã tìm thấy, tự điền tên công ty bên dưới — vẫn có thể sửa lại.</p>
+            )}
+            {lookup === 'notfound' && (
+              <p className="text-[11px] text-txt-2 mt-1">Không tìm thấy doanh nghiệp với MST này — tự nhập tay.</p>
+            )}
+          </div>
         )}
         <TextInput label="Tên công ty/khách hàng *" full error={errors.name?.message}
           {...register('name', { required: 'Bắt buộc' })} />
