@@ -155,7 +155,8 @@ export function ProductsPage() {
         hint: 'Mỗi dòng = 1 phụ tùng. Trùng mã (tokin_part_no) sẽ CẬP NHẬT, không tạo trùng. Có thể tải thẳng file "Báo cáo tổng hợp Nhập Xuất Tồn" từ phần mềm kế toán lên đây — hệ thống tự nhận diện, tự tách tên/mã và lấy giá vốn, không cần chỉnh sửa file trước.',
       }} />
 
-      <PartForm open={partFormOpen} editing={editingPart} onClose={() => { setPartFormOpen(false); setEditingPart(null) }} />
+      <PartForm open={partFormOpen} editing={editingPart} onClose={() => { setPartFormOpen(false); setEditingPart(null) }}
+        groupList={groupList} canManageTaxonomy={canManage} />
       <TorchForm open={torchFormOpen} editing={editingTorch} onClose={() => { setTorchFormOpen(false); setEditingTorch(null) }} />
     </div>
   )
@@ -368,15 +369,16 @@ function Box({ label, value, tone }: { label: string; value: string; tone?: 'ok'
 
 interface PartFormValues {
   tokin_part_no: string; category: string; display_name_vi: string; display_name_en: string
-  price_vnd: string; tax_pct: string; is_contact_price: boolean
+  price_vnd: string; tax_pct: string; is_contact_price: boolean; product_category: string
 }
 const EMPTY_PART_FORM: PartFormValues = {
   tokin_part_no: '', category: '', display_name_vi: '', display_name_en: '',
-  price_vnd: '', tax_pct: '', is_contact_price: false,
+  price_vnd: '', tax_pct: '', is_contact_price: false, product_category: '',
 }
 
-function PartForm({ open, editing, onClose }: {
+function PartForm({ open, editing, onClose, groupList, canManageTaxonomy }: {
   open: boolean; editing: CatalogPart | null; onClose: () => void
+  groupList: ProductGroupNode[]; canManageTaxonomy: boolean
 }) {
   const qc = useQueryClient()
   const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<PartFormValues>({ defaultValues: EMPTY_PART_FORM })
@@ -389,6 +391,7 @@ function PartForm({ open, editing, onClose }: {
       price_vnd: editing.effective_price_vnd != null ? String(editing.effective_price_vnd) : '',
       tax_pct: editing.tax_pct != null ? String(editing.tax_pct) : '',
       is_contact_price: editing.is_contact_price,
+      product_category: editing.product_category != null ? String(editing.product_category) : '',
     } : EMPTY_PART_FORM)
   }, [open, editing, reset])
 
@@ -400,6 +403,9 @@ function PartForm({ open, editing, onClose }: {
         price_vnd: d.price_vnd !== '' ? Number(d.price_vnd) : null,
         tax_pct: d.tax_pct !== '' ? Number(d.tax_pct) : null,
         is_contact_price: d.is_contact_price,
+        // Không có quyền quản lý Nhóm/Danh mục → KHÔNG gửi field này, tránh vô
+        // tình xoá mất phân loại đã gắn (payload thiếu key thì backend giữ nguyên).
+        ...(canManageTaxonomy ? { product_category: d.product_category ? Number(d.product_category) : null } : {}),
       }
       return editing
         ? api.patch(`/catalog/parts/${encodeURIComponent(editing.tokin_part_no)}/`, payload)
@@ -408,6 +414,7 @@ function PartForm({ open, editing, onClose }: {
     onSuccess: () => {
       toast.success(editing ? 'Đã lưu phụ tùng' : 'Đã tạo phụ tùng')
       qc.invalidateQueries({ queryKey: ['catalog-parts'] })
+      qc.invalidateQueries({ queryKey: ['product-groups'] })
       onClose()
     },
     onError: (e) => toast.error(apiError(e)),
@@ -449,6 +456,20 @@ function PartForm({ open, editing, onClose }: {
           </div>
           <TextInput label="Thuế (%)" type="number" placeholder="VD: 8" {...register('tax_pct')} />
         </FieldRow>
+        {canManageTaxonomy && (
+          <div className="mb-3">
+            <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Nhóm hàng</label>
+            <select {...register('product_category')}
+              className="w-full bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame focus:outline-none">
+              <option value="">— Chưa phân loại —</option>
+              {groupList.map((g) => (
+                <optgroup key={g.id} label={g.name}>
+                  {g.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+        )}
         <label className="flex items-center gap-2 text-sm text-txt-2">
           <input type="checkbox" {...register('is_contact_price')} className="accent-flame" />
           Giá liên hệ (không hiện giá cụ thể)
