@@ -16,7 +16,7 @@ import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
 import { useAuth, isWmsControl } from '@/lib/auth/store'
-import { CameraScanner } from '@/components/CameraScanner'
+import { CameraScanner, type ScanKind } from '@/components/CameraScanner'
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { Modal } from '@/components/Modal'
 import { usePartOptions } from '@/lib/useWmsOptions'
@@ -30,9 +30,21 @@ export function BarcodeAssignPage() {
   const canManage = isWmsControl(useAuth((s) => s.user?.role))
   const [tab, setTab] = useState<'scan' | 'list'>('scan')
   const [lookupQ, setLookupQ] = useState('')
+  const [lookupKind, setLookupKind] = useState<ScanKind | null>(null)   // biết được nhờ quét (camera/ảnh) — gõ tay thì không biết loại
   const [assigning, setAssigning] = useState(false)   // quét-gán: mã lạ → gán cho 1 SP
   const [assignPick, setAssignPick] = useState('')
+  const [hasExtraCode, setHasExtraCode] = useState(false)   // tick "có kèm mã Barcode/QR khác không"
+  const [extraCode, setExtraCode] = useState('')
   const { options: partOptions, isLoading: partsLoading } = usePartOptions()
+
+  // Sản phẩm đang chọn để gán đã có sẵn mã nào chưa (để hiện thông tin, không
+  // bắt gõ lại nếu đã có sẵn mã loại kia rồi).
+  const existingCodes = useQuery({
+    queryKey: ['part-barcodes-for', assignPick],
+    queryFn: () => api.get<{ results: PartBarcodeRow[] }>('/catalog/part-barcodes/', { params: { search: assignPick } })
+      .then((r) => r.data.results.filter((row) => row.part === assignPick)),
+    enabled: assigning && !!assignPick,
+  })
 
   // Quét/nhập mã → tìm phụ tùng (catalog, có cả barcode) + serial (WMS).
   const lookup = useQuery({
@@ -48,10 +60,17 @@ export function BarcodeAssignPage() {
   })
 
   const assignMut = useMutation({
-    mutationFn: (partNo: string) => api.post(`/catalog/parts/${encodeURIComponent(partNo)}/set-barcode/`, { barcode: lookupQ.trim() }),
+    mutationFn: async (partNo: string) => {
+      const r = await api.post(`/catalog/parts/${encodeURIComponent(partNo)}/set-barcode/`, { barcode: lookupQ.trim() })
+      if (hasExtraCode && extraCode.trim()) {
+        await api.post(`/catalog/parts/${encodeURIComponent(partNo)}/set-barcode/`, { barcode: extraCode.trim() })
+      }
+      return r
+    },
     onSuccess: (r) => {
-      toast.success(`Đã gán "${lookupQ.trim()}" → ${r.data.part_no}. Lần sau quét ra ngay.`)
-      setAssigning(false); setAssignPick('')
+      const extra = hasExtraCode && extraCode.trim() ? ` + "${extraCode.trim()}"` : ''
+      toast.success(`Đã gán "${lookupQ.trim()}"${extra} → ${r.data.part_no}. Lần sau quét ra ngay.`)
+      setAssigning(false); setAssignPick(''); setHasExtraCode(false); setExtraCode('')
       qc.invalidateQueries({ queryKey: ['scan-lookup'] })
       qc.invalidateQueries({ queryKey: ['part-barcodes'] })
     },
@@ -116,10 +135,10 @@ export function BarcodeAssignPage() {
 
       {tab === 'scan' && (
       <div className="space-y-3">
-        <CameraScanner onScan={(c) => setLookupQ(c)} />
+        <CameraScanner onScan={(c, k) => { setLookupQ(c); setLookupKind(k) }} />
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-2" />
-          <input value={lookupQ} onChange={(e) => setLookupQ(e.target.value)}
+          <input value={lookupQ} onChange={(e) => { setLookupQ(e.target.value); setLookupKind(null) }}
             placeholder="Quét, tải ảnh, hoặc nhập mã hàng / serial…"
             className="w-full bg-ink-3 border border-line rounded-md pl-9 pr-3 py-2 text-sm focus:border-flame focus:outline-none" />
         </div>
@@ -135,13 +154,38 @@ export function BarcodeAssignPage() {
               </Button>
             ) : (
               <div className="space-y-2">
+                {lookupKind && (
+                  <label className="flex items-center gap-1.5 text-[11px] text-txt-2">
+                    <input type="checkbox" checked={hasExtraCode}
+                      onChange={(e) => { setHasExtraCode(e.target.checked); if (!e.target.checked) setExtraCode('') }} />
+                    Mã này có kèm {lookupKind === 'qr' ? 'Barcode' : 'QR'} riêng trên cùng tem/hộp không?
+                  </label>
+                )}
+                {hasExtraCode && (
+                  <input value={extraCode} onChange={(e) => setExtraCode(e.target.value)}
+                    placeholder={`Nhập mã ${lookupKind === 'qr' ? 'Barcode' : 'QR'} kèm theo…`}
+                    className="w-full bg-ink-3 border border-line rounded-md px-3 py-1.5 text-xs font-mono focus:border-flame focus:outline-none" />
+                )}
                 <p className="text-[11px] text-txt-2">Tìm & chọn sản phẩm để gán mã <span className="font-mono">{lookupQ.trim()}</span>:</p>
                 <SearchableSelect
                   value={assignPick}
-                  onChange={(v) => { setAssignPick(v); assignMut.mutate(v) }}
+                  onChange={setAssignPick}
                   options={partOptions} loading={partsLoading}
                   placeholder="Gõ tên hoặc mã sản phẩm để tìm…" />
-                <button onClick={() => { setAssigning(false); setAssignPick('') }} className="text-xs text-txt-2 hover:text-txt">Hủy</button>
+                {assignPick && !!existingCodes.data?.length && (
+                  <p className="text-[11px] text-txt-2">
+                    Sản phẩm này đã có sẵn mã: {existingCodes.data.map((row) => (
+                      <span key={row.id} className="font-mono text-flame mr-1.5">{row.code}</span>
+                    ))}
+                  </p>
+                )}
+                {assignPick && (
+                  <Button size="sm" disabled={assignMut.isPending} onClick={() => assignMut.mutate(assignPick)}>
+                    <Link2 size={14} /> Gán
+                  </Button>
+                )}
+                <button onClick={() => { setAssigning(false); setAssignPick(''); setHasExtraCode(false); setExtraCode('') }}
+                  className="text-xs text-txt-2 hover:text-txt block">Hủy</button>
               </div>
             )}
           </Card>

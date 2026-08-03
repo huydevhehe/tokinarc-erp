@@ -2,7 +2,10 @@
  * Tokinarc frontend — src/components/CameraScanner.tsx
  * Khung quét barcode/QR bằng camera điện thoại (zxing-wasm). Tái dùng cho:
  *   - Trang Quét mã (lẻ) và modal Quét theo phiếu Nhập/Xuất.
- * Mỗi lần đọc trúng mã → gọi onScan(code) + bíp + flash. Camera cần HTTPS/localhost.
+ * Mỗi lần đọc trúng mã → gọi onScan(code, kind) + bíp + flash. Camera cần HTTPS/localhost.
+ * kind: 'qr' (họ QRCode/MicroQR/RMQR) hay 'barcode' (mọi symbology còn lại —
+ * Code128/EAN13/DataMatrix/PDF417...) — zxing-wasm tự phân loại được, không
+ * cần đoán từ nội dung mã.
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { readBarcodes, prepareZXingModule } from 'zxing-wasm/reader'
@@ -13,7 +16,10 @@ import { Button } from '@/components/ui'
 // Nạp WASM từ bundle local (kho có thể offline — không phụ thuộc CDN).
 prepareZXingModule({ overrides: { locateFile: (p, prefix) => (p.endsWith('.wasm') ? wasmUrl : prefix + p) } })
 
-export function CameraScanner({ onScan }: { onScan: (code: string) => void }) {
+export type ScanKind = 'qr' | 'barcode'
+const kindOf = (symbology: string): ScanKind => (symbology === 'QRCode' ? 'qr' : 'barcode')
+
+export function CameraScanner({ onScan }: { onScan: (code: string, kind: ScanKind) => void }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number>(0)
@@ -77,7 +83,7 @@ export function CameraScanner({ onScan }: { onScan: (code: string) => void }) {
             if (text !== lastText) {
               lastText = text
               beep(); setHit(text); setTimeout(() => setHit(''), 1300)
-              onScanRef.current(text)
+              onScanRef.current(text, kindOf(results[0].symbology))
             }
           } else if (lastText && ++missStreak > 5) {
             lastText = ''
@@ -104,7 +110,7 @@ export function CameraScanner({ onScan }: { onScan: (code: string) => void }) {
       if (!text) { setCamError('Không đọc được mã vạch/QR trong ảnh này — thử ảnh rõ nét hơn.'); return }
       setCamError('')
       beep(); setHit(text); setTimeout(() => setHit(''), 1300)
-      onScanRef.current(text)
+      onScanRef.current(text, kindOf(results[0].symbology))
     } catch {
       setCamError('Không đọc được mã vạch/QR trong ảnh này — thử ảnh rõ nét hơn.')
     } finally {
