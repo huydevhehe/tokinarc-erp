@@ -156,7 +156,7 @@ export function ProductsPage() {
       }} />
 
       <PartForm open={partFormOpen} editing={editingPart} onClose={() => { setPartFormOpen(false); setEditingPart(null) }}
-        groupList={groupList} canManageTaxonomy={canManage} />
+        groupList={groupList} canManageTaxonomy={canManageProducts} />
       <TorchForm open={torchFormOpen} editing={editingTorch} onClose={() => { setTorchFormOpen(false); setEditingTorch(null) }} />
     </div>
   )
