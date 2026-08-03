@@ -35,6 +35,7 @@ export function BarcodeAssignPage() {
   const [assignPick, setAssignPick] = useState('')
   const [hasExtraCode, setHasExtraCode] = useState(false)   // tick "có kèm mã Barcode/QR khác không"
   const [extraCode, setExtraCode] = useState('')
+  const [scanningExtra, setScanningExtra] = useState(false)   // đang mở camera quét mã kèm theo (thay vì gõ tay)
   const { options: partOptions, isLoading: partsLoading } = usePartOptions()
 
   // Sản phẩm đang chọn để gán đã có sẵn mã nào chưa (để hiện thông tin, không
@@ -157,14 +158,27 @@ export function BarcodeAssignPage() {
                 {lookupKind && (
                   <label className="flex items-center gap-1.5 text-[11px] text-txt-2">
                     <input type="checkbox" checked={hasExtraCode}
-                      onChange={(e) => { setHasExtraCode(e.target.checked); if (!e.target.checked) setExtraCode('') }} />
+                      onChange={(e) => {
+                        setHasExtraCode(e.target.checked)
+                        if (!e.target.checked) { setExtraCode(''); setScanningExtra(false) }
+                      }} />
                     Mã này có kèm {lookupKind === 'qr' ? 'Barcode' : 'QR'} riêng trên cùng tem/hộp không?
                   </label>
                 )}
                 {hasExtraCode && (
-                  <input value={extraCode} onChange={(e) => setExtraCode(e.target.value)}
-                    placeholder={`Nhập mã ${lookupKind === 'qr' ? 'Barcode' : 'QR'} kèm theo…`}
-                    className="w-full bg-ink-3 border border-line rounded-md px-3 py-1.5 text-xs font-mono focus:border-flame focus:outline-none" />
+                  <div className="space-y-1.5">
+                    {scanningExtra ? (
+                      <CameraScanner onScan={(c) => { setExtraCode(c); setScanningExtra(false) }} />
+                    ) : (
+                      <Button size="sm" variant="ghost" onClick={() => setScanningExtra(true)}>
+                        <ScanLine size={13} /> Quét mã {lookupKind === 'qr' ? 'Barcode' : 'QR'} kèm theo
+                      </Button>
+                    )}
+                    <input value={extraCode} onChange={(e) => setExtraCode(e.target.value)}
+                      placeholder={`…hoặc gõ tay mã ${lookupKind === 'qr' ? 'Barcode' : 'QR'} nếu không quét được`}
+                      className="w-full bg-ink-3 border border-line rounded-md px-3 py-1.5 text-xs font-mono focus:border-flame focus:outline-none" />
+                    {extraCode && <p className="text-[11px] text-ok">✓ Mã kèm theo: <span className="font-mono">{extraCode}</span></p>}
+                  </div>
                 )}
                 <p className="text-[11px] text-txt-2">Tìm & chọn sản phẩm để gán mã <span className="font-mono">{lookupQ.trim()}</span>:</p>
                 <SearchableSelect
