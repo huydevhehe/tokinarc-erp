@@ -27,7 +27,7 @@ class POLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrderLine
         fields = ['id', 'part', 'part_name', 'description', 'qty', 'unit_cost',
-                  'line_total', 'qty_received', 'target_bin', 'order_idx']
+                  'line_total', 'qty_received', 'target_bin', 'order_idx', 'tax_pct']
         read_only_fields = ['id', 'line_total', 'qty_received']
 
 
@@ -77,7 +77,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             PurchaseOrderLine.objects.create(
                 po=po, part=l['part'], description=l.get('description', ''),
                 qty=l['qty'], unit_cost=l['unit_cost'], line_total=lt,
-                target_bin=l.get('target_bin'), order_idx=idx)
+                target_bin=l.get('target_bin'), order_idx=idx, tax_pct=l.get('tax_pct'))
 
 
 class PurchasePaymentSerializer(serializers.ModelSerializer):

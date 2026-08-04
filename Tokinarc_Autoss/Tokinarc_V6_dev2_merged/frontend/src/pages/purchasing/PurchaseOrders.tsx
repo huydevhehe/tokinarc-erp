@@ -20,6 +20,7 @@ import { PageHeader, Button, StatCard, Tag, TableCard, Th, Td, RowMsg, SearchInp
 import { SearchableSelect } from '@/components/SearchableSelect'
 import { formatMoneyDisplay, parseMoneyInput } from '@/components/form'
 import { PODetailModal, type PODetail } from '@/pages/purchasing/PODetailModal'
+import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
 
 const PO_STATUSES: { value: string; label: string }[] = [
   { value: '', label: 'Tất cả trạng thái' },
@@ -32,7 +33,7 @@ const PO_STATUSES: { value: string; label: string }[] = [
   { value: 'cancelled', label: 'Hủy' },
 ]
 
-interface POLine { id?: string; part: string; part_name?: string; description?: string; qty: number; unit_cost: number; qty_received?: number }
+interface POLine { id?: string; part: string; part_name?: string; description?: string; qty: number; unit_cost: number; qty_received?: number; tax_pct?: string }
 interface PO {
   id: string; code: string; supplier_name: string; warehouse_code: string
   status: string; status_display: string; total_vnd: string; paid_vnd: string; debt_vnd: number
@@ -67,8 +68,9 @@ export function PurchaseOrdersPage() {
   const [expectedDate, setExpectedDate] = useState(''); const [paymentTerms, setPaymentTerms] = useState('')
   const [carrier, setCarrier] = useState(''); const [trackingNo, setTrackingNo] = useState('')
   const [notes, setNotes] = useState('')
-  const [lines, setLines] = useState<POLine[]>([{ part: '', qty: 1, unit_cost: 0 }])
+  const [lines, setLines] = useState<POLine[]>([{ part: '', qty: 1, unit_cost: 0, tax_pct: '' }])
   const [payAmt, setPayAmt] = useState('')
+  const [addPartForLine, setAddPartForLine] = useState<number | null>(null)   // dòng đang thêm mặt hàng mới
   const { options: partOptions, isLoading: partsLoading, unitByValue } = usePartOptions()
 
   const [view, setView] = useState<'all' | 'incoming'>('all')
@@ -97,9 +99,12 @@ export function PurchaseOrdersPage() {
       supplier, warehouse,
       expected_date: expectedDate || null, payment_terms_note: paymentTerms,
       carrier, tracking_no: trackingNo, notes,
-      lines: lines.filter((l) => l.part).map((l) => ({ part: l.part.trim(), qty: Number(l.qty), unit_cost: Number(l.unit_cost) })),
+      lines: lines.filter((l) => l.part).map((l) => ({
+        part: l.part.trim(), qty: Number(l.qty), unit_cost: Number(l.unit_cost),
+        tax_pct: l.tax_pct !== '' && l.tax_pct != null ? Number(l.tax_pct) : null,
+      })),
     }),
-    onSuccess: (r) => { toast.success(`Đã tạo ${r.data.code}`); invalidate(); setOpen(false); setLines([{ part: '', qty: 1, unit_cost: 0 }]); setSupplier(''); setExpectedDate(''); setPaymentTerms(''); setCarrier(''); setTrackingNo(''); setNotes('') },
+    onSuccess: (r) => { toast.success(`Đã tạo ${r.data.code}`); invalidate(); setOpen(false); setLines([{ part: '', qty: 1, unit_cost: 0, tax_pct: '' }]); setSupplier(''); setExpectedDate(''); setPaymentTerms(''); setCarrier(''); setTrackingNo(''); setNotes('') },
     onError: (e) => toast.error(apiError(e)),
   })
   const ACT_MSG: Record<string, string> = {
@@ -323,7 +328,7 @@ export function PurchaseOrdersPage() {
               placeholder="VD: Giao theo 2 đợt, đợt 1 trong tuần này / chính sách đổi trả…"
               className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
           </div>
-          <div className="text-xs text-txt-2">Dòng hàng (mã part + SL + đơn giá):</div>
+          <div className="text-xs text-txt-2">Dòng hàng (mã part + SL + đơn giá + thuế):</div>
           {lines.map((l, i) => (
             <div key={i} className="flex gap-2 items-center">
               <div className="flex-1">
@@ -332,18 +337,29 @@ export function PurchaseOrdersPage() {
                   onChange={(v) => setLines((a) => a.map((x, j) => j === i ? { ...x, part: v } : x))}
                   options={partOptions} loading={partsLoading} placeholder="Gõ mã/tên để tìm phụ tùng…" />
               </div>
+              {canCreatePO && (
+                <button type="button" onClick={() => setAddPartForLine(i)}
+                  className="text-txt-2 hover:text-flame p-1.5 shrink-0" aria-label="Thêm mặt hàng mới"
+                  title="Không tìm thấy? Thêm mặt hàng mới vào danh mục">
+                  <Plus size={15} />
+                </button>
+              )}
               <input placeholder={unitByValue[l.part] ? `SL (${unitByValue[l.part]})` : 'SL'} type="number" value={l.qty}
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, qty: Number(e.target.value) } : x))}
-                className="w-24 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
+                className="w-20 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
               <input placeholder="Đơn giá" type="text" inputMode="numeric" value={formatMoneyDisplay(l.unit_cost)}
                 onFocus={(e) => e.target.select()}
                 onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, unit_cost: parseMoneyInput(e.target.value) } : x))}
                 className="w-28 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
+              <input placeholder="Thuế %" type="number" min={0} max={100} step="0.01" value={l.tax_pct ?? ''}
+                onFocus={(e) => e.target.select()}
+                onChange={(e) => setLines((a) => a.map((x, j) => j === i ? { ...x, tax_pct: e.target.value } : x))}
+                className="w-20 bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm" />
               <button onClick={() => setLines((a) => a.filter((_, j) => j !== i))} className="text-txt-2 hover:text-danger"><Trash2 size={14} /></button>
             </div>
           ))}
-          <Button variant="ghost" size="sm" onClick={() => setLines((a) => [...a, { part: '', qty: 1, unit_cost: 0 }])}><Plus size={13} /> Thêm dòng</Button>
+          <Button variant="ghost" size="sm" onClick={() => setLines((a) => [...a, { part: '', qty: 1, unit_cost: 0, tax_pct: '' }])}><Plus size={13} /> Thêm dòng</Button>
         </div>
       </Modal>
 
@@ -361,6 +377,11 @@ export function PurchaseOrdersPage() {
 
       <PODetailModal po={detail} open={!!detail} onClose={() => setDetail(null)}
         onExport={() => detail && downloadFile(`/purchasing/orders/${detail.id}/export-xlsx/`, `don_mua_${detail.code}.xlsx`)} />
+
+      <PartQuickAddModal open={addPartForLine != null} onClose={() => setAddPartForLine(null)}
+        onSaved={(p) => {
+          if (addPartForLine != null) setLines((a) => a.map((x, j) => j === addPartForLine ? { ...x, part: p.tokin_part_no } : x))
+        }} />
     </div>
   )
 }

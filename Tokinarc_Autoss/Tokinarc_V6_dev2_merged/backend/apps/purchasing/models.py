@@ -122,6 +122,10 @@ class PurchaseOrderLine(models.Model):
     qty_received = models.IntegerField(default=0)
     target_bin  = models.ForeignKey('wms.Bin', null=True, blank=True, on_delete=models.SET_NULL)
     order_idx   = models.IntegerField(default=0)
+    # Thuế VAT theo dòng (khớp pattern InboundLine.tax_pct/OutboundLine.tax_pct —
+    # mỗi mặt hàng có thể chịu mức thuế khác nhau, không gộp chung 1 mức cho cả
+    # đơn). Chỉ để hiển thị/tham khảo — KHÔNG cộng vào line_total.
+    tax_pct     = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
 
     class Meta:
         db_table = 'pur_order_line'
