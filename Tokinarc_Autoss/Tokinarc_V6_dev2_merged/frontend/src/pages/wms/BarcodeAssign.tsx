@@ -51,10 +51,11 @@ function guessPartFromQr(text: string): { tokin_part_no: string; display_name_vi
   const segs = splitRespectingParens(text)
   if (segs.length < 2) return null
   if (segs[0].startsWith('#')) {
-    // Kiểu B (nhiều trường) — mã ở đoạn 2, tên tiếng Anh ở đoạn 4 (có thì ưu tiên,
-    // không thì tạm lấy đoạn 3 — vẫn sửa được trên form trước khi lưu.
+    // Kiểu B (nhiều trường) — mã ở đoạn 2; tên thì lưu GỘP CẢ 2 (tiếng Nhật ở
+    // đoạn 3 + tiếng Anh ở đoạn 4) vào 1 ô "Tên sản phẩm" theo yêu cầu sếp —
+    // kỹ sư cần thấy tên gốc tiếng Nhật lẫn tên tiếng Anh cùng lúc.
     const code = segs[1] ?? ''
-    const name = segs[3] || segs[2] || ''
+    const name = [segs[2], segs[3]].filter(Boolean).join(' / ')
     if (!code) return null
     return { tokin_part_no: code, display_name_vi: name }
   }
