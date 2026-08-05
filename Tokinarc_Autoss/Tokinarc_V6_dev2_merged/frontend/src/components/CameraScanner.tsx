@@ -59,13 +59,16 @@ export function CameraScanner({ onScan }: { onScan: (code: string, kind: ScanKin
   const scanLoop = () => {
     const canvas = canvasRef.current ?? (canvasRef.current = document.createElement('canvas'))
     let reading = false
-    // Chống quét trùng theo VỊ TRÍ (còn thấy mã hay không), không theo thời gian:
-    // giữ camera đứng yên trên cùng 1 mã bao lâu cũng chỉ tính 1 lần — phải đưa
-    // mã ra khỏi khung (hoặc đổi mã khác) rồi đưa lại mới tính là quét mới. Trước
-    // đây chống trùng theo mốc 1.5s nên cầm yên tem ~4-5s là bắn lại onScan, gây
-    // trùng/nhân đôi (VD +1 SL 2 lần) dù người dùng không quét thêm gì.
+    // Chống quét trùng theo VỊ TRÍ (còn thấy mã hay không), không theo số khung
+    // hình: giữ camera đứng yên trên cùng 1 mã bao lâu cũng chỉ tính 1 lần —
+    // phải đưa mã ra khỏi khung (hoặc đổi mã khác) rồi đưa lại mới tính là quét
+    // mới. Đếm theo THỜI GIAN THỰC (ms) chứ không đếm số khung: đếm khung phụ
+    // thuộc tốc độ xử lý từng máy (máy yếu/camera rung nhẹ đã đủ rớt quá vài
+    // khung, hiểu nhầm "đã rời mã" rồi bắn lại onScan dù không di chuyển đi
+    // đâu — đúng lỗi tester báo "nhúc nhích nhẹ là thông báo nhảy liên tục").
     let lastText = ''
-    let missStreak = 0   // số khung liên tiếp KHÔNG thấy mã — chờ vài khung mới coi là "đã rời mã", tránh 1 khung mờ/rung làm rớt rồi bắn lại ngay chính mã đó
+    let lastSeenAt = 0
+    const LOST_MS = 1200   // phải mất dấu mã liên tục >1.2s mới coi là "đã rời mã" — đủ trừ hao rung tay/mờ thoáng qua
     const tick = async () => {
       const v = videoRef.current
       if (!v || v.readyState < 2 || !streamRef.current) { rafRef.current = requestAnimationFrame(tick); return }
@@ -78,14 +81,15 @@ export function CameraScanner({ onScan }: { onScan: (code: string, kind: ScanKin
           const img = ctx.getImageData(0, 0, canvas.width, canvas.height)
           const results = await readBarcodes(img, { tryHarder: true, maxNumberOfSymbols: 1 })
           const text = results[0]?.text
+          const now = performance.now()
           if (text) {
-            missStreak = 0
+            lastSeenAt = now
             if (text !== lastText) {
               lastText = text
               beep(); setHit(text); setTimeout(() => setHit(''), 1300)
               onScanRef.current(text, kindOf(results[0].symbology))
             }
-          } else if (lastText && ++missStreak > 5) {
+          } else if (lastText && now - lastSeenAt > LOST_MS) {
             lastText = ''
           }
         } catch { /* bỏ qua frame lỗi */ }
