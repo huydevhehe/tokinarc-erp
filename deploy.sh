@@ -24,7 +24,11 @@ sudo fuser -k 8008/tcp 2>/dev/null || true
 sleep 2
 
 echo "== 5. Khoi dong lai =="
-./start_all.sh
+# Goi qua "bash" thay vi "./start_all.sh" — khong phu thuoc bit thuc thi (+x)
+# cua file, tranh lap lai loi "Permission denied" neu file bi mat quyen +x
+# sau lan checkout/reset tiep theo (VD do commit tu may Windows).
+chmod +x start_all.sh 2>/dev/null || true
+bash start_all.sh
 
 echo "== Xong. Kiem tra bang: =="
 echo "  ps aux | grep -E 'gunicorn|uvicorn' | grep -v grep"
