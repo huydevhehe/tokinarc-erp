@@ -58,10 +58,14 @@ class PartBarcodeSerializer(serializers.ModelSerializer):
     gán") — thêm/sửa/xóa từng mã, khác với action set-barcode (quét-gán nhanh
     1 chiều, không cho sửa/xóa)."""
     part_name = serializers.CharField(source='part.display_name_vi', read_only=True)
+    # Ghi chú chung của sản phẩm (Part.notes có sẵn, trước đây chưa lộ ra API
+    # nào) — hiện/sửa ngay trên bảng "Danh sách đã gán" cho tiện, khỏi phải
+    # nhảy sang trang Sản phẩm.
+    part_notes = serializers.CharField(source='part.notes', read_only=True, allow_blank=True)
 
     class Meta:
         model = PartBarcode
-        fields = ['id', 'part', 'part_name', 'code', 'kind', 'created_at']
+        fields = ['id', 'part', 'part_name', 'part_notes', 'code', 'kind', 'created_at']
         read_only_fields = ['id', 'created_at']
 
     def validate_code(self, value):
@@ -99,7 +103,7 @@ class PartWriteSerializer(serializers.ModelSerializer):
         fields = [
             'tokin_part_no', 'category', 'display_name_vi', 'display_name_en',
             'price_vnd', 'tax_pct', 'is_contact_price', 'is_active', 'product_category',
-            'product_category_name',
+            'product_category_name', 'notes',
         ]
         # #: "Loại" (category) không còn bắt buộc ở modal thêm nhanh — chỉ NV kho
         # gõ tối thiểu mã+tên là tạo được, phân loại đầy đủ bổ sung sau.

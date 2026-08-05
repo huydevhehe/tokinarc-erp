@@ -25,7 +25,7 @@ import type { CatalogPart, SerialNumber } from '@/lib/types'
 import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
 
-interface PartBarcodeRow { id: number; part: string; part_name: string; code: string; kind: '' | 'qr' | 'barcode'; created_at: string }
+interface PartBarcodeRow { id: number; part: string; part_name: string; part_notes: string; code: string; kind: '' | 'qr' | 'barcode'; created_at: string }
 
 // Tách "mã sản phẩm" + "tên sản phẩm" từ nội dung QR — gặp 2 kiểu thực tế:
 //  A) "<mã> ,<tên>"                                        (Tip/Nozzle...)
@@ -306,6 +306,15 @@ export function BarcodeAssignPage() {
     onError: (e) => toast.error(apiError(e)),
   })
 
+  // Sửa ghi chú (Part.notes — có sẵn trong model, chỉ mới lộ ra API) ngay
+  // trên bảng, khỏi phải nhảy sang trang Sản phẩm.
+  const notesMut = useMutation({
+    mutationFn: (v: { part: string; notes: string }) =>
+      api.patch(`/catalog/parts/${encodeURIComponent(v.part)}/`, { notes: v.notes }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['part-barcodes'] }) },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
   // Gộp danh sách mã (1 dòng/mã, trả từ API) thành 1 dòng/sản phẩm với 2 cột
   // riêng QR/Barcode — dễ nhìn "sản phẩm này đủ/thiếu mã gì" hơn so với liệt
   // kê phẳng. Mã chưa rõ loại (dữ liệu cũ trước khi có field `kind`) tạm xếp
@@ -514,14 +523,18 @@ export function BarcodeAssignPage() {
         </div>
         <TableCard>
           <thead><tr className="border-b border-line">
-            <Th>Sản phẩm</Th><Th>Mã QR</Th><Th>Mã Barcode</Th><Th>Ngày gán</Th>
+            <Th>Sản phẩm</Th><Th>Part Name (từ QR)</Th><Th>Mã QR</Th><Th>Mã Barcode</Th><Th>Ngày gán</Th><Th>Ghi chú</Th>
           </tr></thead>
           <tbody>
-            {list.isLoading && <RowMsg colSpan={4}>Đang tải…</RowMsg>}
-            {groups.length === 0 && !list.isLoading && <RowMsg colSpan={4}>Chưa gán mã nào.</RowMsg>}
-            {groups.map((g) => (
+            {list.isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
+            {groups.length === 0 && !list.isLoading && <RowMsg colSpan={6}>Chưa gán mã nào.</RowMsg>}
+            {groups.map((g) => {
+              const qrParsed = g.qr ? guessPartFromQr(g.qr.code) : null
+              const notesValue = g.qr?.part_notes ?? g.barcode?.part_notes ?? ''
+              return (
               <tr key={g.part} className="border-b border-line/50 last:border-0">
                 <Td className="font-medium">{g.part} — {g.part_name}</Td>
+                <Td className="text-txt-2 text-xs max-w-[220px]">{qrParsed?.display_name_vi || '—'}</Td>
                 <Td>
                   {g.qr ? (
                     <span className="inline-flex items-center gap-1.5">
@@ -561,8 +574,21 @@ export function BarcodeAssignPage() {
                   ) : <span className="text-txt-2">—</span>}
                 </Td>
                 <Td className="text-txt-2 text-xs whitespace-nowrap">{formatDateTime(g.latest)}</Td>
+                <Td>
+                  {canManage ? (
+                    <input key={`${g.part}-${notesValue}`} defaultValue={notesValue}
+                      placeholder="Ghi chú…" disabled={!g.qr && !g.barcode}
+                      onBlur={(e) => {
+                        if (e.target.value !== notesValue) notesMut.mutate({ part: g.part, notes: e.target.value })
+                      }}
+                      className="w-40 bg-ink-3 border border-line rounded-md px-2 py-1 text-xs focus:border-flame focus:outline-none" />
+                  ) : (
+                    <span className="text-txt-2 text-xs">{notesValue || '—'}</span>
+                  )}
+                </Td>
               </tr>
-            ))}
+              )
+            })}
           </tbody>
         </TableCard>
         {list.data && list.data.count > 0 && (
