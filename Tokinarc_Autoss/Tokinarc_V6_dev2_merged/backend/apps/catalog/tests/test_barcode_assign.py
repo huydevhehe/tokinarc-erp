@@ -109,3 +109,35 @@ def test_part_lite_serializer_exposes_barcodes_list(wh_user, part):
     r = c.get('/api/v1/catalog/parts/', {'search': part.pk})
     row = next(p for p in r.data['results'] if p['tokin_part_no'] == part.pk)
     assert set(row['barcodes']) == {'A1', 'A2'}
+
+
+# ─── Quyền: gán mã là nghiệp vụ KHO ──────────────────────────────────────────
+@pytest.mark.parametrize('role', [Role.SALES, Role.SERVICE, Role.CUSTOMER])
+@pytest.mark.django_db
+def test_non_warehouse_roles_cannot_assign_barcode(part, role):
+    """Sale/Kỹ sư/Khách hàng KHÔNG được gán mã lên hàng — trước đây chỉ chặn mỗi
+    Khách hàng nên ai đăng nhập cũng gán được (sửa 2026-08-06)."""
+    u = User.objects.create(username=f'u_{role}', role=role)
+    c = APIClient(); c.force_authenticate(u)
+    r = c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/', {'barcode': 'X-1', 'kind': 'qr'}, format='json')
+    assert r.status_code == 403
+    assert not PartBarcode.objects.filter(code='X-1').exists()
+
+
+@pytest.mark.parametrize('role', [Role.WAREHOUSE, Role.WAREHOUSE_MANAGER, Role.MANAGER, Role.CEO, Role.ADMIN])
+@pytest.mark.django_db
+def test_warehouse_roles_can_assign_barcode(part, role):
+    u = User.objects.create(username=f'ok_{role}', role=role)
+    c = APIClient(); c.force_authenticate(u)
+    r = c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/', {'barcode': f'OK-{role}', 'kind': 'qr'}, format='json')
+    assert r.status_code == 200
+
+
+@pytest.mark.parametrize('role', [Role.SALES, Role.SERVICE, Role.CUSTOMER])
+@pytest.mark.django_db
+def test_non_warehouse_roles_cannot_even_list_barcodes(part, role):
+    """Danh sách mã đã gán cũng là dữ liệu kho — không cho xem luôn."""
+    PartBarcode.objects.create(part=part, code='SEE-ME')
+    u = User.objects.create(username=f'l_{role}', role=role)
+    c = APIClient(); c.force_authenticate(u)
+    assert c.get('/api/v1/catalog/part-barcodes/').status_code == 403

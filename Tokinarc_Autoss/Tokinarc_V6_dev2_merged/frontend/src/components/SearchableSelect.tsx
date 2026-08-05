@@ -83,7 +83,16 @@ export function SearchableSelect({ value, onChange, options, loading, placeholde
           value={open ? query : closedDisplay}
           disabled={disabled}
           onFocus={() => { setOpen(true); setQuery('') }}
+          // Đã đóng gợi ý bằng Esc thì ô vẫn đang focus, bấm lại sẽ KHÔNG chạy
+          // onFocus nữa — cần onClick để mở lại được, không thì ô như bị liệt.
+          onClick={() => setOpen(true)}
           onChange={(e) => { setQuery(e.target.value); setOpen(true) }}
+          // Esc lúc danh sách gợi ý đang mở: chỉ đóng gợi ý, KHÔNG để nổi lên
+          // modal cha (modal nào cũng đóng khi Esc) — đang gõ tìm mà lỡ bấm Esc
+          // là mất sạch dữ liệu đang nhập dở của cả form.
+          onKeyDown={(e) => {
+            if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); setQuery('') }
+          }}
           placeholder={loading ? 'Đang tải…' : (placeholder ?? 'Gõ để tìm…')}
           className="w-full bg-ink-3 border border-line rounded-md pl-7 pr-2 py-1.5 text-sm focus:border-flame focus:outline-none disabled:opacity-50"
         />

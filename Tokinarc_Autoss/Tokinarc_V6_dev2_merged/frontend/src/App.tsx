@@ -57,6 +57,7 @@ import { RequireRole } from '@/components/RequireRole'
 
 const MGR = ['manager', 'ceo', 'admin'] as const
 const WMS_CTRL = ['wh_manager', 'manager', 'ceo', 'admin'] as const   // mua hàng: chỉ quản lý kho trở lên
+const WMS_OP = ['warehouse', 'wh_manager', 'manager', 'ceo', 'admin'] as const   // nghiệp vụ kho: NV kho trở lên
 
 function Protected({ children }: { children: React.ReactNode }) {
   const isAuthed = useAuth((s) => s.isAuthed)
@@ -132,7 +133,7 @@ export function App() {
           <Route path="wms/map" element={<WarehouseMapPage />} />
           <Route path="wms/scan" element={<Navigate to="/wms/cycle-count" replace />} />
           <Route path="wms/cycle-count" element={<WmsCycleCountPage />} />
-          <Route path="wms/barcode-assign" element={<BarcodeAssignPage />} />
+          <Route path="wms/barcode-assign" element={<RequireRole roles={[...WMS_OP]}><BarcodeAssignPage /></RequireRole>} />
           <Route path="wms/lots" element={<Navigate to="/wms/trace" replace />} />
           <Route path="wms/ops-kpi" element={<Navigate to="/wms/dashboard" replace />} />
           <Route path="wms/product-groups" element={<RequireRole roles={[...WMS_CTRL]}><ProductTaxonomyPage /></RequireRole>} />

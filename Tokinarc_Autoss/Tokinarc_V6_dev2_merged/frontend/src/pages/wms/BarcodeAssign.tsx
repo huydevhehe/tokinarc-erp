@@ -11,7 +11,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Barcode, Search, Link2, ScanLine, List, Plus, Pencil, Trash2, PackagePlus } from 'lucide-react'
+import { Barcode, Search, Link2, ScanLine, List, Plus, Pencil, Trash2, PackagePlus, Images } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
@@ -24,49 +24,16 @@ import { usePartOptions } from '@/lib/useWmsOptions'
 import type { CatalogPart, SerialNumber } from '@/lib/types'
 import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
+import { BatchAssignModal } from '@/pages/wms/BatchAssignModal'
+import { guessPartFromQr } from '@/lib/qrParse'
 
 interface PartBarcodeRow { id: number; part: string; part_name: string; part_notes: string; code: string; kind: '' | 'qr' | 'barcode'; created_at: string }
-
-// Tách "mã sản phẩm" + "tên sản phẩm" từ nội dung QR — gặp 2 kiểu thực tế:
-//  A) "<mã> ,<tên>"                                        (Tip/Nozzle...)
-//  B) "#<id>,<mã>  ,<tên tiếng Nhật> ,<tên tiếng Anh...>    (Torch Body...)
-//     ,<SL> ,<mã bản vẽ> ,<lô>" — kiểu B nhận biết qua tiền tố "#" ở đầu.
-// Tách theo dấu phẩy nhưng GIỮ NGUYÊN đoạn nằm trong ngoặc — tên tiếng Anh
-// kiểu B có thể chứa dấu phẩy bên trong ngoặc (VD "(Type A2, w/o Tip Body)"),
-// tách thô sẽ cắt đôi tên sai.
-function splitRespectingParens(text: string): string[] {
-  const parts: string[] = []
-  let depth = 0
-  let cur = ''
-  for (const ch of text) {
-    if (ch === '(') depth++
-    if (ch === ')') depth = Math.max(0, depth - 1)
-    if (ch === ',' && depth === 0) { parts.push(cur); cur = '' } else { cur += ch }
-  }
-  parts.push(cur)
-  return parts.map((s) => s.trim())
-}
-
-function guessPartFromQr(text: string): { tokin_part_no: string; display_name_vi: string } | null {
-  const segs = splitRespectingParens(text)
-  if (segs.length < 2) return null
-  if (segs[0].startsWith('#')) {
-    // Kiểu B (nhiều trường) — mã ở đoạn 2; tên thì lưu GỘP CẢ 2 (tiếng Nhật ở
-    // đoạn 3 + tiếng Anh ở đoạn 4) vào 1 ô "Tên sản phẩm" theo yêu cầu sếp —
-    // kỹ sư cần thấy tên gốc tiếng Nhật lẫn tên tiếng Anh cùng lúc.
-    const code = segs[1] ?? ''
-    const name = [segs[2], segs[3]].filter(Boolean).join(' / ')
-    if (!code) return null
-    return { tokin_part_no: code, display_name_vi: name }
-  }
-  // Kiểu A (đơn giản, 2 trường).
-  return { tokin_part_no: segs[0], display_name_vi: segs[1] ?? '' }
-}
 
 export function BarcodeAssignPage() {
   const qc = useQueryClient()
   const canManage = isWmsControl(useAuth((s) => s.user?.role))
   const [tab, setTab] = useState<'scan' | 'list'>('scan')
+  const [batchOpen, setBatchOpen] = useState(false)
   const [lookupQ, setLookupQ] = useState('')
   const [lookupKind, setLookupKind] = useState<ScanKind | null>(null)   // biết được nhờ quét (camera/ảnh) — gõ tay thì không biết loại
   const [assigning, setAssigning] = useState(false)   // quét-gán: mã lạ → gán cho 1 SP
@@ -350,7 +317,10 @@ export function BarcodeAssignPage() {
           ? 'Quét hoặc tải ảnh lên → tìm sản phẩm. Mã lạ (chưa gán) → chọn đúng sản phẩm, gán 1 lần.'
           : 'Toàn bộ mã đã gán — sửa/xóa nếu gán nhầm.'}
         actions={tab === 'list' && canManage
-          ? <Button onClick={openAdd}><Plus size={14} /> Thêm mã</Button> : undefined} />
+          ? <Button onClick={openAdd}><Plus size={14} /> Thêm mã</Button>
+          : tab === 'scan'
+            ? <Button variant="ghost" onClick={() => setBatchOpen(true)}><Images size={14} /> Gán hàng loạt nhiều ảnh</Button>
+            : undefined} />
 
       <div className="flex gap-1.5 mb-4">
         <button onClick={() => setTab('scan')}
@@ -648,6 +618,8 @@ export function BarcodeAssignPage() {
         </Modal>
       </>
       )}
+
+      <BatchAssignModal open={batchOpen} onClose={() => setBatchOpen(false)} />
     </div>
   )
 }

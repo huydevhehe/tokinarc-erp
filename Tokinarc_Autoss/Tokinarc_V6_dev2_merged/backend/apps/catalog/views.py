@@ -65,13 +65,15 @@ class PartBarcodeWritePermission(BasePermission):
         u = request.user
         if not (u and u.is_authenticated):
             return False
-        from apps.accounts.roles import WMS_CONTROL_ROLES, Role, role_of
+        from apps.accounts.roles import WMS_CONTROL_ROLES, WMS_OP_ROLES, Role, role_of
         role = role_of(u)
-        if role == Role.CUSTOMER:
+        # Nghiệp vụ kho — Sale/Kỹ sư/Khách hàng không xem cũng không sửa được
+        # (trước đây mọi nhân viên nội bộ đều XEM được danh sách này).
+        if role not in WMS_OP_ROLES and role != Role.ADMIN:
             return False
         if request.method in SAFE_METHODS or view.action == 'create':
-            return role in WMS_CONTROL_ROLES or role == Role.WAREHOUSE
-        return role in WMS_CONTROL_ROLES
+            return True
+        return role in WMS_CONTROL_ROLES or role == Role.ADMIN
 
 
 # ─── ProcedureQA — tra cứu lắp đặt / sửa chữa (nội bộ) ────────────────────────
@@ -165,12 +167,15 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
     @action(detail=True, methods=['post'], url_path='set-barcode', permission_classes=[IsAuthenticated])
     def set_barcode(self, request, tokin_part_no=None):
         """Quét-gán: gán barcode/QR (EAN, mã Tokin) trên tem cho part này → lần sau quét ra ngay.
-        Chỉ nhân viên nội bộ. Nếu mã đã gán cho part KHÁC → báo lỗi (tránh trùng).
+        Chỉ nhân viên KHO (+ quản lý kho/quản lý/CEO/admin) — đây là nghiệp vụ
+        kho, Sale/Kỹ sư/Khách hàng không có việc gì phải gán mã lên hàng, trước
+        đây chỉ chặn mỗi Khách hàng nên ai đăng nhập cũng gán được (2026-08-06).
+        Nếu mã đã gán cho part KHÁC → báo lỗi (tránh trùng).
         1 part gán được NHIỀU mã (Barcode + QR khác nội dung trên cùng 1 hộp) —
         gán thêm mã mới KHÔNG xoá các mã đã gán trước đó."""
-        from apps.accounts.roles import Role, role_of
-        if role_of(request.user) == Role.CUSTOMER:
-            return Response({'detail': 'Chỉ nhân viên nội bộ được gán mã.'}, status=403)
+        from apps.accounts.roles import WMS_OP_ROLES, Role, role_of
+        if role_of(request.user) not in WMS_OP_ROLES | {Role.ADMIN}:
+            return Response({'detail': 'Chỉ nhân viên kho/quản lý được gán mã vạch-QR.'}, status=403)
         code = (request.data.get('barcode') or '').strip()
         if not code:
             return Response({'detail': 'Thiếu mã barcode.'}, status=400)
