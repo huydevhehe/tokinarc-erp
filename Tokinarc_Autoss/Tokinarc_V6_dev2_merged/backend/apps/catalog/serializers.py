@@ -61,7 +61,7 @@ class PartBarcodeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = PartBarcode
-        fields = ['id', 'part', 'part_name', 'code', 'created_at']
+        fields = ['id', 'part', 'part_name', 'code', 'kind', 'created_at']
         read_only_fields = ['id', 'created_at']
 
     def validate_code(self, value):
@@ -73,6 +73,16 @@ class PartBarcodeSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 f'Mã "{value}" đã gán cho {clash.part_id} ({clash.part.display_name_vi}).')
         return value
+
+    def validate(self, attrs):
+        part = attrs.get('part') or (self.instance.part if self.instance else None)
+        kind = attrs.get('kind', self.instance.kind if self.instance else '')
+        if part:
+            exclude_id = self.instance.pk if self.instance else None
+            err = PartBarcode.capacity_error(part, kind, exclude_id=exclude_id)
+            if err:
+                raise serializers.ValidationError({'part': err})
+        return attrs
 
 
 class PartWriteSerializer(serializers.ModelSerializer):

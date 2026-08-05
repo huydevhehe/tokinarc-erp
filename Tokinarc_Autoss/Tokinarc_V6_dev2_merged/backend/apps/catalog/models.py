@@ -193,17 +193,46 @@ class Part(models.Model):
 
 # ─── Barcode/QR — 1 sản phẩm gắn được NHIỀU mã (Barcode + QR khác nội dung
 # nhau trên cùng 1 hộp là chuyện thường gặp; field đơn cũ chỉ giữ được 1 mã).
+class BarcodeKind(models.TextChoices):
+    QR      = 'qr',      'QR'
+    BARCODE = 'barcode', 'Barcode'
+
+
 class PartBarcode(models.Model):
     part       = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='barcodes')
     code       = models.CharField(max_length=64, unique=True, db_index=True)
+    # Loại mã (QR hay Barcode thường) — tự nhận biết lúc quét (zxing-wasm trả
+    # symbology), lưu lại để hiển thị ở "Danh sách đã gán" (không phải đoán lại
+    # từ nội dung). Mã thêm tay (không qua quét) có thể để trống — không rõ loại.
+    kind       = models.CharField(max_length=10, choices=BarcodeKind.choices, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         db_table = 'catalog_part_barcode'
-        ordering = ['-created_at']
+        ordering = ['part', '-created_at']
 
     def __str__(self) -> str:
         return f"{self.code} → {self.part_id}"
+
+    # 1 sản phẩm CHỈ cần đúng 1 QR + 1 Barcode — chặn cứng (không chỉ cảnh
+    # báo) nếu gán thêm sẽ vượt quá 2 mã, hoặc trùng loại (đã có QR mà gán
+    # thêm QR khác / đã có Barcode mà gán thêm Barcode khác). Mã không rõ
+    # loại (kind rỗng — gõ tay/dữ liệu cũ) vẫn tính vào tổng số nhưng không
+    # bị check trùng loại (vì không biết loại).
+    MAX_PER_PART = 2
+
+    @classmethod
+    def capacity_error(cls, part, kind: str, *, exclude_id: int | None = None) -> str | None:
+        qs = cls.objects.filter(part=part)
+        if exclude_id:
+            qs = qs.exclude(pk=exclude_id)
+        existing = list(qs)
+        if len(existing) >= cls.MAX_PER_PART:
+            return f'Sản phẩm {part.pk} đã có đủ {cls.MAX_PER_PART} mã (1 QR + 1 Barcode) — không gán thêm được.'
+        if kind and any(pb.kind == kind for pb in existing):
+            label = 'QR' if kind == 'qr' else 'Barcode'
+            return f'Sản phẩm {part.pk} đã có mã {label} rồi.'
+        return None
 
 
 # ─── Nhóm / Danh mục sản phẩm (do Quản lý kho tự quản lý) ────────────────────

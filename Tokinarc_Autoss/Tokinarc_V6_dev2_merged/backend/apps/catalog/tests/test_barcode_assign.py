@@ -66,6 +66,42 @@ def test_reassign_same_code_to_same_part_is_idempotent(wh_user, part):
 
 
 @pytest.mark.django_db
+def test_assign_third_code_blocked_over_capacity(wh_user, part):
+    """1 part chỉ được tối đa 2 mã (1 QR + 1 Barcode) — gán mã thứ 3 phải bị chặn."""
+    c = APIClient(); c.force_authenticate(wh_user)
+    assert c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/',
+                  {'barcode': 'CODE-A', 'kind': 'barcode'}, format='json').status_code == 200
+    assert c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/',
+                  {'barcode': 'CODE-B', 'kind': 'qr'}, format='json').status_code == 200
+    r = c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/', {'barcode': 'CODE-C', 'kind': 'qr'}, format='json')
+    assert r.status_code == 400
+    assert r.data['code'] == 'BARCODE_CAPACITY'
+    assert PartBarcode.objects.filter(part=part).count() == 2
+
+
+@pytest.mark.django_db
+def test_assign_duplicate_kind_blocked_even_under_capacity(wh_user, part):
+    """Chưa đủ 2 mã nhưng gán trùng LOẠI (đã có QR mà gán thêm QR khác) vẫn phải chặn."""
+    c = APIClient(); c.force_authenticate(wh_user)
+    assert c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/',
+                  {'barcode': 'QR-1', 'kind': 'qr'}, format='json').status_code == 200
+    r = c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/', {'barcode': 'QR-2', 'kind': 'qr'}, format='json')
+    assert r.status_code == 400
+    assert r.data['code'] == 'BARCODE_CAPACITY'
+    assert PartBarcode.objects.filter(part=part).count() == 1
+
+
+@pytest.mark.django_db
+def test_rescan_same_code_ignores_capacity_even_when_full(wh_user, part):
+    """Part đã đủ 2 mã — quét LẠI đúng 1 trong 2 mã cũ (không phải mã mới) vẫn phải cho qua."""
+    c = APIClient(); c.force_authenticate(wh_user)
+    c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/', {'barcode': 'CODE-A', 'kind': 'barcode'}, format='json')
+    c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/', {'barcode': 'CODE-B', 'kind': 'qr'}, format='json')
+    r = c.post(f'/api/v1/catalog/parts/{part.pk}/set-barcode/', {'barcode': 'CODE-A', 'kind': 'barcode'}, format='json')
+    assert r.status_code == 200
+
+
+@pytest.mark.django_db
 def test_part_lite_serializer_exposes_barcodes_list(wh_user, part):
     PartBarcode.objects.create(part=part, code='A1')
     PartBarcode.objects.create(part=part, code='A2')

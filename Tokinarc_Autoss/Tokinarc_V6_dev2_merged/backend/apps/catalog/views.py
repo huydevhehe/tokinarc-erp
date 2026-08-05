@@ -174,12 +174,22 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         code = (request.data.get('barcode') or '').strip()
         if not code:
             return Response({'detail': 'Thiếu mã barcode.'}, status=400)
+        kind = (request.data.get('kind') or '').strip()
+        if kind not in ('qr', 'barcode'):
+            kind = ''
         clash = PartBarcode.objects.filter(code=code).exclude(part_id=tokin_part_no).first()
         if clash is not None:
             return Response({'detail': f'Mã "{code}" đã gán cho {clash.part_id} ({clash.part.display_name_vi}).',
                              'code': 'BARCODE_TAKEN'}, status=409)
         part = self.get_object()
-        PartBarcode.objects.get_or_create(code=code, defaults={'part': part})
+        # Quét lại đúng mã đã gán sẵn cho CHÍNH part này thì bỏ qua giới hạn
+        # (không phải "thêm mã mới", chỉ xác nhận lại mã cũ — get_or_create
+        # bên dưới sẽ tìm thấy, không tạo dòng mới).
+        if not PartBarcode.objects.filter(code=code, part_id=tokin_part_no).exists():
+            err = PartBarcode.capacity_error(part, kind)
+            if err:
+                return Response({'detail': err, 'code': 'BARCODE_CAPACITY'}, status=400)
+        PartBarcode.objects.get_or_create(code=code, defaults={'part': part, 'kind': kind})
         return Response({'part_no': part.pk, 'name': part.display_name_vi, 'barcode': code,
                          'barcodes': list(part.barcodes.values_list('code', flat=True))})
 
@@ -266,7 +276,9 @@ class PartBarcodeViewSet(viewsets.ModelViewSet):
     """CRUD đầy đủ cho danh sách mã vạch/QR đã gán — trang "Gán mã vạch/QR" >
     tab "Danh sách đã gán". Khác action set-barcode (quét-gán nhanh, chỉ tạo
     không sửa/xóa) — ở đây cho sửa (đổi sản phẩm) và xóa (bỏ gán) hẳn hoi."""
-    queryset = PartBarcode.objects.select_related('part').order_by('-created_at')
+    # Gom theo sản phẩm trước (part) rồi mới mới nhất — mã cùng 1 sản phẩm
+    # (đồng bộ QR+Barcode) nằm liền kề nhau, dễ nhìn thấy trên FE.
+    queryset = PartBarcode.objects.select_related('part').order_by('part', '-created_at')
     serializer_class = PartBarcodeSerializer
     permission_classes = [PartBarcodeWritePermission]
     filter_backends = [filters.SearchFilter]

@@ -19,7 +19,13 @@ prepareZXingModule({ overrides: { locateFile: (p, prefix) => (p.endsWith('.wasm'
 export type ScanKind = 'qr' | 'barcode'
 const kindOf = (symbology: string): ScanKind => (symbology === 'QRCode' ? 'qr' : 'barcode')
 
-export function CameraScanner({ onScan }: { onScan: (code: string, kind: ScanKind) => void }) {
+export function CameraScanner({ onScan, onMultiScan }: {
+  onScan: (code: string, kind: ScanKind) => void
+  // Chỉ áp dụng cho "Tải ảnh lên" (ảnh tĩnh) — 1 tấm hình có thể chụp cả 2 tem
+  // (QR + Barcode) trên cùng 1 hộp. Nếu ảnh đọc ra ≥2 mã KHÁC loại, gọi
+  // onMultiScan thay vì onScan để nơi gọi tự điền đủ cả 2 ô 1 lượt.
+  onMultiScan?: (results: { code: string; kind: ScanKind }[]) => void
+}) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number>(0)
@@ -109,12 +115,19 @@ export function CameraScanner({ onScan }: { onScan: (code: string, kind: ScanKin
     if (!file) return
     setUploading(true)
     try {
-      const results = await readBarcodes(file, { tryHarder: true, maxNumberOfSymbols: 1 })
-      const text = results[0]?.text
-      if (!text) { setCamError('Không đọc được mã vạch/QR trong ảnh này — thử ảnh rõ nét hơn.'); return }
+      // maxNumberOfSymbols > 1: 1 tấm ảnh có thể chụp cả tem QR lẫn Barcode
+      // trên cùng 1 hộp — đọc hết ra, không chỉ lấy mã đầu tiên thấy được.
+      const results = await readBarcodes(file, { tryHarder: true, maxNumberOfSymbols: 4 })
+      const found = results.filter((r) => r.text)
+      if (found.length === 0) { setCamError('Không đọc được mã vạch/QR trong ảnh này — thử ảnh rõ nét hơn.'); return }
       setCamError('')
-      beep(); setHit(text); setTimeout(() => setHit(''), 1300)
-      onScanRef.current(text, kindOf(results[0].symbology))
+      const first = found[0]
+      beep(); setHit(found.map((r) => r.text).join('  +  ')); setTimeout(() => setHit(''), 1300)
+      if (found.length > 1 && onMultiScan) {
+        onMultiScan(found.map((r) => ({ code: r.text, kind: kindOf(r.symbology) })))
+      } else {
+        onScanRef.current(first.text, kindOf(first.symbology))
+      }
     } catch {
       setCamError('Không đọc được mã vạch/QR trong ảnh này — thử ảnh rõ nét hơn.')
     } finally {

@@ -23,7 +23,13 @@ import { usePartOptions } from '@/lib/useWmsOptions'
 import type { CatalogPart, SerialNumber } from '@/lib/types'
 import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 
-interface PartBarcodeRow { id: number; part: string; part_name: string; code: string; created_at: string }
+interface PartBarcodeRow { id: number; part: string; part_name: string; code: string; kind: '' | 'qr' | 'barcode'; created_at: string }
+
+function KindTag({ kind }: { kind: '' | 'qr' | 'barcode' }) {
+  if (kind === 'qr') return <Tag tone="blue">QR</Tag>
+  if (kind === 'barcode') return <Tag tone="purple">Barcode</Tag>
+  return <Tag tone="gray">—</Tag>
+}
 
 export function BarcodeAssignPage() {
   const qc = useQueryClient()
@@ -62,9 +68,21 @@ export function BarcodeAssignPage() {
 
   const assignMut = useMutation({
     mutationFn: async (partNo: string) => {
-      const r = await api.post(`/catalog/parts/${encodeURIComponent(partNo)}/set-barcode/`, { barcode: lookupQ.trim() })
+      let r
+      try {
+        r = await api.post(`/catalog/parts/${encodeURIComponent(partNo)}/set-barcode/`,
+          { barcode: lookupQ.trim(), kind: lookupKind ?? '' })
+      } catch (e) {
+        throw new Error(`Mã "${lookupQ.trim()}" — ${apiError(e)}`)
+      }
       if (hasExtraCode && extraCode.trim()) {
-        await api.post(`/catalog/parts/${encodeURIComponent(partNo)}/set-barcode/`, { barcode: extraCode.trim() })
+        const extraKind = lookupKind === 'qr' ? 'barcode' : lookupKind === 'barcode' ? 'qr' : ''
+        try {
+          await api.post(`/catalog/parts/${encodeURIComponent(partNo)}/set-barcode/`,
+            { barcode: extraCode.trim(), kind: extraKind })
+        } catch (e) {
+          throw new Error(`Mã kèm theo "${extraCode.trim()}" — ${apiError(e)}`)
+        }
       }
       return r
     },
@@ -75,8 +93,37 @@ export function BarcodeAssignPage() {
       qc.invalidateQueries({ queryKey: ['scan-lookup'] })
       qc.invalidateQueries({ queryKey: ['part-barcodes'] })
     },
-    onError: (e) => toast.error(apiError(e)),
+    onError: (e) => toast.error(e instanceof Error ? e.message : apiError(e)),
   })
+
+  // Chặn cứng (không chỉ cảnh báo) khi gán thêm mã sẽ vượt quá 2 mã/sản phẩm
+  // (1 QR + 1 Barcode là đủ) hoặc trùng loại — khớp giới hạn ở backend
+  // (PartBarcode.capacity_error), chặn sớm ở FE để khỏi phải round-trip lỗi.
+  const assignBlockReason = (): string | null => {
+    const existing = existingCodes.data ?? []
+    if (existing.length >= 2) {
+      return 'Sản phẩm này đã có đủ 2 mã rồi (1 QR + 1 Barcode) — không gán thêm được.'
+    }
+    if (lookupKind && existing.some((row) => row.kind === lookupKind)) {
+      return `Sản phẩm này đã có mã ${lookupKind === 'qr' ? 'QR' : 'Barcode'} rồi.`
+    }
+    if (hasExtraCode && extraCode.trim()) {
+      const extraKind = lookupKind === 'qr' ? 'barcode' : lookupKind === 'barcode' ? 'qr' : ''
+      if (extraKind && existing.some((row) => row.kind === extraKind)) {
+        return `Sản phẩm này đã có mã ${extraKind === 'qr' ? 'QR' : 'Barcode'} rồi (mã kèm theo).`
+      }
+    }
+    return null
+  }
+
+  // 1 tấm ảnh đọc ra ≥2 mã khác loại (QR + Barcode trên cùng hộp) → tự điền
+  // đủ cả 2 ô luôn, không bắt quét/gõ riêng ô "mã kèm theo" nữa.
+  const onMultiScanPrimary = (results: { code: string; kind: ScanKind }[]) => {
+    const [first, ...rest] = results
+    setLookupQ(first.code); setLookupKind(first.kind)
+    const other = rest.find((r) => r.kind !== first.kind) ?? rest[0]
+    if (other) { setHasExtraCode(true); setExtraCode(other.code) }
+  }
 
   // ─── Tab "Danh sách đã gán" ────────────────────────────────────────────
   const [listSearch, setListSearch] = useState('')
@@ -86,6 +133,7 @@ export function BarcodeAssignPage() {
   const [addOpen, setAddOpen] = useState(false)
   const [formCode, setFormCode] = useState('')
   const [formPart, setFormPart] = useState('')
+  const [formKind, setFormKind] = useState<'' | 'qr' | 'barcode'>('')
 
   const list = useQuery({
     queryKey: ['part-barcodes', listSearch, page, pageSize],
@@ -96,12 +144,12 @@ export function BarcodeAssignPage() {
 
   const save = useMutation({
     mutationFn: () => editing
-      ? api.patch(`/catalog/part-barcodes/${editing.id}/`, { part: formPart, code: formCode })
-      : api.post('/catalog/part-barcodes/', { part: formPart, code: formCode }),
+      ? api.patch(`/catalog/part-barcodes/${editing.id}/`, { part: formPart, code: formCode, kind: formKind })
+      : api.post('/catalog/part-barcodes/', { part: formPart, code: formCode, kind: formKind }),
     onSuccess: () => {
       toast.success(editing ? 'Đã lưu' : 'Đã thêm mã mới')
       qc.invalidateQueries({ queryKey: ['part-barcodes'] })
-      setAddOpen(false); setEditing(null); setFormCode(''); setFormPart('')
+      setAddOpen(false); setEditing(null); setFormCode(''); setFormPart(''); setFormKind('')
     },
     onError: (e) => toast.error(apiError(e)),
   })
@@ -111,8 +159,14 @@ export function BarcodeAssignPage() {
     onError: (e) => toast.error(apiError(e)),
   })
 
-  const openAdd = () => { setEditing(null); setFormCode(''); setFormPart(''); setAddOpen(true) }
-  const openEdit = (row: PartBarcodeRow) => { setEditing(row); setFormCode(row.code); setFormPart(row.part); setAddOpen(true) }
+  const openAdd = () => { setEditing(null); setFormCode(''); setFormPart(''); setFormKind(''); setAddOpen(true) }
+  const openEdit = (row: PartBarcodeRow) => { setEditing(row); setFormCode(row.code); setFormPart(row.part); setFormKind(row.kind); setAddOpen(true) }
+
+  // Sản phẩm nào đang có ≥2 mã gán → 2 mã đó "đồng bộ" với nhau (cùng 1 SP).
+  const partCounts = (list.data?.results ?? []).reduce<Record<string, number>>((acc, row) => {
+    acc[row.part] = (acc[row.part] ?? 0) + 1
+    return acc
+  }, {})
 
   return (
     <div className={tab === 'scan' ? 'max-w-xl' : 'max-w-3xl'}>
@@ -136,7 +190,7 @@ export function BarcodeAssignPage() {
 
       {tab === 'scan' && (
       <div className="space-y-3">
-        <CameraScanner onScan={(c, k) => { setLookupQ(c); setLookupKind(k) }} />
+        <CameraScanner onScan={(c, k) => { setLookupQ(c); setLookupKind(k) }} onMultiScan={onMultiScanPrimary} />
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-2" />
           <input value={lookupQ} onChange={(e) => { setLookupQ(e.target.value); setLookupKind(null) }}
@@ -187,14 +241,20 @@ export function BarcodeAssignPage() {
                   options={partOptions} loading={partsLoading}
                   placeholder="Gõ tên hoặc mã sản phẩm để tìm…" />
                 {assignPick && !!existingCodes.data?.length && (
-                  <p className="text-[11px] text-txt-2">
+                  <p className={`text-[11px] ${assignBlockReason() ? 'text-danger' : 'text-txt-2'}`}>
                     Sản phẩm này đã có sẵn mã: {existingCodes.data.map((row) => (
-                      <span key={row.id} className="font-mono text-flame mr-1.5">{row.code}</span>
+                      <span key={row.id} className="font-mono text-flame mr-1.5">
+                        {row.code}{row.kind && <span className="text-txt-2"> ({row.kind === 'qr' ? 'QR' : 'Barcode'})</span>}
+                      </span>
                     ))}
                   </p>
                 )}
+                {assignPick && assignBlockReason() && (
+                  <p className="text-[11px] text-danger font-medium">⛔ {assignBlockReason()}</p>
+                )}
                 {assignPick && (
-                  <Button size="sm" disabled={assignMut.isPending} onClick={() => assignMut.mutate(assignPick)}>
+                  <Button size="sm" disabled={assignMut.isPending || !!assignBlockReason()}
+                    onClick={() => assignMut.mutate(assignPick)}>
                     <Link2 size={14} /> Gán
                   </Button>
                 )}
@@ -235,16 +295,20 @@ export function BarcodeAssignPage() {
         </div>
         <TableCard>
           <thead><tr className="border-b border-line">
-            <Th>Mã đã gán</Th><Th>Sản phẩm</Th><Th>Ngày gán</Th>
+            <Th>Mã đã gán</Th><Th>Loại mã</Th><Th>Sản phẩm</Th><Th>Ngày gán</Th>
             {canManage && <Th className="text-right">Hành động</Th>}
           </tr></thead>
           <tbody>
-            {list.isLoading && <RowMsg colSpan={canManage ? 4 : 3}>Đang tải…</RowMsg>}
-            {list.data?.results.length === 0 && <RowMsg colSpan={canManage ? 4 : 3}>Chưa gán mã nào.</RowMsg>}
+            {list.isLoading && <RowMsg colSpan={canManage ? 5 : 4}>Đang tải…</RowMsg>}
+            {list.data?.results.length === 0 && <RowMsg colSpan={canManage ? 5 : 4}>Chưa gán mã nào.</RowMsg>}
             {list.data?.results.map((row) => (
               <tr key={row.id} className="border-b border-line/50 last:border-0">
                 <Td className="font-mono text-flame">{row.code}</Td>
-                <Td>{row.part} — {row.part_name}</Td>
+                <Td><KindTag kind={row.kind} /></Td>
+                <Td>
+                  {row.part} — {row.part_name}
+                  {partCounts[row.part] > 1 && <span className="ml-1.5"><Tag tone="ok">Đồng bộ</Tag></span>}
+                </Td>
                 <Td className="text-txt-2 text-xs">{new Date(row.created_at).toLocaleDateString('vi-VN')}</Td>
                 {canManage && (
                   <Td className="text-right">
@@ -280,6 +344,15 @@ export function BarcodeAssignPage() {
               <input value={formCode} onChange={(e) => setFormCode(e.target.value)} autoFocus
                 placeholder="Gõ hoặc dán mã…"
                 className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm font-mono focus:border-flame focus:outline-none" />
+            </div>
+            <div>
+              <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Loại mã</label>
+              <select value={formKind} onChange={(e) => setFormKind(e.target.value as '' | 'qr' | 'barcode')}
+                className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none">
+                <option value="">— Không rõ —</option>
+                <option value="qr">QR</option>
+                <option value="barcode">Barcode</option>
+              </select>
             </div>
             <div>
               <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Sản phẩm *</label>
