@@ -66,7 +66,13 @@ export function BatchAssignModal({ open, onClose }: { open: boolean; onClose: ()
 
   const reset = () => { setImages([]); setRows([]); setProgress(0); setTotal(0) }
   const abortRun = () => { runIdRef.current += 1; setProcessing(false) }
-  const close = () => { abortRun(); reset(); onClose() }
+  const close = () => {
+    // Đang lưu thì KHÔNG cho đóng (kể cả bấm X / Esc / bấm ra nền): các mã vẫn
+    // ghi vào hệ thống nhưng nhân viên không thấy mã nào xong mã nào lỗi, dễ
+    // tưởng chưa lưu rồi làm lại cả lượt. Chờ vài giây là xong.
+    if (saveAll.isPending) { toast.info('Đang lưu, chờ một chút rồi hãy đóng.'); return }
+    abortRun(); reset(); onClose()
+  }
 
   const onPick = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? [])
