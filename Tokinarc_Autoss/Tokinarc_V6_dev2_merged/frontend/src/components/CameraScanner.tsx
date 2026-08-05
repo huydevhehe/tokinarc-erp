@@ -19,18 +19,22 @@ prepareZXingModule({ overrides: { locateFile: (p, prefix) => (p.endsWith('.wasm'
 export type ScanKind = 'qr' | 'barcode'
 const kindOf = (symbology: string): ScanKind => (symbology === 'QRCode' ? 'qr' : 'barcode')
 
-export function CameraScanner({ onScan, onMultiScan }: {
+export function CameraScanner({ onScan, onMultiScan, requireKind }: {
   onScan: (code: string, kind: ScanKind) => void
   // Chỉ áp dụng cho "Tải ảnh lên" (ảnh tĩnh) — 1 tấm hình có thể chụp cả 2 tem
   // (QR + Barcode) trên cùng 1 hộp. Nếu ảnh đọc ra ≥2 mã KHÁC loại, gọi
   // onMultiScan thay vì onScan để nơi gọi tự điền đủ cả 2 ô 1 lượt.
   onMultiScan?: (results: { code: string; kind: ScanKind }[]) => void
+  // Chỉ nhận đúng 1 loại (VD sản phẩm đã có QR, giờ gán bổ sung Barcode —
+  // quét trúng QR thì báo sai loại, không gọi onScan, đợi quét đúng Barcode).
+  requireKind?: ScanKind
 }) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const rafRef = useRef<number>(0)
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const onScanRef = useRef(onScan); onScanRef.current = onScan
+  const requireKindRef = useRef(requireKind); requireKindRef.current = requireKind
   const [scanning, setScanning] = useState(false)
   const [camError, setCamError] = useState('')
   const [hit, setHit] = useState('')   // mã vừa quét — flash "✓ đã quét"
@@ -92,8 +96,15 @@ export function CameraScanner({ onScan, onMultiScan }: {
             lastSeenAt = now
             if (text !== lastText) {
               lastText = text
-              beep(); setHit(text); setTimeout(() => setHit(''), 1300)
-              onScanRef.current(text, kindOf(results[0].symbology))
+              const kind = kindOf(results[0].symbology)
+              const need = requireKindRef.current
+              if (need && kind !== need) {
+                setCamError(`Mã này là ${kind === 'qr' ? 'QR' : 'Barcode'} — cần quét mã ${need === 'qr' ? 'QR' : 'Barcode'}.`)
+              } else {
+                setCamError('')
+                beep(); setHit(text); setTimeout(() => setHit(''), 1300)
+                onScanRef.current(text, kind)
+              }
             }
           } else if (lastText && now - lastSeenAt > LOST_MS) {
             lastText = ''
@@ -118,8 +129,17 @@ export function CameraScanner({ onScan, onMultiScan }: {
       // maxNumberOfSymbols > 1: 1 tấm ảnh có thể chụp cả tem QR lẫn Barcode
       // trên cùng 1 hộp — đọc hết ra, không chỉ lấy mã đầu tiên thấy được.
       const results = await readBarcodes(file, { tryHarder: true, maxNumberOfSymbols: 4 })
-      const found = results.filter((r) => r.text)
+      let found = results.filter((r) => r.text)
       if (found.length === 0) { setCamError('Không đọc được mã vạch/QR trong ảnh này — thử ảnh rõ nét hơn.'); return }
+      if (requireKind) {
+        const matched = found.filter((r) => kindOf(r.symbology) === requireKind)
+        if (matched.length === 0) {
+          const gotKind = kindOf(found[0].symbology)
+          setCamError(`Ảnh này là ${gotKind === 'qr' ? 'QR' : 'Barcode'} — cần ảnh mã ${requireKind === 'qr' ? 'QR' : 'Barcode'}.`)
+          return
+        }
+        found = matched
+      }
       setCamError('')
       const first = found[0]
       beep(); setHit(found.map((r) => r.text).join('  +  ')); setTimeout(() => setHit(''), 1300)

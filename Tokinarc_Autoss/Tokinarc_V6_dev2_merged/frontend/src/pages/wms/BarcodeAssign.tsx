@@ -15,6 +15,7 @@ import { Barcode, Search, Link2, ScanLine, List, Plus, Pencil, Trash2 } from 'lu
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
+import { formatDateTime } from '@/lib/crm'
 import { useAuth, isWmsControl } from '@/lib/auth/store'
 import { CameraScanner, type ScanKind } from '@/components/CameraScanner'
 import { SearchableSelect } from '@/components/SearchableSelect'
@@ -24,12 +25,6 @@ import type { CatalogPart, SerialNumber } from '@/lib/types'
 import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
 
 interface PartBarcodeRow { id: number; part: string; part_name: string; code: string; kind: '' | 'qr' | 'barcode'; created_at: string }
-
-function KindTag({ kind }: { kind: '' | 'qr' | 'barcode' }) {
-  if (kind === 'qr') return <Tag tone="blue">QR</Tag>
-  if (kind === 'barcode') return <Tag tone="purple">Barcode</Tag>
-  return <Tag tone="gray">—</Tag>
-}
 
 export function BarcodeAssignPage() {
   const qc = useQueryClient()
@@ -123,6 +118,20 @@ export function BarcodeAssignPage() {
     setLookupQ(first.code); setLookupKind(first.kind)
     const other = rest.find((r) => r.kind !== first.kind) ?? rest[0]
     if (other) { setHasExtraCode(true); setExtraCode(other.code) }
+    notifyIfAlreadyAssigned(first.code)
+  }
+
+  // Quét xong mà im lặng (chỉ hiện thẻ kết quả bên dưới) dễ làm người dùng
+  // không chắc "đã lưu chưa" — quét trúng mã ĐÃ gán sẵn thì báo thẳng luôn,
+  // không cần đợi mắt tìm thẻ kết quả. Gọi riêng 1 request nhỏ (không chờ
+  // query `lookup` bên dưới) để chỉ báo đúng 1 lần/lượt quét, không lặp lại
+  // khi gõ tay hay khi query tự refetch vì lý do khác.
+  const notifyIfAlreadyAssigned = async (code: string) => {
+    try {
+      const r = await api.get<{ results: CatalogPart[] }>('/catalog/parts/', { params: { search: code } })
+      const p = r.data.results[0]
+      if (p) toast.success(`✓ Mã "${code}" đã gán sẵn cho: ${p.tokin_part_no} — ${p.display_name_vi}`)
+    } catch { /* im lặng — không chặn luồng chính, thẻ kết quả bên dưới vẫn hiển thị bình thường */ }
   }
 
   // ─── Tab "Danh sách đã gán" ────────────────────────────────────────────
@@ -162,11 +171,36 @@ export function BarcodeAssignPage() {
   const openAdd = () => { setEditing(null); setFormCode(''); setFormPart(''); setFormKind(''); setAddOpen(true) }
   const openEdit = (row: PartBarcodeRow) => { setEditing(row); setFormCode(row.code); setFormPart(row.part); setFormKind(row.kind); setAddOpen(true) }
 
-  // Sản phẩm nào đang có ≥2 mã gán → 2 mã đó "đồng bộ" với nhau (cùng 1 SP).
-  const partCounts = (list.data?.results ?? []).reduce<Record<string, number>>((acc, row) => {
-    acc[row.part] = (acc[row.part] ?? 0) + 1
-    return acc
-  }, {})
+  // Gán bổ sung mã còn thiếu cho 1 sản phẩm (đã có QR → gán thêm Barcode, hoặc
+  // ngược lại) — quét bị ép chỉ nhận đúng loại đang thiếu.
+  const [fillFor, setFillFor] = useState<{ part: string; part_name: string; kind: ScanKind } | null>(null)
+  const [fillManual, setFillManual] = useState('')
+  const fillMut = useMutation({
+    mutationFn: (code: string) => api.post(`/catalog/parts/${encodeURIComponent(fillFor!.part)}/set-barcode/`,
+      { barcode: code.trim(), kind: fillFor!.kind }),
+    onSuccess: (r) => {
+      toast.success(`Đã gán mã ${fillFor?.kind === 'qr' ? 'QR' : 'Barcode'} cho ${r.data.part_no}`)
+      setFillFor(null); setFillManual('')
+      qc.invalidateQueries({ queryKey: ['part-barcodes'] })
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
+  // Gộp danh sách mã (1 dòng/mã, trả từ API) thành 1 dòng/sản phẩm với 2 cột
+  // riêng QR/Barcode — dễ nhìn "sản phẩm này đủ/thiếu mã gì" hơn so với liệt
+  // kê phẳng. Mã chưa rõ loại (dữ liệu cũ trước khi có field `kind`) tạm xếp
+  // vào ô còn trống đầu tiên.
+  interface PartGroup { part: string; part_name: string; qr: PartBarcodeRow | null; barcode: PartBarcodeRow | null; latest: string }
+  const groups: PartGroup[] = []
+  const byPart = new Map<string, PartGroup>()
+  for (const row of list.data?.results ?? []) {
+    let g = byPart.get(row.part)
+    if (!g) { g = { part: row.part, part_name: row.part_name, qr: null, barcode: null, latest: row.created_at }; byPart.set(row.part, g); groups.push(g) }
+    if (row.kind === 'qr' && !g.qr) g.qr = row
+    else if (row.kind === 'barcode' && !g.barcode) g.barcode = row
+    else if (!row.kind) { if (!g.qr) g.qr = row; else if (!g.barcode) g.barcode = row }
+    if (row.created_at > g.latest) g.latest = row.created_at
+  }
 
   return (
     <div className={tab === 'scan' ? 'max-w-xl' : 'max-w-3xl'}>
@@ -190,7 +224,9 @@ export function BarcodeAssignPage() {
 
       {tab === 'scan' && (
       <div className="space-y-3">
-        <CameraScanner onScan={(c, k) => { setLookupQ(c); setLookupKind(k) }} onMultiScan={onMultiScanPrimary} />
+        <CameraScanner
+          onScan={(c, k) => { setLookupQ(c); setLookupKind(k); notifyIfAlreadyAssigned(c) }}
+          onMultiScan={onMultiScanPrimary} />
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-2" />
           <input value={lookupQ} onChange={(e) => { setLookupQ(e.target.value); setLookupKind(null) }}
@@ -295,34 +331,53 @@ export function BarcodeAssignPage() {
         </div>
         <TableCard>
           <thead><tr className="border-b border-line">
-            <Th>Mã đã gán</Th><Th>Loại mã</Th><Th>Sản phẩm</Th><Th>Ngày gán</Th>
-            {canManage && <Th className="text-right">Hành động</Th>}
+            <Th>Sản phẩm</Th><Th>Mã QR</Th><Th>Mã Barcode</Th><Th>Ngày gán</Th>
           </tr></thead>
           <tbody>
-            {list.isLoading && <RowMsg colSpan={canManage ? 5 : 4}>Đang tải…</RowMsg>}
-            {list.data?.results.length === 0 && <RowMsg colSpan={canManage ? 5 : 4}>Chưa gán mã nào.</RowMsg>}
-            {list.data?.results.map((row) => (
-              <tr key={row.id} className="border-b border-line/50 last:border-0">
-                <Td className="font-mono text-flame">{row.code}</Td>
-                <Td><KindTag kind={row.kind} /></Td>
+            {list.isLoading && <RowMsg colSpan={4}>Đang tải…</RowMsg>}
+            {groups.length === 0 && !list.isLoading && <RowMsg colSpan={4}>Chưa gán mã nào.</RowMsg>}
+            {groups.map((g) => (
+              <tr key={g.part} className="border-b border-line/50 last:border-0">
+                <Td className="font-medium">{g.part} — {g.part_name}</Td>
                 <Td>
-                  {row.part} — {row.part_name}
-                  {partCounts[row.part] > 1 && <span className="ml-1.5"><Tag tone="ok">Đồng bộ</Tag></span>}
-                </Td>
-                <Td className="text-txt-2 text-xs">{new Date(row.created_at).toLocaleDateString('vi-VN')}</Td>
-                {canManage && (
-                  <Td className="text-right">
-                    <span className="inline-flex gap-1.5 justify-end">
-                      <Button variant="ghost" size="sm" onClick={() => openEdit(row)}>
-                        <Pencil size={13} /> Sửa
-                      </Button>
-                      <Button variant="ghost" size="sm" disabled={remove.isPending} className="!text-danger"
-                        onClick={() => { if (confirm(`Bỏ gán mã "${row.code}"?`)) remove.mutate(row.id) }}>
-                        <Trash2 size={13} /> Xóa
-                      </Button>
+                  {g.qr ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="font-mono text-flame">{g.qr.code}</span>
+                      {canManage && (
+                        <>
+                          <button onClick={() => openEdit(g.qr!)} className="text-txt-2 hover:text-flame" aria-label="Sửa mã QR"><Pencil size={12} /></button>
+                          <button onClick={() => { if (confirm(`Bỏ gán mã QR "${g.qr!.code}"?`)) remove.mutate(g.qr!.id) }}
+                            disabled={remove.isPending} className="text-txt-2 hover:text-danger" aria-label="Xóa mã QR"><Trash2 size={12} /></button>
+                        </>
+                      )}
                     </span>
-                  </Td>
-                )}
+                  ) : canManage ? (
+                    <button onClick={() => setFillFor({ part: g.part, part_name: g.part_name, kind: 'qr' })}
+                      className="text-[11px] text-txt-2 hover:text-flame inline-flex items-center gap-1">
+                      <Plus size={12} /> Gán QR
+                    </button>
+                  ) : <span className="text-txt-2">—</span>}
+                </Td>
+                <Td>
+                  {g.barcode ? (
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="font-mono text-flame">{g.barcode.code}</span>
+                      {canManage && (
+                        <>
+                          <button onClick={() => openEdit(g.barcode!)} className="text-txt-2 hover:text-flame" aria-label="Sửa mã Barcode"><Pencil size={12} /></button>
+                          <button onClick={() => { if (confirm(`Bỏ gán mã Barcode "${g.barcode!.code}"?`)) remove.mutate(g.barcode!.id) }}
+                            disabled={remove.isPending} className="text-txt-2 hover:text-danger" aria-label="Xóa mã Barcode"><Trash2 size={12} /></button>
+                        </>
+                      )}
+                    </span>
+                  ) : canManage ? (
+                    <button onClick={() => setFillFor({ part: g.part, part_name: g.part_name, kind: 'barcode' })}
+                      className="text-[11px] text-txt-2 hover:text-flame inline-flex items-center gap-1">
+                      <Plus size={12} /> Gán Barcode
+                    </button>
+                  ) : <span className="text-txt-2">—</span>}
+                </Td>
+                <Td className="text-txt-2 text-xs whitespace-nowrap">{formatDateTime(g.latest)}</Td>
               </tr>
             ))}
           </tbody>
@@ -359,6 +414,22 @@ export function BarcodeAssignPage() {
               <SearchableSelect value={formPart} onChange={setFormPart}
                 options={partOptions} loading={partsLoading} placeholder="Gõ tên hoặc mã sản phẩm để tìm…" />
             </div>
+          </div>
+        </Modal>
+
+        <Modal open={!!fillFor} onClose={() => { setFillFor(null); setFillManual('') }}
+          title={`Gán mã ${fillFor?.kind === 'qr' ? 'QR' : 'Barcode'} cho ${fillFor?.part ?? ''}`}
+          icon={<Barcode size={18} className="text-flame" />}
+          footer={<><Button variant="ghost" onClick={() => { setFillFor(null); setFillManual('') }}>Hủy</Button>
+            <Button onClick={() => fillMut.mutate(fillManual)} disabled={fillMut.isPending || !fillManual.trim()}>Gán</Button></>}>
+          <div className="space-y-2">
+            <p className="text-xs text-txt-2">{fillFor?.part_name}</p>
+            {fillFor && (
+              <CameraScanner requireKind={fillFor.kind} onScan={(c) => fillMut.mutate(c)} />
+            )}
+            <input value={fillManual} onChange={(e) => setFillManual(e.target.value)}
+              placeholder={`…hoặc gõ tay mã ${fillFor?.kind === 'qr' ? 'QR' : 'Barcode'} nếu không quét được`}
+              className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm font-mono focus:border-flame focus:outline-none" />
           </div>
         </Modal>
       </>
