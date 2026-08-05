@@ -81,6 +81,21 @@ export function BarcodeAssignPage() {
   // thao tác lại từ đầu (trước đây chỉ hiện mỗi mã chưa gán, mã đã khớp bị
   // "giấu" mất, dễ hiểu lầm sản phẩm chưa có trong hệ thống).
   const [completeSuggestion, setCompleteSuggestion] = useState<{ part: CatalogPart; missingCode: string; missingKind: ScanKind } | null>(null)
+  // Mã lạ (không tìm thấy bằng nguyên nội dung QR) nhưng mã sản phẩm tách
+  // được từ QR lại khớp 1 sản phẩm CÓ SẴN — gán thẳng, không gợi ý Thêm mới
+  // (tránh tạo trùng mã sản phẩm đã tồn tại).
+  const resolveAssignMut = useMutation({
+    mutationFn: () => api.post(`/catalog/parts/${encodeURIComponent(guessedPartCheck.data!.tokin_part_no)}/set-barcode/`,
+      { barcode: lookupQ.trim(), kind: lookupKind ?? '' }),
+    onSuccess: (r) => {
+      toast.success(`Đã gán mã QR cho ${r.data.part_no}`)
+      qc.invalidateQueries({ queryKey: ['scan-lookup'] })
+      qc.invalidateQueries({ queryKey: ['part-barcodes'] })
+      qc.invalidateQueries({ queryKey: ['part-barcodes-stats'] })
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
   const completeMut = useMutation({
     mutationFn: () => api.post(`/catalog/parts/${encodeURIComponent(completeSuggestion!.part.tokin_part_no)}/set-barcode/`,
       { barcode: completeSuggestion!.missingCode, kind: completeSuggestion!.missingKind }),
@@ -114,6 +129,21 @@ export function BarcodeAssignPage() {
       return { parts: parts.data.results.slice(0, 6), serials: serials.data.results.slice(0, 6) }
     },
     enabled: tab === 'scan' && lookupQ.trim().length >= 2,
+  })
+  const notFound = !!lookup.data && lookup.data.parts.length === 0 && lookup.data.serials.length === 0 && lookupQ.trim().length >= 2
+
+  // Nội dung QR kiểu phức tạp dài cả trăm ký tự — tìm bằng NGUYÊN chuỗi đó
+  // gần như không bao giờ ra kết quả (mã sản phẩm trong hệ thống ngắn hơn
+  // nhiều, không thể "chứa" được cả chuỗi dài). Mã lạ (không tìm thấy) mà
+  // tách được mã sản phẩm từ nội dung QR → thử tìm LẠI đúng bằng mã đã tách,
+  // để phân biệt đúng "sản phẩm đã có, chỉ thiếu gán mã" với "sản phẩm chưa
+  // có thật" — tránh gợi ý Thêm mới nhầm cho sản phẩm ĐÃ tồn tại.
+  const guessedFromQr = lookupKind === 'qr' ? guessPartFromQr(lookupQ.trim()) : null
+  const guessedPartCheck = useQuery({
+    queryKey: ['guessed-part-check', guessedFromQr?.tokin_part_no],
+    queryFn: () => api.get<{ results: CatalogPart[] }>('/catalog/parts/', { params: { search: guessedFromQr!.tokin_part_no } })
+      .then((r) => r.data.results.find((p) => p.tokin_part_no === guessedFromQr!.tokin_part_no) ?? null),
+    enabled: notFound && !!guessedFromQr && guessedFromQr.tokin_part_no !== lookupQ.trim(),
   })
 
   const assignMut = useMutation({
@@ -353,7 +383,18 @@ export function BarcodeAssignPage() {
           </Card>
         )}
         {lookup.isLoading && <p className="text-xs text-txt-2">Đang tìm…</p>}
-        {lookup.data && lookup.data.parts.length === 0 && lookup.data.serials.length === 0 && lookupQ.trim().length >= 2 && (
+        {notFound && guessedFromQr && guessedPartCheck.data && (
+          <Card>
+            <p className="text-sm text-txt-2">
+              Mã QR này chưa gán, nhưng sản phẩm <b>{guessedPartCheck.data.tokin_part_no} — {guessedPartCheck.data.display_name_vi}</b> đã có sẵn trong hệ thống
+              (nhận diện qua mã sản phẩm tách được từ nội dung QR).
+            </p>
+            <Button size="sm" className="mt-2" disabled={resolveAssignMut.isPending} onClick={() => resolveAssignMut.mutate()}>
+              <Link2 size={14} /> Gán mã QR này cho sản phẩm
+            </Button>
+          </Card>
+        )}
+        {notFound && !(guessedFromQr && guessedPartCheck.data) && (
           <Card>
             <p className="text-sm text-txt-2 mb-2">
               Không tìm thấy "<span className="font-mono text-flame">{lookupQ.trim()}</span>". Tem này có thể <b>chưa gán</b>.
@@ -363,7 +404,7 @@ export function BarcodeAssignPage() {
                 <Button size="sm" onClick={() => setAssigning(true)}>
                   <Link2 size={14} /> Gán mã này cho sản phẩm
                 </Button>
-                {lookupKind === 'qr' && (
+                {lookupKind === 'qr' && guessedPartCheck.data === null && (
                   <Button size="sm" variant="ghost" onClick={() => setQuickAddOpen(true)}>
                     <PackagePlus size={14} /> Sản phẩm chưa có — Thêm mới
                   </Button>
