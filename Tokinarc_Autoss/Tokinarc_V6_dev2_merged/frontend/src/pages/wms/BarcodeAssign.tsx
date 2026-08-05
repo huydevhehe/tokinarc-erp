@@ -39,6 +39,24 @@ export function BarcodeAssignPage() {
   const [scanningExtra, setScanningExtra] = useState(false)   // đang mở camera quét mã kèm theo (thay vì gõ tay)
   const { options: partOptions, isLoading: partsLoading } = usePartOptions()
 
+  // 1 ảnh có 2 mã: 1 mã đã khớp sản phẩm có sẵn (VD QR → ra đúng part), mã còn
+  // lại (Barcode) CHƯA gán cho ai — gợi ý gán bổ sung luôn 1 nút, khỏi phải
+  // thao tác lại từ đầu (trước đây chỉ hiện mỗi mã chưa gán, mã đã khớp bị
+  // "giấu" mất, dễ hiểu lầm sản phẩm chưa có trong hệ thống).
+  const [completeSuggestion, setCompleteSuggestion] = useState<{ part: CatalogPart; missingCode: string; missingKind: ScanKind } | null>(null)
+  const completeMut = useMutation({
+    mutationFn: () => api.post(`/catalog/parts/${encodeURIComponent(completeSuggestion!.part.tokin_part_no)}/set-barcode/`,
+      { barcode: completeSuggestion!.missingCode, kind: completeSuggestion!.missingKind }),
+    onSuccess: (r) => {
+      toast.success(`Đã gán mã ${completeSuggestion?.missingKind === 'qr' ? 'QR' : 'Barcode'} cho ${r.data.part_no}`)
+      setCompleteSuggestion(null)
+      qc.invalidateQueries({ queryKey: ['scan-lookup'] })
+      qc.invalidateQueries({ queryKey: ['part-barcodes'] })
+      qc.invalidateQueries({ queryKey: ['part-barcodes-stats'] })
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
   // Sản phẩm đang chọn để gán đã có sẵn mã nào chưa (để hiện thông tin, không
   // bắt gõ lại nếu đã có sẵn mã loại kia rồi).
   const existingCodes = useQuery({
@@ -112,14 +130,36 @@ export function BarcodeAssignPage() {
     return null
   }
 
-  // 1 tấm ảnh đọc ra ≥2 mã khác loại (QR + Barcode trên cùng hộp) → tự điền
-  // đủ cả 2 ô luôn, không bắt quét/gõ riêng ô "mã kèm theo" nữa.
-  const onMultiScanPrimary = (results: { code: string; kind: ScanKind }[]) => {
+  // 1 tấm ảnh đọc ra ≥2 mã khác loại (QR + Barcode trên cùng hộp) — tra cả 2
+  // mã xem đã khớp sản phẩm nào chưa, để xử lý đúng từng trường hợp thay vì
+  // chỉ hiện mỗi mã ĐẦU TIÊN đọc được (dễ hiểu lầm "chưa có sản phẩm" trong
+  // khi mã còn lại đã khớp sẵn 1 sản phẩm có thật).
+  const onMultiScanPrimary = async (results: { code: string; kind: ScanKind }[]) => {
+    setCompleteSuggestion(null)
+    const resolved = await Promise.all(results.map(async (r) => {
+      try {
+        const res = await api.get<{ results: CatalogPart[] }>('/catalog/parts/', { params: { search: r.code } })
+        return { ...r, part: res.data.results[0] ?? null }
+      } catch { return { ...r, part: null } }
+    }))
+    const found = resolved.filter((r) => r.part)
+    const missing = resolved.filter((r) => !r.part)
+
+    if (found.length === 1 && missing.length === 1) {
+      // Đúng ca: 1 mã đã khớp sản phẩm, mã kia chưa gán cho ai — gợi ý gán bổ sung 1 nút.
+      setLookupQ(found[0].code); setLookupKind(found[0].kind)
+      setCompleteSuggestion({ part: found[0].part!, missingCode: missing[0].code, missingKind: missing[0].kind })
+      return
+    }
+
     const [first, ...rest] = results
     setLookupQ(first.code); setLookupKind(first.kind)
     const other = rest.find((r) => r.kind !== first.kind) ?? rest[0]
     if (other) { setHasExtraCode(true); setExtraCode(other.code) }
-    notifyIfAlreadyAssigned(first.code)
+    if (found.length > 0) {
+      const p = found[0].part!
+      toast.success(`✓ Mã "${found[0].code}" đã gán sẵn cho: ${p.tokin_part_no} — ${p.display_name_vi}`)
+    }
   }
 
   // Quét xong mà im lặng (chỉ hiện thẻ kết quả bên dưới) dễ làm người dùng
@@ -249,14 +289,32 @@ export function BarcodeAssignPage() {
       {tab === 'scan' && (
       <div className="space-y-3">
         <CameraScanner
-          onScan={(c, k) => { setLookupQ(c); setLookupKind(k); notifyIfAlreadyAssigned(c) }}
+          onScan={(c, k) => { setLookupQ(c); setLookupKind(k); setCompleteSuggestion(null); notifyIfAlreadyAssigned(c) }}
           onMultiScan={onMultiScanPrimary} />
         <div className="relative">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-txt-2" />
-          <input value={lookupQ} onChange={(e) => { setLookupQ(e.target.value); setLookupKind(null) }}
+          <input value={lookupQ} onChange={(e) => { setLookupQ(e.target.value); setLookupKind(null); setCompleteSuggestion(null) }}
             placeholder="Quét, tải ảnh, hoặc nhập mã hàng / serial…"
             className="w-full bg-ink-3 border border-line rounded-md pl-9 pr-3 py-2 text-sm focus:border-flame focus:outline-none" />
         </div>
+        {completeSuggestion && (
+          <Card>
+            <p className="text-sm text-txt-2">
+              Ảnh này có <b className="text-txt">2 mã</b> — mã <span className="font-mono text-flame">{lookupQ.trim()}</span> đã khớp sản phẩm{' '}
+              <b>{completeSuggestion.part.tokin_part_no} — {completeSuggestion.part.display_name_vi}</b>.
+            </p>
+            <p className="text-sm text-txt-2 mt-1">
+              Mã <span className="font-mono text-flame">{completeSuggestion.missingCode}</span>{' '}
+              ({completeSuggestion.missingKind === 'qr' ? 'QR' : 'Barcode'}) đi kèm <b className="text-warn">chưa được gán</b> — gán luôn cho sản phẩm này chứ?
+            </p>
+            <div className="flex gap-2 mt-2">
+              <Button size="sm" disabled={completeMut.isPending} onClick={() => completeMut.mutate()}>
+                <Link2 size={14} /> Gán luôn
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setCompleteSuggestion(null)}>Bỏ qua</Button>
+            </div>
+          </Card>
+        )}
         {lookup.isLoading && <p className="text-xs text-txt-2">Đang tìm…</p>}
         {lookup.data && lookup.data.parts.length === 0 && lookup.data.serials.length === 0 && lookupQ.trim().length >= 2 && (
           <Card>
