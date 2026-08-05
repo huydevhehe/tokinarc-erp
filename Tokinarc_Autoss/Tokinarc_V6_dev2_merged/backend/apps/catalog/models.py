@@ -200,7 +200,10 @@ class BarcodeKind(models.TextChoices):
 
 class PartBarcode(models.Model):
     part       = models.ForeignKey(Part, on_delete=models.CASCADE, related_name='barcodes')
-    code       = models.CharField(max_length=64, unique=True, db_index=True)
+    # 64 ký tự từng đủ cho barcode/QR đơn giản, nhưng 1 số QR thực tế (kiểu
+    # nhiều trường, VD "#G...,YEA003012 ,...(mô tả dài)...,lô") dài hơn
+    # 100 ký tự — nới lên 255 để không vỡ ràng buộc DB (500) lúc gán.
+    code       = models.CharField(max_length=255, unique=True, db_index=True)
     # Loại mã (QR hay Barcode thường) — tự nhận biết lúc quét (zxing-wasm trả
     # symbology), lưu lại để hiển thị ở "Danh sách đã gán" (không phải đoán lại
     # từ nội dung). Mã thêm tay (không qua quét) có thể để trống — không rõ loại.
