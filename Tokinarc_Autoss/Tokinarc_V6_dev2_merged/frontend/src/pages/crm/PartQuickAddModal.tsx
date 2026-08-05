@@ -22,10 +22,12 @@ interface Form { tokin_part_no: string; category: string; display_name_vi: strin
 interface ProductCategoryLite { id: number; name: string }
 interface ProductGroupLite { id: number; name: string; categories: ProductCategoryLite[] }
 
-export function PartQuickAddModal({ open, onClose, onSaved }: {
+export function PartQuickAddModal({ open, onClose, onSaved, initial }: {
   open: boolean; onClose: () => void
   /** Gọi sau khi thêm thành công — nơi gọi tự chọn mặt hàng mới vào dòng hàng. */
   onSaved?: (p: NewPart) => void
+  /** Điền sẵn (VD tách được từ nội dung QR quét được) — vẫn sửa được trước khi lưu. */
+  initial?: { tokin_part_no?: string; display_name_vi?: string }
 }) {
   const qc = useQueryClient()
   const { register, handleSubmit, reset, control, formState: { errors } } = useForm<Form>()
@@ -42,8 +44,11 @@ export function PartQuickAddModal({ open, onClose, onSaved }: {
     g.categories.map((c) => ({ value: String(c.id), label: `${g.name} — ${c.name}` })))
 
   useEffect(() => {
-    if (open) reset({ tokin_part_no: '', category: '', display_name_vi: '', product_category: '' })
-  }, [open, reset])
+    if (open) reset({
+      tokin_part_no: initial?.tokin_part_no ?? '', category: '',
+      display_name_vi: initial?.display_name_vi ?? '', product_category: '',
+    })
+  }, [open, reset, initial])
 
   const save = useMutation({
     mutationFn: (d: Form) => {

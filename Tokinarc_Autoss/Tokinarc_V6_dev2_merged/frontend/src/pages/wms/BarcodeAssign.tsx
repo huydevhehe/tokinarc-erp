@@ -11,7 +11,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { Barcode, Search, Link2, ScanLine, List, Plus, Pencil, Trash2 } from 'lucide-react'
+import { Barcode, Search, Link2, ScanLine, List, Plus, Pencil, Trash2, PackagePlus } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { fetchPage, PAGE_SIZE } from '@/lib/list'
@@ -23,8 +23,44 @@ import { Modal } from '@/components/Modal'
 import { usePartOptions } from '@/lib/useWmsOptions'
 import type { CatalogPart, SerialNumber } from '@/lib/types'
 import { PageHeader, Card, Button, Tag, TableCard, Th, Td, RowMsg, Pagination } from '@/components/ui'
+import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
 
 interface PartBarcodeRow { id: number; part: string; part_name: string; code: string; kind: '' | 'qr' | 'barcode'; created_at: string }
+
+// Tách "mã sản phẩm" + "tên sản phẩm" từ nội dung QR — gặp 2 kiểu thực tế:
+//  A) "<mã> ,<tên>"                                        (Tip/Nozzle...)
+//  B) "#<id>,<mã>  ,<tên tiếng Nhật> ,<tên tiếng Anh...>    (Torch Body...)
+//     ,<SL> ,<mã bản vẽ> ,<lô>" — kiểu B nhận biết qua tiền tố "#" ở đầu.
+// Tách theo dấu phẩy nhưng GIỮ NGUYÊN đoạn nằm trong ngoặc — tên tiếng Anh
+// kiểu B có thể chứa dấu phẩy bên trong ngoặc (VD "(Type A2, w/o Tip Body)"),
+// tách thô sẽ cắt đôi tên sai.
+function splitRespectingParens(text: string): string[] {
+  const parts: string[] = []
+  let depth = 0
+  let cur = ''
+  for (const ch of text) {
+    if (ch === '(') depth++
+    if (ch === ')') depth = Math.max(0, depth - 1)
+    if (ch === ',' && depth === 0) { parts.push(cur); cur = '' } else { cur += ch }
+  }
+  parts.push(cur)
+  return parts.map((s) => s.trim())
+}
+
+function guessPartFromQr(text: string): { tokin_part_no: string; display_name_vi: string } | null {
+  const segs = splitRespectingParens(text)
+  if (segs.length < 2) return null
+  if (segs[0].startsWith('#')) {
+    // Kiểu B (nhiều trường) — mã ở đoạn 2, tên tiếng Anh ở đoạn 4 (có thì ưu tiên,
+    // không thì tạm lấy đoạn 3 — vẫn sửa được trên form trước khi lưu.
+    const code = segs[1] ?? ''
+    const name = segs[3] || segs[2] || ''
+    if (!code) return null
+    return { tokin_part_no: code, display_name_vi: name }
+  }
+  // Kiểu A (đơn giản, 2 trường).
+  return { tokin_part_no: segs[0], display_name_vi: segs[1] ?? '' }
+}
 
 export function BarcodeAssignPage() {
   const qc = useQueryClient()
@@ -37,6 +73,7 @@ export function BarcodeAssignPage() {
   const [hasExtraCode, setHasExtraCode] = useState(false)   // tick "có kèm mã Barcode/QR khác không"
   const [extraCode, setExtraCode] = useState('')
   const [scanningExtra, setScanningExtra] = useState(false)   // đang mở camera quét mã kèm theo (thay vì gõ tay)
+  const [quickAddOpen, setQuickAddOpen] = useState(false)   // mã QR lạ, sản phẩm chưa có trong hệ thống → thêm mới nhanh
   const { options: partOptions, isLoading: partsLoading } = usePartOptions()
 
   // 1 ảnh có 2 mã: 1 mã đã khớp sản phẩm có sẵn (VD QR → ra đúng part), mã còn
@@ -322,9 +359,16 @@ export function BarcodeAssignPage() {
               Không tìm thấy "<span className="font-mono text-flame">{lookupQ.trim()}</span>". Tem này có thể <b>chưa gán</b>.
             </p>
             {!assigning ? (
-              <Button size="sm" onClick={() => setAssigning(true)}>
-                <Link2 size={14} /> Gán mã này cho sản phẩm
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={() => setAssigning(true)}>
+                  <Link2 size={14} /> Gán mã này cho sản phẩm
+                </Button>
+                {lookupKind === 'qr' && (
+                  <Button size="sm" variant="ghost" onClick={() => setQuickAddOpen(true)}>
+                    <PackagePlus size={14} /> Sản phẩm chưa có — Thêm mới
+                  </Button>
+                )}
+              </div>
             ) : (
               <div className="space-y-2">
                 {lookupKind && (
@@ -404,6 +448,19 @@ export function BarcodeAssignPage() {
         ))}
       </div>
       )}
+
+      <PartQuickAddModal open={quickAddOpen} onClose={() => setQuickAddOpen(false)}
+        initial={lookupKind === 'qr' ? (guessPartFromQr(lookupQ.trim()) ?? undefined) : undefined}
+        onSaved={async (p) => {
+          try {
+            await api.post(`/catalog/parts/${encodeURIComponent(p.tokin_part_no)}/set-barcode/`,
+              { barcode: lookupQ.trim(), kind: lookupKind ?? '' })
+            toast.success(`Đã thêm sản phẩm ${p.tokin_part_no} và gán mã QR luôn.`)
+          } catch (e) { toast.error(apiError(e)) }
+          qc.invalidateQueries({ queryKey: ['scan-lookup'] })
+          qc.invalidateQueries({ queryKey: ['part-barcodes'] })
+          qc.invalidateQueries({ queryKey: ['part-barcodes-stats'] })
+        }} />
 
       {tab === 'list' && (
       <>
