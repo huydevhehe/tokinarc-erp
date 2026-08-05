@@ -79,6 +79,15 @@ export function CameraScanner({ onScan, onMultiScan, requireKind }: {
     let lastText = ''
     let lastSeenAt = 0
     const LOST_MS = 1200   // phải mất dấu mã liên tục >1.2s mới coi là "đã rời mã" — đủ trừ hao rung tay/mờ thoáng qua
+    // Chống đọc SAI (không phải đọc trùng) — barcode chỉ là dãy số, rung/lag
+    // máy đúng lúc chụp 1 khung mờ có thể đọc RA SỐ SAI mà vẫn "hợp lệ" theo
+    // checksum (hiếm nhưng không phải không thể). Bắt đọc phải KHỚP GIỐNG HỆT
+    // ở 2 khung hình liên tiếp mới chấp nhận — 1 khung đọc sai gần như không
+    // bao giờ lặp lại y hệt ở khung kế tiếp, nên bị loại tự nhiên, không cần
+    // người dùng tự soát số.
+    let pendingText = ''
+    let pendingCount = 0
+    const CONFIRM_FRAMES = 2
     const tick = async () => {
       const v = videoRef.current
       if (!v || v.readyState < 2 || !streamRef.current) { rafRef.current = requestAnimationFrame(tick); return }
@@ -94,7 +103,13 @@ export function CameraScanner({ onScan, onMultiScan, requireKind }: {
           const now = performance.now()
           if (text) {
             lastSeenAt = now
-            if (text !== lastText) {
+            if (text === pendingText) {
+              pendingCount++
+            } else {
+              pendingText = text
+              pendingCount = 1
+            }
+            if (pendingCount >= CONFIRM_FRAMES && text !== lastText) {
               lastText = text
               const kind = kindOf(results[0].symbology)
               const need = requireKindRef.current
@@ -108,6 +123,7 @@ export function CameraScanner({ onScan, onMultiScan, requireKind }: {
             }
           } else if (lastText && now - lastSeenAt > LOST_MS) {
             lastText = ''
+            pendingText = ''; pendingCount = 0
           }
         } catch { /* bỏ qua frame lỗi */ }
         reading = false
