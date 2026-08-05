@@ -284,6 +284,15 @@ class PartBarcodeViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter]
     search_fields = ['code', 'part__tokin_part_no', 'part__display_name_vi']
 
+    @action(detail=False, methods=['get'])
+    def stats(self, request):
+        """Tổng quan cho FE hiện nhỏ dưới bảng — đếm thật (không tính theo
+        trang hiện tại, dễ sai vì phân trang)."""
+        return Response({
+            'total_codes': PartBarcode.objects.count(),
+            'total_parts': PartBarcode.objects.values('part_id').distinct().count(),
+        })
+
 
 # ─── TorchViewSet ────────────────────────────────────────────────────────────
 class TorchViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,

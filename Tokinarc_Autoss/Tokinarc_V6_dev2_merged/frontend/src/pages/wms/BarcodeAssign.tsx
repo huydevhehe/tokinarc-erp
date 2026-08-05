@@ -87,6 +87,7 @@ export function BarcodeAssignPage() {
       setAssigning(false); setAssignPick(''); setHasExtraCode(false); setExtraCode('')
       qc.invalidateQueries({ queryKey: ['scan-lookup'] })
       qc.invalidateQueries({ queryKey: ['part-barcodes'] })
+      qc.invalidateQueries({ queryKey: ['part-barcodes-stats'] })
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : apiError(e)),
   })
@@ -150,6 +151,11 @@ export function BarcodeAssignPage() {
     enabled: tab === 'list',
   })
   const totalPages = list.data ? Math.max(1, Math.ceil(list.data.count / pageSize)) : 1
+  const stats = useQuery({
+    queryKey: ['part-barcodes-stats'],
+    queryFn: () => api.get<{ total_parts: number; total_codes: number }>('/catalog/part-barcodes/stats/').then((r) => r.data),
+    enabled: tab === 'list',
+  })
 
   const save = useMutation({
     mutationFn: () => editing
@@ -158,13 +164,18 @@ export function BarcodeAssignPage() {
     onSuccess: () => {
       toast.success(editing ? 'Đã lưu' : 'Đã thêm mã mới')
       qc.invalidateQueries({ queryKey: ['part-barcodes'] })
+      qc.invalidateQueries({ queryKey: ['part-barcodes-stats'] })
       setAddOpen(false); setEditing(null); setFormCode(''); setFormPart(''); setFormKind('')
     },
     onError: (e) => toast.error(apiError(e)),
   })
   const remove = useMutation({
     mutationFn: (id: number) => api.delete(`/catalog/part-barcodes/${id}/`),
-    onSuccess: () => { toast.success('Đã xóa'); qc.invalidateQueries({ queryKey: ['part-barcodes'] }) },
+    onSuccess: () => {
+      toast.success('Đã xóa')
+      qc.invalidateQueries({ queryKey: ['part-barcodes'] })
+      qc.invalidateQueries({ queryKey: ['part-barcodes-stats'] })
+    },
     onError: (e) => toast.error(apiError(e)),
   })
 
@@ -182,6 +193,7 @@ export function BarcodeAssignPage() {
       toast.success(`Đã gán mã ${fillFor?.kind === 'qr' ? 'QR' : 'Barcode'} cho ${r.data.part_no}`)
       setFillFor(null); setFillManual('')
       qc.invalidateQueries({ queryKey: ['part-barcodes'] })
+      qc.invalidateQueries({ queryKey: ['part-barcodes-stats'] })
     },
     onError: (e) => toast.error(apiError(e)),
   })
@@ -192,13 +204,25 @@ export function BarcodeAssignPage() {
   // vào ô còn trống đầu tiên.
   interface PartGroup { part: string; part_name: string; qr: PartBarcodeRow | null; barcode: PartBarcodeRow | null; latest: string }
   const groups: PartGroup[] = []
+  // Mã cũ gán từ trước khi có field `kind` (không rõ loại) — đoán theo nội
+  // dung thay vì "ô nào trống điền trước" (dễ đoán sai thứ tự): mã toàn chữ
+  // số (kiểu EAN/UPC) hầu như luôn là Barcode thật, QR ở hệ này thường có
+  // chữ/dấu câu xen kẽ. Chỉ dùng để XẾP CỘT hiển thị — không ghi đè `kind`
+  // thật trong DB (m vẫn có thể bấm Sửa để chốt lại loại chính xác).
+  const looksLikeBarcode = (code: string) => /^\d{6,}$/.test(code)
   const byPart = new Map<string, PartGroup>()
   for (const row of list.data?.results ?? []) {
     let g = byPart.get(row.part)
     if (!g) { g = { part: row.part, part_name: row.part_name, qr: null, barcode: null, latest: row.created_at }; byPart.set(row.part, g); groups.push(g) }
     if (row.kind === 'qr' && !g.qr) g.qr = row
     else if (row.kind === 'barcode' && !g.barcode) g.barcode = row
-    else if (!row.kind) { if (!g.qr) g.qr = row; else if (!g.barcode) g.barcode = row }
+    else if (!row.kind) {
+      const guessBarcode = looksLikeBarcode(row.code)
+      if (guessBarcode && !g.barcode) g.barcode = row
+      else if (!guessBarcode && !g.qr) g.qr = row
+      else if (!g.qr) g.qr = row
+      else if (!g.barcode) g.barcode = row
+    }
     if (row.created_at > g.latest) g.latest = row.created_at
   }
 
@@ -258,7 +282,9 @@ export function BarcodeAssignPage() {
                 {hasExtraCode && (
                   <div className="space-y-1.5">
                     {scanningExtra ? (
-                      <CameraScanner onScan={(c) => { setExtraCode(c); setScanningExtra(false) }} />
+                      <CameraScanner
+                        requireKind={lookupKind === 'qr' ? 'barcode' : lookupKind === 'barcode' ? 'qr' : undefined}
+                        onScan={(c) => { setExtraCode(c); setScanningExtra(false) }} />
                     ) : (
                       <Button size="sm" variant="ghost" onClick={() => setScanningExtra(true)}>
                         <ScanLine size={13} /> Quét mã {lookupKind === 'qr' ? 'Barcode' : 'QR'} kèm theo
@@ -386,6 +412,11 @@ export function BarcodeAssignPage() {
           <Pagination page={page} totalPages={totalPages} fetching={list.isFetching}
             pageSize={pageSize} onPageSizeChange={(n) => { setPageSize(n); setPage(1) }}
             onPrev={() => setPage((p) => p - 1)} onNext={() => setPage((p) => p + 1)} />
+        )}
+        {stats.data && (
+          <p className="text-[11px] text-txt-2 mt-2">
+            Đã gán mã cho <b className="text-txt">{stats.data.total_parts}</b> sản phẩm — tổng <b className="text-txt">{stats.data.total_codes}</b> mã (QR + Barcode).
+          </p>
         )}
 
         <Modal open={addOpen} onClose={() => setAddOpen(false)}
