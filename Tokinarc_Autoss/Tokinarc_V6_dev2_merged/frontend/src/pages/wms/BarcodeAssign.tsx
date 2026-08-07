@@ -37,6 +37,46 @@ function autoGrow(el: HTMLTextAreaElement | null) {
   el.style.height = `${el.scrollHeight}px`
 }
 
+/** 1 dòng nhãn + giá trị dùng chung cho thẻ thông tin quét (Part Number/Part
+ *  Name/Mã Barcode/Mã QR) — value rỗng hiện "chưa có" thay vì để trống trơn,
+ *  để người quét biết chắc hệ thống ĐÃ nhận hay CHƯA nhận mã đó. */
+function InfoRow({ label, value, mono = true, tone }: {
+  label: string; value?: string; mono?: boolean; tone?: 'ok'
+}) {
+  return (
+    <div className="flex items-baseline gap-2 text-sm">
+      <span className="text-[11px] uppercase tracking-wide text-txt-2 w-28 shrink-0">{label}</span>
+      {value
+        ? <span className={`break-all ${mono ? 'font-mono' : ''} ${tone === 'ok' ? 'text-ok' : 'text-txt'}`}>{value}</span>
+        : <span className="text-txt-2 text-xs italic">chưa có</span>}
+    </div>
+  )
+}
+
+/** Thẻ kết quả khi quét trúng mã ĐÃ gán sẵn — hiện đủ Part Number, Part Name,
+ *  Mã Barcode và Mã QR đang gán cho sản phẩm đó (không chỉ mỗi mã vừa quét),
+ *  vì 1 sản phẩm có thể có cả 2 loại mã cùng lúc. */
+function FoundPartCard({ p }: { p: CatalogPart }) {
+  const codes = useQuery({
+    queryKey: ['part-barcodes-for', p.tokin_part_no],
+    queryFn: () => api.get<{ results: PartBarcodeRow[] }>('/catalog/part-barcodes/', { params: { search: p.tokin_part_no } })
+      .then((r) => r.data.results.filter((row) => row.part === p.tokin_part_no)),
+  })
+  const barcodeRow = codes.data?.find((c) => c.kind === 'barcode')
+  const qrRow = codes.data?.find((c) => c.kind === 'qr')
+  return (
+    <Card>
+      <div className="space-y-1.5">
+        <InfoRow label="Part Number" value={p.tokin_part_no} tone="ok" />
+        <InfoRow label="Part Name" value={p.display_name_vi} mono={false} />
+        <InfoRow label="Mã Barcode" value={barcodeRow?.code} tone={barcodeRow ? 'ok' : undefined} />
+        <InfoRow label="Mã QR" value={qrRow?.code} tone={qrRow ? 'ok' : undefined} />
+        <InfoRow label="Giá bán" value={p.price_display} mono={false} />
+      </div>
+    </Card>
+  )
+}
+
 export function BarcodeAssignPage() {
   const qc = useQueryClient()
   const canManage = isWmsControl(useAuth((s) => s.user?.role))
@@ -107,6 +147,13 @@ export function BarcodeAssignPage() {
     enabled: tab === 'scan' && lookupQ.trim().length >= 2,
   })
   const notFound = !!lookup.data && lookup.data.parts.length === 0 && lookup.data.serials.length === 0 && lookupQ.trim().length >= 2
+
+  // Mã lạ (chưa gán) — gộp lại xem đã "nhận" được Barcode và/hoặc QR nào từ
+  // lượt quét/tải ảnh vừa rồi, để hiện rõ ràng ngay (1 ảnh có 2 mã thì phải
+  // thấy đủ cả 2, không chỉ mỗi mã đầu tiên đọc được).
+  const extraKind: ScanKind | undefined = lookupKind === 'qr' ? 'barcode' : lookupKind === 'barcode' ? 'qr' : undefined
+  const scannedBarcode = lookupKind === 'barcode' ? lookupQ.trim() : (extraKind === 'barcode' && hasExtraCode ? extraCode.trim() : '')
+  const scannedQr = lookupKind === 'qr' ? lookupQ.trim() : (extraKind === 'qr' && hasExtraCode ? extraCode.trim() : '')
 
   // Nội dung QR kiểu phức tạp dài cả trăm ký tự — tìm bằng NGUYÊN chuỗi đó
   // gần như không bao giờ ra kết quả (mã sản phẩm trong hệ thống ngắn hơn
@@ -387,6 +434,12 @@ export function BarcodeAssignPage() {
         )}
         {notFound && !(guessedFromQr && guessedPartCheck.data) && (
           <Card>
+            {(scannedBarcode || scannedQr) && (
+              <div className="space-y-1.5 mb-3 pb-3 border-b border-line">
+                <InfoRow label="Mã Barcode" value={scannedBarcode || undefined} tone={scannedBarcode ? 'ok' : undefined} />
+                <InfoRow label="Mã QR" value={scannedQr || undefined} tone={scannedQr ? 'ok' : undefined} />
+              </div>
+            )}
             <p className="text-sm text-txt-2 mb-2">
               Không tìm thấy "<span className="font-mono text-flame">{lookupQ.trim()}</span>". Tem này có thể <b>chưa gán</b>.
             </p>
@@ -436,6 +489,14 @@ export function BarcodeAssignPage() {
                   onChange={setAssignPick}
                   options={partOptions} loading={partsLoading}
                   placeholder="Gõ tên hoặc mã sản phẩm để tìm…" />
+                {assignPick && (
+                  <div className="space-y-1.5">
+                    <InfoRow label="Part Number" value={assignPick} tone="ok" />
+                    <InfoRow label="Part Name"
+                      value={partOptions.find((o) => o.value === assignPick)?.label.replace(`${assignPick} — `, '')}
+                      mono={false} />
+                  </div>
+                )}
                 {assignPick && !!existingCodes.data?.length && (
                   <p className={`text-[11px] ${assignBlockReason() ? 'text-danger' : 'text-txt-2'}`}>
                     Sản phẩm này đã có sẵn mã: {existingCodes.data.map((row) => (
@@ -460,15 +521,7 @@ export function BarcodeAssignPage() {
             )}
           </Card>
         )}
-        {(lookup.data?.parts ?? []).map((p) => (
-          <Card key={p.tokin_part_no}>
-            <div className="flex items-center gap-2">
-              <span className="font-mono text-flame">{p.tokin_part_no}</span>
-              <span className="text-sm flex-1">{p.display_name_vi}</span>
-              <span className="text-sm tabular-nums text-txt-2">{p.price_display}</span>
-            </div>
-          </Card>
-        ))}
+        {(lookup.data?.parts ?? []).map((p) => <FoundPartCard key={p.tokin_part_no} p={p} />)}
         {(lookup.data?.serials ?? []).map((s) => (
           <Card key={s.serial}>
             <div className="flex items-center gap-2 text-sm">
