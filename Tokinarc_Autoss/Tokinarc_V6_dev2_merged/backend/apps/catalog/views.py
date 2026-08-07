@@ -108,10 +108,15 @@ class ProcedureViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 # ─── PartViewSet ─────────────────────────────────────────────────────────────
 class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
-                  mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.GenericViewSet):
+                  mixins.CreateModelMixin, mixins.UpdateModelMixin,
+                  mixins.DestroyModelMixin, viewsets.GenericViewSet):
     """Part. PK = tokin_part_no (string). Đọc: công khai. Tạo/sửa: Quản lý kho
-    trở lên (xem PartTorchWritePermission). Không có Destroy — "xóa" = PATCH
-    is_active=false (nhiều bảng PROTECT tới Part, không xóa cứng được)."""
+    trở lên (xem PartTorchWritePermission).
+
+    DELETE (2026-08-07): hàng chưa từng dùng ở đâu thì XOÁ HẲN, mã trống hoàn
+    toàn; hàng đã có chứng từ/tồn kho thì không xoá cứng được (11 bảng PROTECT)
+    nên chỉ ẩn đi. Trước đây luôn chỉ ẩn, dẫn tới ngõ cụt: quét tem hàng đã ẩn
+    ra "chưa có" → bấm Thêm mới → lỗi "mã đã tồn tại". Xem apps/catalog/archive.py."""
 
     queryset = Part.objects.all().order_by('tokin_part_no')
     permission_classes = [PartTorchWritePermission]
@@ -138,6 +143,54 @@ class PartViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin,
         if self.action in ('create', 'update', 'partial_update'):
             return PartWriteSerializer
         return PartDetailSerializer if self.action == 'retrieve' else PartLiteSerializer
+
+    def destroy(self, request, *args, **kwargs):
+        """Chưa dùng ở đâu → xoá hẳn. Đã có chứng từ/tồn kho → chỉ ẩn được, và
+        nói rõ lý do để người bấm biết món đó vẫn còn trong hệ thống."""
+        from apps.catalog.archive import try_hard_delete
+        part = self.get_object()
+        code, name = part.pk, part.display_name_vi
+        if try_hard_delete(part):
+            return Response({'deleted': True, 'part_no': code,
+                             'detail': f'Đã xoá hẳn "{name}" khỏi hệ thống.'})
+        Part.objects.filter(pk=code).update(is_active=False)
+        return Response({
+            'deleted': False, 'hidden': True, 'part_no': code,
+            'detail': f'"{name}" đã có phát sinh nhập/xuất hoặc tồn kho nên không xoá hẳn được — '
+                      f'đã tạm ngừng dùng (ẩn khỏi danh sách). Tạo lại sản phẩm cùng mã này vẫn được.',
+        })
+
+    def create(self, request, *args, **kwargs):
+        """Trùng mã với một sản phẩm ĐÃ ẨN → không chặn cứng như trước nữa.
+
+        Trả 409 kèm thông tin món cũ để FE hỏi lại người dùng; đồng ý thì gửi
+        lại kèm archive_existing=true, hệ thống dời món cũ sang mã lưu trữ rồi
+        tạo mới bình thường. Trùng mã với sản phẩm ĐANG DÙNG thì vẫn chặn —
+        đó là trùng thật, không phải ngõ cụt.
+        """
+        from apps.catalog.archive import archive_part, archived_code_for
+        code = (request.data.get('tokin_part_no') or '').strip()
+        old = Part.objects.filter(pk=code).first() if code else None
+        if old is not None and not old.is_active:
+            if str(request.data.get('archive_existing')).lower() not in ('true', '1'):
+                from django.db.models import Sum
+
+                from apps.wms.models import InventoryItem
+                qty = (InventoryItem.objects.filter(part_id=old.pk)
+                       .aggregate(n=Sum('qty_on_hand'))['n'] or 0)
+                return Response({
+                    'code': 'PART_HIDDEN_EXISTS',
+                    'part_no': old.pk, 'display_name_vi': old.display_name_vi,
+                    'stock_qty': qty, 'archived_code': archived_code_for(old.pk),
+                    'detail': f'Mã "{old.pk}" đang thuộc sản phẩm "{old.display_name_vi}" đã bị xoá.',
+                }, status=409)
+            # Dời mã + tạo mới phải CÙNG 1 giao dịch: tạo mới lỗi validate mà
+            # món cũ đã bị dời thì coi như dời oan, không ai hoàn lại được.
+            from django.db import transaction
+            with transaction.atomic():
+                archive_part(old)
+                return super().create(request, *args, **kwargs)
+        return super().create(request, *args, **kwargs)
 
     @action(detail=True, methods=['get', 'patch'], permission_classes=[IsAuthenticated])
     def cost(self, request, tokin_part_no=None):

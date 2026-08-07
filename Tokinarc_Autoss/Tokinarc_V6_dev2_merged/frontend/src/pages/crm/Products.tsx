@@ -24,6 +24,7 @@ import { Modal } from '@/components/Modal'
 import { FieldRow, TextInput, SelectInput, formatMoneyDisplay } from '@/components/form'
 import { ImportModal } from '@/pages/crm/ImportModal'
 import { SearchableSelect } from '@/components/SearchableSelect'
+import { asHiddenPartConflict, confirmArchiveExisting } from '@/lib/partArchiveConflict'
 import {
   PageHeader, SearchInput, Tag, TableCard, Th, Td, RowMsg, Pagination, Button,
 } from '@/components/ui'
@@ -232,9 +233,18 @@ function PartsTable({ search, page, setPage, pageSize, setPageSize, group, categ
     placeholderData: keepPreviousData,
   })
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
+  // Xoá: hàng chưa từng dùng ở đâu thì backend xoá HẲN (mã trống hoàn toàn,
+  // sau này tạo lại bình thường); hàng đã có chứng từ/tồn kho thì chỉ tạm ngừng
+  // được — báo đúng việc đã xảy ra thay vì luôn nói "đã xoá" như trước.
   const deactivate = useMutation({
-    mutationFn: (code: string) => api.patch(`/catalog/parts/${encodeURIComponent(code)}/`, { is_active: false }),
-    onSuccess: () => { toast.success('Đã xoá phụ tùng'); qc.invalidateQueries({ queryKey: ['catalog-parts'] }) },
+    mutationFn: (code: string) =>
+      api.delete<{ deleted: boolean; detail: string }>(`/catalog/parts/${encodeURIComponent(code)}/`),
+    onSuccess: (r) => {
+      if (r.data.deleted) toast.success(r.data.detail)
+      else toast.warning(r.data.detail, { duration: 8000 })
+      qc.invalidateQueries({ queryKey: ['catalog-parts'] })
+      qc.invalidateQueries({ queryKey: ['catalog-parts-opt'] })
+    },
     onError: (e) => toast.error(apiError(e)),
   })
   // cột: Mã, Tên, Nhóm, Danh mục, [Gắn], Giá bán, Thuế, [Giá vốn], [Hành động]
@@ -278,7 +288,10 @@ function PartsTable({ search, page, setPage, pageSize, setPageSize, group, categ
                   </Button>
                   <Button variant="ghost" size="sm" className="!text-danger" disabled={deactivate.isPending}
                     onClick={() => {
-                      if (confirm(`Xoá phụ tùng "${p.display_name_vi || p.tokin_part_no}"? Sản phẩm sẽ ẩn khỏi danh sách (dữ liệu nhập/xuất/bán cũ vẫn giữ nguyên).`)) {
+                      if (confirm(`Xoá phụ tùng "${p.display_name_vi || p.tokin_part_no}"?\n\n`
+                        + `• Chưa từng nhập/xuất/tồn kho → xoá hẳn, mã dùng lại được ngay.\n`
+                        + `• Đã có phát sinh → chỉ tạm ngừng dùng (chứng từ cũ giữ nguyên), `
+                        + `nhưng sau này tạo lại sản phẩm cùng mã vẫn được.`)) {
                         deactivate.mutate(p.tokin_part_no)
                       }
                     }}>
@@ -404,7 +417,7 @@ function PartForm({ open, editing, onClose, groupList, canManageTaxonomy }: {
   }, [open, editing, reset])
 
   const save = useMutation({
-    mutationFn: (d: PartFormValues) => {
+    mutationFn: async (d: PartFormValues) => {
       const payload = {
         tokin_part_no: d.tokin_part_no, category: d.category,
         display_name_vi: d.display_name_vi, display_name_en: d.display_name_en,
@@ -422,9 +435,17 @@ function PartForm({ open, editing, onClose, groupList, canManageTaxonomy }: {
             ? '' : d.product_category,
         } : {}),
       }
-      return editing
-        ? api.patch(`/catalog/parts/${encodeURIComponent(editing.tokin_part_no)}/`, payload)
-        : api.post('/catalog/parts/', payload)
+      if (editing) return api.patch(`/catalog/parts/${encodeURIComponent(editing.tokin_part_no)}/`, payload)
+      try {
+        return await api.post('/catalog/parts/', payload)
+      } catch (e) {
+        // Trùng mã với sản phẩm ĐÃ XOÁ (chỉ bị ẩn) — hỏi rồi dời mã cũ sang mã
+        // lưu trữ, thay vì bắt người dùng chịu lỗi "mã đã tồn tại" mà tìm trong
+        // danh mục lại chẳng thấy đâu.
+        const conflict = asHiddenPartConflict(e)
+        if (!conflict || !confirmArchiveExisting(conflict)) throw e
+        return await api.post('/catalog/parts/', { ...payload, archive_existing: true })
+      }
     },
     onSuccess: () => {
       toast.success(editing ? 'Đã lưu phụ tùng' : 'Đã tạo phụ tùng')

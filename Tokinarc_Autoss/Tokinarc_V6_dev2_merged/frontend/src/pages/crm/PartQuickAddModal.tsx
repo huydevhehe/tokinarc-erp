@@ -16,6 +16,7 @@ import { Modal } from '@/components/Modal'
 import { Button } from '@/components/ui'
 import { TextInput } from '@/components/form'
 import { SearchableSelect } from '@/components/SearchableSelect'
+import { asHiddenPartConflict, confirmArchiveExisting } from '@/lib/partArchiveConflict'
 
 export interface NewPart { tokin_part_no: string; display_name_vi: string }
 interface Form { tokin_part_no: string; category: string; display_name_vi: string; product_category: string }
@@ -51,15 +52,24 @@ export function PartQuickAddModal({ open, onClose, onSaved, initial }: {
   }, [open, reset, initial])
 
   const save = useMutation({
-    mutationFn: (d: Form) => {
+    mutationFn: async (d: Form) => {
       // Khớp 1 Danh mục có sẵn → gửi thẳng id. Không khớp (gõ tên mới, allowCreate)
       // → gửi làm product_category_name, backend tự tìm/tạo Nhóm+Danh mục cùng tên.
       const matched = categoryOptions.some((o) => o.value === d.product_category)
-      return api.post<NewPart>('/catalog/parts/', {
+      const payload = {
         tokin_part_no: d.tokin_part_no, category: d.category, display_name_vi: d.display_name_vi,
         product_category: matched ? d.product_category : null,
         product_category_name: matched ? '' : d.product_category,
-      })
+      }
+      try {
+        return await api.post<NewPart>('/catalog/parts/', payload)
+      } catch (e) {
+        // Mã trùng với một sản phẩm ĐÃ XOÁ — trước đây là ngõ cụt ("mã đã tồn
+        // tại" mà nhìn danh mục lại không thấy đâu). Hỏi 1 câu rồi dời mã cũ đi.
+        const conflict = asHiddenPartConflict(e)
+        if (!conflict || !confirmArchiveExisting(conflict)) throw e
+        return await api.post<NewPart>('/catalog/parts/', { ...payload, archive_existing: true })
+      }
     },
     onSuccess: (r) => {
       toast.success(`Đã thêm mặt hàng ${r.data.tokin_part_no} vào danh mục`)
