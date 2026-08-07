@@ -29,6 +29,14 @@ import { guessPartFromQr } from '@/lib/qrParse'
 
 interface PartBarcodeRow { id: number; part: string; part_name: string; part_notes: string; code: string; kind: '' | 'qr' | 'barcode'; created_at: string }
 
+/** Ô ghi chú tự cao lên vừa đúng nội dung — ghi chú kho dài ngắn khác nhau,
+ *  cố định số dòng thì hoặc cắt mất chữ, hoặc chừa chỗ trống thừa cả bảng. */
+function autoGrow(el: HTMLTextAreaElement | null) {
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = `${el.scrollHeight}px`
+}
+
 export function BarcodeAssignPage() {
   const qc = useQueryClient()
   const canManage = isWmsControl(useAuth((s) => s.user?.role))
@@ -311,7 +319,10 @@ export function BarcodeAssignPage() {
   }
 
   return (
-    <div className={tab === 'scan' ? 'max-w-xl' : 'max-w-3xl'}>
+    // Tab quét: khung hẹp cho dễ nhìn 1 luồng. Tab danh sách: dùng HẾT bề ngang
+    // màn hình — bảng 6 cột (có cả nội dung QR dài + ô ghi chú) mà bó trong
+    // max-w-3xl thì phải cuộn ngang, ghi chú gõ dài bị che mất.
+    <div className={tab === 'scan' ? 'max-w-xl' : ''}>
       <PageHeader icon={<Barcode size={20} className="text-flame" />} title="Gán mã vạch/QR"
         subtitle={tab === 'scan'
           ? 'Quét hoặc tải ảnh lên → tìm sản phẩm. Mã lạ (chưa gán) → chọn đúng sản phẩm, gán 1 lần.'
@@ -493,7 +504,10 @@ export function BarcodeAssignPage() {
         </div>
         <TableCard>
           <thead><tr className="border-b border-line">
-            <Th>Sản phẩm</Th><Th>Part Name (từ QR)</Th><Th>Mã QR</Th><Th>Mã Barcode</Th><Th>Ngày gán</Th><Th>Ghi chú</Th>
+            {/* Ghi chú là ô nhập tay, cần rộng nhất — chốt bề ngang tối thiểu để
+                nó không bị các cột mã dài bóp lại còn một mẩu. */}
+            <Th>Sản phẩm</Th><Th>Part Name (từ QR)</Th><Th className="max-w-[320px]">Mã QR</Th><Th>Mã Barcode</Th>
+            <Th className="whitespace-nowrap">Ngày gán</Th><Th className="min-w-[300px] w-[24%]">Ghi chú</Th>
           </tr></thead>
           <tbody>
             {list.isLoading && <RowMsg colSpan={6}>Đang tải…</RowMsg>}
@@ -505,10 +519,12 @@ export function BarcodeAssignPage() {
               <tr key={g.part} className="border-b border-line/50 last:border-0">
                 <Td className="font-medium">{g.part} — {g.part_name}</Td>
                 <Td className="text-txt-2 text-xs max-w-[220px]">{qrParsed?.display_name_vi || '—'}</Td>
-                <Td>
+                {/* Nội dung QR có thể dài cả trăm ký tự — ghìm bề ngang lại và
+                    cho xuống dòng, không thì nó bóp hết chỗ của cột Ghi chú. */}
+                <Td className="max-w-[320px]">
                   {g.qr ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <span className="font-mono text-flame">{g.qr.code}</span>
+                    <span className="inline-flex items-start gap-1.5">
+                      <span className="font-mono text-flame break-all">{g.qr.code}</span>
                       {canManage && (
                         <>
                           <button onClick={() => openEdit(g.qr!)} className="text-txt-2 hover:text-flame" aria-label="Sửa mã QR"><Pencil size={12} /></button>
@@ -545,15 +561,20 @@ export function BarcodeAssignPage() {
                 </Td>
                 <Td className="text-txt-2 text-xs whitespace-nowrap">{formatDateTime(g.latest)}</Td>
                 <Td>
+                  {/* Ô nhiều dòng (không phải input 1 dòng): ghi chú kho hay dài,
+                      1 dòng thì gõ tới đâu trôi mất tới đó, không đọc lại được.
+                      Xuống dòng tự động + kéo cao thêm được nếu cần. */}
                   {canManage ? (
-                    <input key={`${g.part}-${notesValue}`} defaultValue={notesValue}
+                    <textarea key={`${g.part}-${notesValue}`} defaultValue={notesValue} rows={1}
+                      ref={autoGrow} onInput={(e) => autoGrow(e.currentTarget)}
                       placeholder="Ghi chú…" disabled={!g.qr && !g.barcode}
                       onBlur={(e) => {
                         if (e.target.value !== notesValue) notesMut.mutate({ part: g.part, notes: e.target.value })
                       }}
-                      className="w-40 bg-ink-3 border border-line rounded-md px-2 py-1 text-xs focus:border-flame focus:outline-none" />
+                      className="w-full min-w-[280px] bg-ink-3 border border-line rounded-md px-2 py-1 text-xs
+                                 resize-y overflow-hidden focus:border-flame focus:outline-none" />
                   ) : (
-                    <span className="text-txt-2 text-xs">{notesValue || '—'}</span>
+                    <span className="text-txt-2 text-xs whitespace-pre-wrap">{notesValue || '—'}</span>
                   )}
                 </Td>
               </tr>
