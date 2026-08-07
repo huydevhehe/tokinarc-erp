@@ -196,12 +196,24 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['get'], url_path='export-xlsx')
     def export_xlsx(self, request, pk=None):
-        """Xuất đề xuất/đơn mua ra Excel (đầu trang NCC + bảng dòng + ô duyệt)."""
+        """Xuất đề xuất/đơn mua ra Excel (đầu trang NCC + bảng dòng + ô duyệt).
+        Thuế tính theo dòng (tax_pct, không cộng vào line_total) — cộng riêng
+        thành 1 dòng "Tiền thuế", tổng cuối là tiền hàng + thuế (sau thuế)."""
         from apps.common.company import vnd_to_words
         from apps.common.excel import make_document_xlsx, supplier_party, xlsx_response
         po = self.get_object()
-        rows = [(l.part_id, getattr(l.part, 'display_name_vi', '') or '', l.qty,
-                 int(l.unit_cost or 0), int(l.line_total or 0)) for l in po.lines.all()]
+        subtotal = 0
+        tax_total = 0
+        rows = []
+        for l in po.lines.all():
+            lt = int(l.line_total or 0)
+            tax_pct = l.tax_pct
+            line_tax = int(lt * float(tax_pct) / 100) if tax_pct else 0
+            subtotal += lt
+            tax_total += line_tax
+            rows.append((l.part_id, getattr(l.part, 'display_name_vi', '') or '', l.qty,
+                        int(l.unit_cost or 0), f'{tax_pct}%' if tax_pct is not None else '—', lt))
+        grand_total = subtotal + tax_total
         data = make_document_xlsx(
             sheet_title='DonMua', doc_title='ĐỀ XUẤT / ĐƠN MUA HÀNG', doc_code=po.code,
             doc_date=po.created_at.strftime('%d/%m/%Y'),
@@ -209,10 +221,12 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             meta=[('Kho nhận:', po.warehouse.code),
                   ('Người đề xuất:', po.owner.username if po.owner_id else '—'),
                   ('Trạng thái:', po.get_status_display())],
-            columns=[('Mã part', 16, 'text'), ('Tên hàng', 40, 'text'), ('SL', 8, 'int'),
-                     ('Đơn giá', 16, 'money'), ('Thành tiền', 18, 'money')],
-            rows=rows, total_label='TỔNG CỘNG', total_value=int(po.total_vnd or 0),
-            amount_words=vnd_to_words(po.total_vnd),
+            columns=[('Mã part', 16, 'text'), ('Tên hàng', 36, 'text'), ('SL', 8, 'int'),
+                     ('Đơn giá', 16, 'money'), ('Thuế %', 10, 'text'), ('Thành tiền', 18, 'money')],
+            rows=rows,
+            extra_totals=[('Tổng tiền hàng (trước thuế):', subtotal), ('Tiền thuế:', tax_total)],
+            total_label='TỔNG THANH TOÁN (SAU THUẾ)', total_value=grand_total,
+            amount_words=vnd_to_words(grand_total),
             signatures=['NGƯỜI ĐỀ XUẤT', 'NGƯỜI DUYỆT'])
         return xlsx_response(data, f'don_mua_{po.code}.xlsx')
 

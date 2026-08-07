@@ -14,7 +14,7 @@ export interface PODetail {
   notes?: string
   expected_date?: string | null; carrier?: string; tracking_no?: string
   payment_terms_note?: string
-  lines: { id?: string; part: string; part_name?: string; qty: number; unit_cost: string | number }[]
+  lines: { id?: string; part: string; part_name?: string; qty: number; unit_cost: string | number; tax_pct?: string | number | null }[]
 }
 
 const TONE: Record<string, 'gray' | 'blue' | 'warn' | 'ok' | 'danger' | 'purple'> = {
@@ -39,7 +39,14 @@ export function PODetailModal({ po, open, onClose, footer, onExport }: {
           <Button variant="ghost" onClick={onClose}>Đóng</Button>
         </>
       )}>
-      {po && (
+      {po && (() => {
+        const subtotal = po.lines.reduce((s, l) => s + Number(l.unit_cost) * l.qty, 0)
+        const taxTotal = po.lines.reduce((s, l) => {
+          const pct = l.tax_pct != null && l.tax_pct !== '' ? Number(l.tax_pct) : 0
+          return s + (Number(l.unit_cost) * l.qty * pct) / 100
+        }, 0)
+        const grandTotal = subtotal + taxTotal
+        return (
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-3">
             <Info label="Nhà cung cấp" value={po.supplier_name} />
@@ -68,6 +75,7 @@ export function PODetailModal({ po, open, onClose, footer, onExport }: {
                   <th className="text-left">Tên</th>
                   <th className="text-right">SL</th>
                   <th className="text-right">Đơn giá</th>
+                  <th className="text-right">Thuế %</th>
                   <th className="text-right">Thành tiền</th>
                 </tr>
               </thead>
@@ -78,19 +86,30 @@ export function PODetailModal({ po, open, onClose, footer, onExport }: {
                     <td>{l.part_name ?? '—'}</td>
                     <td className="text-right tabular-nums">{l.qty}</td>
                     <td className="text-right tabular-nums">{formatVnd(l.unit_cost)}</td>
+                    <td className="text-right tabular-nums text-txt-2">{l.tax_pct != null && l.tax_pct !== '' ? `${l.tax_pct}%` : '—'}</td>
                     <td className="text-right tabular-nums">{formatVnd(Number(l.unit_cost) * l.qty)}</td>
                   </tr>
                 ))}
                 {po.lines.length === 0 && (
-                  <tr><td colSpan={5} className="py-3 text-center text-txt-2">Không có dòng nào.</td></tr>
+                  <tr><td colSpan={6} className="py-3 text-center text-txt-2">Không có dòng nào.</td></tr>
                 )}
               </tbody>
             </table>
           </div>
 
-          <div className="flex justify-end items-baseline gap-2 border-t border-line pt-3">
-            <span className="text-txt-2 text-sm">Tổng giá trị:</span>
-            <span className="font-bold text-flame tabular-nums text-base">{formatVnd(po.total_vnd)}</span>
+          <div className="border-t border-line pt-3 space-y-1">
+            <div className="flex justify-end items-baseline gap-2">
+              <span className="text-txt-2 text-sm">Tổng tiền hàng (trước thuế):</span>
+              <span className="tabular-nums text-sm">{formatVnd(subtotal)}</span>
+            </div>
+            <div className="flex justify-end items-baseline gap-2">
+              <span className="text-txt-2 text-sm">Tiền thuế:</span>
+              <span className="tabular-nums text-sm">{formatVnd(taxTotal)}</span>
+            </div>
+            <div className="flex justify-end items-baseline gap-2">
+              <span className="text-txt-2 text-sm">Tổng thanh toán (sau thuế):</span>
+              <span className="font-bold text-flame tabular-nums text-base">{formatVnd(grandTotal)}</span>
+            </div>
           </div>
 
           {po.notes && (
@@ -100,7 +119,8 @@ export function PODetailModal({ po, open, onClose, footer, onExport }: {
             </div>
           )}
         </div>
-      )}
+        )
+      })()}
     </Modal>
   )
 }
