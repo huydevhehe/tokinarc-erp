@@ -31,8 +31,9 @@ def part(db):
 
 def _cho_co_lich_su(part) -> InboundLine:
     """Gắn 1 dòng phiếu nhập → part không xoá cứng được nữa (PROTECT)."""
-    wh = Warehouse.objects.create(code=f'W{part.pk[:6]}', name='Kho test')
-    order = InboundOrder.objects.create(warehouse=wh)
+    wh, _ = Warehouse.objects.get_or_create(code=f'W{part.pk[:6]}', defaults={'name': 'Kho test'})
+    n = InboundOrder.objects.count() + 1
+    order = InboundOrder.objects.create(warehouse=wh, code=f'NK-ARC-{n:03d}')
     return InboundLine.objects.create(inbound=order, part=part, qty_expected=7)
 
 
@@ -186,3 +187,34 @@ def test_bang_tuong_thich_sung_han_cung_chan(kho, part):
     c = APIClient(); c.force_authenticate(kho)
     r = c.delete(f'/api/v1/catalog/parts/{part.pk}/')
     assert r.data['deleted'] is False, 'đang nằm trong bảng tương thích mà vẫn xoá hẳn'
+
+
+@pytest.mark.django_db
+def test_xoa_va_tao_lai_cung_ma_nhieu_vong(kho):
+    """Xoá → tạo lại → lại xoá → lại tạo… cùng 1 mã, lặp nhiều vòng.
+
+    Mỗi vòng đẩy bản cũ sang 1 mã lưu trữ RIÊNG, mã gốc luôn thuộc về bản mới
+    nhất. Không có giới hạn số vòng, không bao giờ đụng nhau.
+    """
+    c = APIClient(); c.force_authenticate(kho)
+    for vong in range(1, 4):
+        if vong == 1:
+            Part.objects.create(tokin_part_no='LAP-1', category='Tip', display_name_vi='Bản 0')
+        # Có chứng từ → xoá chỉ ẩn được (ca khó nhất, bản cũ luôn còn nằm đó)
+        _cho_co_lich_su(Part.objects.get(pk='LAP-1'))
+        r = c.delete('/api/v1/catalog/parts/LAP-1/')
+        assert r.data['deleted'] is False and r.data['hidden'] is True
+
+        r = c.post('/api/v1/catalog/parts/',
+                   {'tokin_part_no': 'LAP-1', 'category': 'Tip',
+                    'display_name_vi': f'Bản {vong}', 'archive_existing': True}, format='json')
+        assert r.status_code == 201, f'vòng {vong} tạo lại không được'
+        moi = Part.objects.get(pk='LAP-1')
+        assert moi.display_name_vi == f'Bản {vong}' and moi.is_active is True
+
+    luu_tru = sorted(Part.objects.filter(pk__startswith='LAP-1#daxoa-')
+                     .values_list('tokin_part_no', 'display_name_vi'))
+    assert len(luu_tru) == 3, f'3 vòng phải ra 3 bản lưu trữ riêng, đang có: {luu_tru}'
+    assert len({code for code, _ in luu_tru}) == 3, 'mã lưu trữ phải khác nhau từng bản'
+    assert [ten for _, ten in luu_tru] == ['Bản 0', 'Bản 1', 'Bản 2']
+    assert all(not p.is_active for p in Part.objects.filter(pk__startswith='LAP-1#daxoa-'))
