@@ -137,3 +137,56 @@ def test_warehouse_staff_can_create_and_edit_torch(nv_kho):
     r = c.patch('/api/v1/catalog/torches/TST-TORCH-02/', {'display_name_vi': 'Y'}, format='json')
     assert r.status_code == 200, r.data
     assert Torch.objects.get(pk='TST-TORCH-02').display_name_vi == 'Y'
+
+
+# ─── Nhóm hàng: gõ tên nhóm mới ngay tại form sản phẩm ────────────────────
+@pytest.mark.parametrize('role', [Role.WAREHOUSE, Role.WAREHOUSE_MANAGER])
+@pytest.mark.django_db
+def test_edit_part_can_create_new_group_by_typing_name(role):
+    """Sửa phụ tùng + gõ tên nhóm CHƯA CÓ → tự tạo Nhóm + Danh mục cùng tên rồi
+    gắn vào. Trước đây serializer chỉ xử lý product_category_name lúc TẠO, nên ở
+    màn Sửa thì tên nhóm mới bị bỏ qua im lặng (API vẫn trả 200)."""
+    from apps.catalog.models import ProductCategory, ProductGroup
+    part = Part.objects.create(tokin_part_no='GRP-1', category='Tip', display_name_vi='Hàng test')
+    c = APIClient(); c.force_authenticate(_user(role))
+    r = c.patch(f'/api/v1/catalog/parts/{part.pk}/',
+                {'product_category': None, 'product_category_name': f'Nhóm mới {role}'}, format='json')
+    assert r.status_code == 200
+    part.refresh_from_db()
+    assert part.product_category is not None, 'gõ tên nhóm mới khi SỬA mà không được gắn'
+    assert part.product_category.name == f'Nhóm mới {role}'
+    assert part.product_category.group.name == f'Nhóm mới {role}'
+    assert ProductGroup.objects.filter(name=f'Nhóm mới {role}').count() == 1
+    assert ProductCategory.objects.filter(name=f'Nhóm mới {role}').count() == 1
+
+
+@pytest.mark.django_db
+def test_edit_part_typing_existing_group_name_does_not_duplicate(nv_kho):
+    """Gõ đúng tên nhóm ĐÃ CÓ → dùng lại nhóm cũ, không đẻ thêm nhóm trùng tên."""
+    from apps.catalog.models import ProductCategory, ProductGroup
+    g = ProductGroup.objects.create(name='Cáp kết nối')
+    ProductCategory.objects.create(group=g, name='Cáp kết nối')
+    part = Part.objects.create(tokin_part_no='GRP-2', category='Tip', display_name_vi='Hàng test 2')
+    c = APIClient(); c.force_authenticate(nv_kho)
+    r = c.patch(f'/api/v1/catalog/parts/{part.pk}/',
+                {'product_category': None, 'product_category_name': 'Cáp kết nối'}, format='json')
+    assert r.status_code == 200
+    assert ProductGroup.objects.filter(name='Cáp kết nối').count() == 1
+    part.refresh_from_db()
+    assert part.product_category.group_id == g.id
+
+
+@pytest.mark.django_db
+def test_edit_part_can_clear_category(nv_kho):
+    """Chọn "— Chưa phân loại —" → gỡ hẳn phân loại, không bị tên nhóm rỗng chen vào."""
+    from apps.catalog.models import ProductCategory, ProductGroup
+    g = ProductGroup.objects.create(name='Nhóm A')
+    cat = ProductCategory.objects.create(group=g, name='Nhóm A')
+    part = Part.objects.create(tokin_part_no='GRP-3', category='Tip',
+                               display_name_vi='Hàng test 3', product_category=cat)
+    c = APIClient(); c.force_authenticate(nv_kho)
+    r = c.patch(f'/api/v1/catalog/parts/{part.pk}/',
+                {'product_category': None, 'product_category_name': ''}, format='json')
+    assert r.status_code == 200
+    part.refresh_from_db()
+    assert part.product_category is None

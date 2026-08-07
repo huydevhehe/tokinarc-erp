@@ -109,13 +109,22 @@ class PartWriteSerializer(serializers.ModelSerializer):
         # gõ tối thiểu mã+tên là tạo được, phân loại đầy đủ bổ sung sau.
         extra_kwargs = {'category': {'required': False, 'allow_blank': True}}
 
-    def create(self, validated_data):
-        name = validated_data.pop('product_category_name', '').strip()
+    def _resolve_category(self, validated_data):
+        """Gõ tên nhóm chưa có → tự tạo Nhóm + Danh mục cùng tên rồi gắn vào.
+        Dùng cho CẢ tạo mới lẫn sửa: trước đây chỉ create() làm việc này, nên ở
+        màn Sửa phụ tùng nhân viên gõ tên nhóm mới thì bị bỏ qua im lặng."""
+        name = (validated_data.pop('product_category_name', '') or '').strip()
         if name and not validated_data.get('product_category'):
             group, _ = ProductGroup.objects.get_or_create(name=name)
             category, _ = ProductCategory.objects.get_or_create(group=group, name=name)
             validated_data['product_category'] = category
-        return super().create(validated_data)
+        return validated_data
+
+    def create(self, validated_data):
+        return super().create(self._resolve_category(validated_data))
+
+    def update(self, instance, validated_data):
+        return super().update(instance, self._resolve_category(validated_data))
 
 
 class TorchLiteSerializer(serializers.ModelSerializer):

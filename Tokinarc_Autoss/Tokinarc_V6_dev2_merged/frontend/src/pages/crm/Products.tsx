@@ -10,7 +10,7 @@
  */
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
 import { Wrench, Flame, Coins, Upload, FolderTree, Plus, Pencil, Trash2 } from 'lucide-react'
 import { api, apiError } from '@/lib/api'
@@ -23,6 +23,7 @@ import type { CatalogPart, CatalogTorch, ProductGroupNode } from '@/lib/types'
 import { Modal } from '@/components/Modal'
 import { FieldRow, TextInput, SelectInput, formatMoneyDisplay } from '@/components/form'
 import { ImportModal } from '@/pages/crm/ImportModal'
+import { SearchableSelect } from '@/components/SearchableSelect'
 import {
   PageHeader, SearchInput, Tag, TableCard, Th, Td, RowMsg, Pagination, Button,
 } from '@/components/ui'
@@ -381,7 +382,14 @@ function PartForm({ open, editing, onClose, groupList, canManageTaxonomy }: {
   groupList: ProductGroupNode[]; canManageTaxonomy: boolean
 }) {
   const qc = useQueryClient()
-  const { register, handleSubmit, reset, watch, setValue, formState: { errors } } = useForm<PartFormValues>({ defaultValues: EMPTY_PART_FORM })
+  const { register, handleSubmit, reset, watch, setValue, control, formState: { errors } } = useForm<PartFormValues>({ defaultValues: EMPTY_PART_FORM })
+
+  // Gộp Nhóm + Danh mục thành 1 ô chọn (mặt hàng gắn thẳng vào Danh mục) —
+  // giống modal "Thêm nhanh", để chỗ nào cũng gõ tạo nhóm mới được như nhau.
+  const categoryOptions = [
+    { value: '', label: '— Chưa phân loại —' },
+    ...groupList.flatMap((g) => g.categories.map((c) => ({ value: String(c.id), label: `${g.name} — ${c.name}` }))),
+  ]
 
   useEffect(() => {
     if (!open) return
@@ -405,7 +413,14 @@ function PartForm({ open, editing, onClose, groupList, canManageTaxonomy }: {
         is_contact_price: d.is_contact_price,
         // Không có quyền quản lý Nhóm/Danh mục → KHÔNG gửi field này, tránh vô
         // tình xoá mất phân loại đã gắn (payload thiếu key thì backend giữ nguyên).
-        ...(canManageTaxonomy ? { product_category: d.product_category ? Number(d.product_category) : null } : {}),
+        // Khớp 1 Danh mục có sẵn → gửi id. Gõ tên mới (allowCreate) → gửi làm
+        // product_category_name, backend tự tìm/tạo Nhóm + Danh mục cùng tên.
+        ...(canManageTaxonomy ? {
+          product_category: categoryOptions.some((o) => o.value === d.product_category && o.value !== '')
+            ? Number(d.product_category) : null,
+          product_category_name: categoryOptions.some((o) => o.value === d.product_category)
+            ? '' : d.product_category,
+        } : {}),
       }
       return editing
         ? api.patch(`/catalog/parts/${encodeURIComponent(editing.tokin_part_no)}/`, payload)
@@ -459,15 +474,17 @@ function PartForm({ open, editing, onClose, groupList, canManageTaxonomy }: {
         {canManageTaxonomy && (
           <div className="mb-3">
             <label className="block text-[11px] font-semibold uppercase tracking-wide text-txt-2 mb-1">Nhóm hàng</label>
-            <select {...register('product_category')}
-              className="w-full bg-ink-3 border border-line rounded-md px-2.5 py-2 text-sm focus:border-flame focus:outline-none">
-              <option value="">— Chưa phân loại —</option>
-              {groupList.map((g) => (
-                <optgroup key={g.id} label={g.name}>
-                  {g.categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </optgroup>
-              ))}
-            </select>
+            {/* Vừa chọn được nhóm có sẵn, vừa GÕ TÊN NHÓM MỚI tạo tại chỗ — trước
+                đây là ô chọn cứng, muốn thêm nhóm phải sang trang Nhóm & Danh mục
+                khai báo trước rồi mới quay lại sửa. */}
+            <Controller name="product_category" control={control} render={({ field }) => (
+              <SearchableSelect value={field.value ?? ''} onChange={field.onChange}
+                options={categoryOptions} allowCreate
+                placeholder="Gõ tên nhóm có sẵn hoặc gõ tên mới rồi bấm + Dùng…" />
+            )} />
+            <p className="text-[11px] text-txt-2 mt-1">
+              Gõ tên chưa có sẵn → hệ thống tự tạo nhóm mới luôn, không cần khai báo trước.
+            </p>
           </div>
         )}
         <label className="flex items-center gap-2 text-sm text-txt-2">
