@@ -148,3 +148,41 @@ def test_chi_nhan_vien_kho_tro_len_moi_duoc_xoa(part):
         c = APIClient(); c.force_authenticate(u)
         assert c.delete(f'/api/v1/catalog/parts/{part.pk}/').status_code == 403
     assert Part.objects.filter(pk='ARC-1').exists()
+
+
+# ─── Tham chiếu "lỏng" (không khai báo khoá ngoại) cũng phải chặn xoá ──────
+@pytest.mark.django_db
+def test_dang_nam_trong_bao_gia_thi_khong_xoa_han(kho, part):
+    """Dòng báo giá dùng khoá lỏng (chỉ lưu chuỗi mã) nên Django không chặn
+    giúp — xoá hẳn là báo giá cũ trỏ vào mã không còn tồn tại."""
+    from apps.crm.models import Customer, Quote, QuoteLine
+    sale = User.objects.create(username='sale_arc', role=Role.SALES)
+    kh = Customer.objects.create(code='KH-ARC', name='Khách test', owner=sale)
+    q = Quote.objects.create(customer=kh, code='BG-ARC', owner=sale)
+    QuoteLine.objects.create(quote=q, part_no=part.pk, part_name=part.display_name_vi, qty=2)
+
+    c = APIClient(); c.force_authenticate(kho)
+    r = c.delete(f'/api/v1/catalog/parts/{part.pk}/')
+    assert r.data['deleted'] is False, 'đang nằm trong báo giá mà vẫn xoá hẳn'
+    assert Part.objects.filter(pk='ARC-1').exists()
+
+
+@pytest.mark.django_db
+def test_dang_nam_trong_bo_vat_tu_thi_khong_xoa_han(kho, part):
+    from apps.catalog.models import ConsumableSet, ConsumableSetItem
+    cs = ConsumableSet.objects.create(set_id='BO-ARC', display_name_vi='Bộ vật tư test')
+    ConsumableSetItem.objects.create(consumable_set=cs, part_no=part.pk)
+
+    c = APIClient(); c.force_authenticate(kho)
+    r = c.delete(f'/api/v1/catalog/parts/{part.pk}/')
+    assert r.data['deleted'] is False, 'đang nằm trong bộ vật tư mà vẫn xoá hẳn'
+
+
+@pytest.mark.django_db
+def test_bang_tuong_thich_sung_han_cung_chan(kho, part):
+    from apps.catalog.models import TorchPartMapping
+    TorchPartMapping.objects.create(torch_model='TK-308RR', part_no=part.pk)
+
+    c = APIClient(); c.force_authenticate(kho)
+    r = c.delete(f'/api/v1/catalog/parts/{part.pk}/')
+    assert r.data['deleted'] is False, 'đang nằm trong bảng tương thích mà vẫn xoá hẳn'

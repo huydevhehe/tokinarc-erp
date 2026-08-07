@@ -105,10 +105,46 @@ def archive_part(part: Part) -> str:
     return new
 
 
+# Bảng "khoá lỏng" chỉ lưu chuỗi mã, KHÔNG khai báo khoá ngoại → Django không
+# biết mà chặn, xoá xong là chúng trỏ vào mã không còn tồn tại. Phải tự kiểm.
+# Ngoại lệ: bảng vector tìm kiếm là dữ liệu tự sinh, xoá theo được, không chặn.
+LOOSE_SKIP = {'catalog_part_embedding'}
+
+
+def loose_references(part_no: str) -> dict[str, int]:
+    """{tên bảng: số dòng} của các tham chiếu "lỏng" còn trỏ tới mã này."""
+    fk_cols = set()
+    from django.apps import apps
+    for model in apps.get_models():
+        for f in model._meta.get_fields():
+            if getattr(f, 'many_to_one', False) and f.related_model is Part:
+                fk_cols.add((model._meta.db_table, f.column))
+
+    found: dict[str, int] = {}
+    with connection.cursor() as cur:
+        for table, col in _referencing_columns():
+            if (table, col) in fk_cols or table in LOOSE_SKIP:
+                continue
+            cur.execute(f'SELECT COUNT(*) FROM {connection.ops.quote_name(table)} '
+                        f'WHERE {connection.ops.quote_name(col)} = %s', [part_no])
+            n = cur.fetchone()[0]
+            if n:
+                found[table] = n
+    return found
+
+
 def try_hard_delete(part: Part) -> bool:
-    """Xoá hẳn nếu không còn gì tham chiếu. True = đã xoá sạch, False = còn
-    chứng từ nên không xoá được (người gọi tự quyết ẩn đi hay dời mã)."""
+    """Xoá hẳn nếu không còn gì dùng tới. True = đã xoá sạch, False = còn nơi
+    dùng nên không xoá được (người gọi tự quyết ẩn đi hay dời mã).
+
+    Chặn bởi 2 lớp: khoá ngoại PROTECT (chứng từ nhập/xuất, tồn kho, đơn
+    mua/bán, kiểm kê, lô) do Django lo, và các tham chiếu "lỏng" ở trên — báo
+    giá, bộ vật tư, bảng tương thích súng hàn — phải tự kiểm vì không có ràng
+    buộc nào chặn giúp.
+    """
     from django.db.models import ProtectedError
+    if loose_references(part.pk):
+        return False
     try:
         with transaction.atomic():
             part.delete()
