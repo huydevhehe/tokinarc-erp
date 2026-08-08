@@ -178,6 +178,52 @@ class BinViewSet(viewsets.ModelViewSet):
             qs = qs.filter(zone__code=zone)
         return qs
 
+    @action(detail=False, methods=['get'], url_path='export-items')
+    def export_items(self, request):
+        """Xuất Excel danh sách hàng đang nằm trong 1 nhóm ô — đúng bảng đang
+        xem ở cửa sổ chi tiết của Bản đồ kho (bấm ô / tầng / kệ).
+
+        ?bins=<id>,<id>,…  ô cần xuất (FE gửi đúng nhóm ô đang mở)
+        ?title=…           tiêu đề ghi lên file (VD "Kệ 1-1 · Tầng 2")
+        """
+        from openpyxl import Workbook
+
+        from apps.common.excel import style_table_sheet, xlsx_response
+        ids = [x for x in (request.query_params.get('bins') or '').split(',') if x.strip()]
+        title = (request.query_params.get('title') or 'Vị trí kho').strip()
+        rows = (InventoryItem.objects
+                .filter(bin_id__in=ids)
+                .select_related('bin', 'part', 'torch')
+                .order_by('bin__full_code', 'part_id', 'torch_id'))
+
+        wb = Workbook()
+        ws = wb.active
+        ws.title = 'Ton kho theo vi tri'
+        ws.append([f'Tồn kho tại: {title}'])
+        ws.append([f'Xuất lúc: {timezone.localtime():%H:%M %d/%m/%Y}'])
+        ws.append([])
+        ws.append(['Ô', 'Mã', 'Tên hàng hóa', 'ĐVT', 'Tồn', 'Giữ'])
+        tong = 0
+        for it in rows:
+            item = it.part or it.torch
+            ws.append([
+                it.bin.full_code,
+                it.part_id or it.torch_id or '',
+                getattr(item, 'display_name_vi', '') or '',
+                getattr(item, 'price_unit', '') or '',
+                it.qty_on_hand, it.qty_reserved,
+            ])
+            tong += it.qty_on_hand or 0
+        ws.append([])
+        ws.append(['', '', f'{rows.count()} mặt hàng', 'Tổng tồn', tong])
+        style_table_sheet(ws, header_row=4, widths=[20, 20, 46, 10, 10, 10])
+
+        import io
+        buf = io.BytesIO()
+        wb.save(buf)
+        safe = ''.join(c if c.isalnum() or c in '-_' else '_' for c in title)
+        return xlsx_response(buf.getvalue(), f'ton_kho_{safe or "vi_tri"}.xlsx')
+
     def perform_create(self, serializer):
         z = serializer.validated_data['zone']
         rack = serializer.validated_data['rack']

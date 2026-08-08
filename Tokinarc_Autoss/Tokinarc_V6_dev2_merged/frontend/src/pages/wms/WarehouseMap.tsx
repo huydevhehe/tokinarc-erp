@@ -5,11 +5,12 @@
  */
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { Map as MapIcon, Search, X } from 'lucide-react'
+import { Map as MapIcon, Search, X, Download } from 'lucide-react'
 import { fetchAll } from '@/lib/list'
+import { downloadFile } from '@/lib/download'
 import { apiError } from '@/lib/api'
 import type { InventoryItem } from '@/lib/types'
-import { Card, PageHeader, TableCard, Th, Td } from '@/components/ui'
+import { Card, PageHeader, TableCard, Th, Td, Button } from '@/components/ui'
 import { Modal } from '@/components/Modal'
 
 interface Bin { id: string; warehouse_code: string; zone_code: string; zone_name: string; rack: string; bin_code: string; full_code: string }
@@ -206,7 +207,23 @@ export function WarehouseMapPage() {
       </div>
 
       <Modal open={!!detail} onClose={() => setDetail(null)} wide
-        title={detail?.title ?? ''} icon={<MapIcon size={18} className="text-flame" />}>
+        title={detail?.title ?? ''} icon={<MapIcon size={18} className="text-flame" />}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setDetail(null)}>Đóng</Button>
+            <Button disabled={detailRows.length === 0}
+              onClick={() => {
+                const params = new URLSearchParams({
+                  bins: detail!.bins.map((b) => b.id).join(','),
+                  title: detail!.title,
+                })
+                const safe = detail!.title.replace(/[^a-zA-Z0-9]+/g, '_')
+                downloadFile(`/wms/bins/export-items/?${params}`, `ton_kho_${safe}.xlsx`)
+              }}>
+              <Download size={14} /> Xuất Excel
+            </Button>
+          </>
+        }>
         {detailRows.length === 0 ? (
           <p className="text-sm text-txt-2">Chỗ này đang trống — chưa có hàng nào.</p>
         ) : (
