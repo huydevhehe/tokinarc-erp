@@ -140,12 +140,17 @@ def _line_unit(obj) -> str:
 class InboundLineSerializer(serializers.ModelSerializer):
     part_name = serializers.SerializerMethodField()
     unit = serializers.SerializerMethodField()
+    # `target_bin` là id số (Bin.pk) — không đọc được. Trả kèm mã vị trí dạng
+    # 'HCM-A-R01-B03' để bảng Nhập kho hiện được cột "Bin đích" mà khỏi phải
+    # tải thêm danh sách bin rồi tự dò id.
+    target_bin_code = serializers.CharField(source='target_bin.full_code',
+                                            default=None, read_only=True)
 
     class Meta:
         model  = InboundLine
         fields = ['id', 'part', 'torch', 'part_name', 'unit', 'qty_expected', 'qty_received',
-                  'target_bin', 'lot_no', 'lot_expires', 'unit_cost', 'tax_pct',
-                  'serials_raw', 'order_idx']
+                  'target_bin', 'target_bin_code', 'lot_no', 'lot_expires', 'unit_cost',
+                  'tax_pct', 'serials_raw', 'order_idx']
 
     def get_unit(self, obj) -> str:
         return _line_unit(obj)

@@ -159,26 +159,35 @@ export function InboundPage() {
         <thead>
           <tr className="border-b border-line">
             <Th>Mã đơn</Th><Th>Ngày nhập</Th><Th>Nhà CC</Th><Th>Mặt hàng</Th>
+            <Th>Bin đích</Th>
             <Th className="text-right">SL</Th><Th className="text-right">Thành tiền</Th>
             <Th>Trạng thái</Th><Th className="text-right">Hành động</Th>
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={8}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={8} danger>Lỗi: {apiError(error)}</RowMsg>}
-          {data && items.length === 0 && <RowMsg colSpan={8}>Chưa có đơn nhập.</RowMsg>}
+          {isLoading && <RowMsg colSpan={9}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={9} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {data && items.length === 0 && <RowMsg colSpan={9}>Chưa có đơn nhập.</RowMsg>}
           {items.map((o) => {
             const lines = o.lines ?? []
             const exp = lines.reduce((s, l) => s + (l.qty_expected || 0), 0)
             const amount = lines.reduce((s, l) => s + (l.qty_expected || 0) * Number(l.unit_cost || 0), 0)
             const itemLabel = lines.length === 1 ? (lines[0].part_name || '—')
               : lines.length > 1 ? `${lines.length} mặt hàng` : '—'
+            // 1 đơn nhiều dòng hàng thì mỗi dòng cất 1 vị trí khác nhau — gộp lại
+            // như cột "Mặt hàng": 1 vị trí thì hiện mã, nhiều thì đếm.
+            const bins = [...new Set(lines.map((l) => l.target_bin_code).filter(Boolean))] as string[]
+            const binLabel = bins.length === 1 ? bins[0] : bins.length > 1 ? `${bins.length} vị trí` : '—'
             return (
             <tr key={o.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{o.code}</Td>
               <Td className="text-txt-2">{formatDate(o.received_at)}</Td>
               <Td className="text-txt-2">{o.supplier || '—'}</Td>
               <Td className="text-txt-2 truncate max-w-[220px]">{itemLabel}</Td>
+              <Td className={bins.length ? 'font-mono text-xs whitespace-nowrap' : 'text-txt-2'}>
+                {/* Nhiều vị trí thì rê chuột vào xem đủ danh sách, khỏi giãn cột. */}
+                <span title={bins.length > 1 ? bins.join(' · ') : undefined}>{binLabel}</span>
+              </Td>
               <Td className="text-right tabular-nums">{exp}</Td>
               <Td className="text-right tabular-nums whitespace-nowrap">{compactVnd(amount)}</Td>
               <Td><Tag tone={INBOUND_STATUS_TONE[o.status]}>{INBOUND_STATUS_LABEL[o.status]}</Tag></Td>

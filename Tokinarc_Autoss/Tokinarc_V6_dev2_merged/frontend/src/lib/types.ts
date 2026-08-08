@@ -197,6 +197,8 @@ export interface InboundLine {
   qty_expected: number
   qty_received: number
   target_bin: string | null
+  /** Mã vị trí đọc được ('HCM-A-R01-B03') — target_bin chỉ là id số. */
+  target_bin_code?: string | null
   lot_no: string
   unit_cost?: string | number
   tax_pct?: string | number | null
