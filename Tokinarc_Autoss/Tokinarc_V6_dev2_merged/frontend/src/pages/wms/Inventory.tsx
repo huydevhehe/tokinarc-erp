@@ -3,7 +3,7 @@
  * Tồn kho THẬT (GET /wms/inventory/). Search + phân trang. Dùng chung cho cả
  * trang "Sắp hết hàng" qua prop lowStock.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
 import { Package, AlertTriangle, SlidersHorizontal, ArrowLeftRight, Layers, Download } from 'lucide-react'
 import { apiError, api } from '@/lib/api'
@@ -18,6 +18,7 @@ import {
 } from '@/components/ui'
 import { AdjustForm } from '@/pages/wms/forms/AdjustForm'
 import { TransferForm } from '@/pages/wms/forms/TransferForm'
+import { BatchTransferForm } from '@/pages/wms/forms/BatchTransferForm'
 
 interface BinLite { id: string; full_code: string }
 interface CategoryRow { kind: 'part' | 'torch'; group: string; qty: number; value: number }
@@ -40,6 +41,8 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
   const [reportYear, setReportYear] = useState('')
   const [adjustItem, setAdjustItem] = useState<InventoryItem | null>(null)
   const [transferItem, setTransferItem] = useState<InventoryItem | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [batchOpen, setBatchOpen] = useState(false)
   const debounced = useDebounced(search, 350, () => setPage(1))
 
   // Không chọn nhóm → tổng quan gộp (CategoryRow); chọn đúng 1 Nhóm → danh sách
@@ -80,6 +83,15 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
   })
 
   const totalPages = data ? Math.max(1, Math.ceil(data.count / pageSize)) : 1
+  // Đổi trang/lọc thì bỏ chọn — tránh giữ ID của dòng đã không còn hiển thị.
+  useEffect(() => { setSelected(new Set()) }, [page, debounced, lowStock])
+  const selectedItems = (data?.results ?? []).filter((i) => selected.has(i.id))
+  const toggleSelect = (id: string) => setSelected((s) => {
+    const next = new Set(s)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
+  const allOnPageSelected = !!data?.results.length && data.results.every((i) => selected.has(i.id))
 
   return (
     <div className="max-w-6xl">
@@ -152,6 +164,11 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
                   <AlertTriangle size={14} /> Chỉ sắp hết{lowCount.data ? ` (${lowCount.data})` : ''}
                 </button>
                 <SearchInput value={search} onChange={setSearch} placeholder="Tìm mặt hàng, vị trí…" />
+                {selected.size > 0 && (
+                  <Button onClick={() => setBatchOpen(true)}>
+                    <ArrowLeftRight size={14} /> Chuyển kho ({selected.size})
+                  </Button>
+                )}
                 <Button variant="ghost"
                   onClick={() => {
                     const params = new URLSearchParams()
@@ -230,6 +247,10 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
       <TableCard>
         <thead>
           <tr className="border-b border-line">
+            <Th className="w-8">
+              <input type="checkbox" checked={allOnPageSelected}
+                onChange={() => setSelected(allOnPageSelected ? new Set() : new Set((data?.results ?? []).map((i) => i.id)))} />
+            </Th>
             {/* Mỗi dòng tồn kho vốn là 1 vị trí cụ thể — thiếu cột này thì cùng
                 1 mặt hàng nằm 2 bin sẽ hiện 2 dòng trông y hệt nhau. */}
             <Th>Mã số</Th><Th>Tên hàng hóa</Th><Th>Vị trí</Th><Th>ĐVT</Th>
@@ -239,15 +260,16 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
           </tr>
         </thead>
         <tbody>
-          {isLoading && <RowMsg colSpan={8}>Đang tải…</RowMsg>}
-          {isError && <RowMsg colSpan={8} danger>Lỗi: {apiError(error)}</RowMsg>}
+          {isLoading && <RowMsg colSpan={9}>Đang tải…</RowMsg>}
+          {isError && <RowMsg colSpan={9} danger>Lỗi: {apiError(error)}</RowMsg>}
           {data?.results.length === 0 && (
-            <RowMsg colSpan={8}>{lowStock ? 'Không có mặt hàng sắp hết. 🎉' : 'Chưa có tồn kho.'}</RowMsg>
+            <RowMsg colSpan={9}>{lowStock ? 'Không có mặt hàng sắp hết. 🎉' : 'Chưa có tồn kho.'}</RowMsg>
           )}
           {data?.results.map((i) => {
             const low = i.is_low
             return (
               <tr key={i.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
+                <Td><input type="checkbox" checked={selected.has(i.id)} onChange={() => toggleSelect(i.id)} /></Td>
                 <Td className="font-mono text-flame">{i.part ?? i.torch ?? '—'}</Td>
                 <Td className="font-medium">{i.display_name ?? i.item_name}</Td>
                 <Td className="font-mono text-xs whitespace-nowrap">{i.bin_code || '—'}</Td>
@@ -278,6 +300,8 @@ export function InventoryPage({ lowStock: initialLow = false }: { lowStock?: boo
 
       <AdjustForm open={!!adjustItem} onClose={() => setAdjustItem(null)} item={adjustItem} />
       <TransferForm open={!!transferItem} onClose={() => setTransferItem(null)} item={transferItem} binOptions={binOptions} />
+      <BatchTransferForm open={batchOpen} onClose={() => { setBatchOpen(false); setSelected(new Set()) }}
+        items={selectedItems} binOptions={binOptions} />
     </div>
   )
 }
