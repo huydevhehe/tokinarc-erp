@@ -9,7 +9,8 @@ import { Map as MapIcon, Search, X } from 'lucide-react'
 import { fetchAll } from '@/lib/list'
 import { apiError } from '@/lib/api'
 import type { InventoryItem } from '@/lib/types'
-import { Card, PageHeader } from '@/components/ui'
+import { Card, PageHeader, TableCard, Th, Td } from '@/components/ui'
+import { Modal } from '@/components/Modal'
 
 interface Bin { id: string; warehouse_code: string; zone_code: string; zone_name: string; rack: string; bin_code: string; full_code: string }
 
@@ -37,25 +38,29 @@ export function WarehouseMapPage() {
   const bins = useQuery({ queryKey: ['wms-map-bins'], queryFn: () => fetchAll<Bin>('/wms/bins/', { page_size: 2000 }) })
   const inv = useQuery({ queryKey: ['wms-map-inv'], queryFn: () => fetchAll<InventoryItem>('/wms/inventory/', { page_size: 2000 }) })
 
-  // bin id → mã hàng thật + tên + loại + tồn (mỗi ô đúng 1 mã).
-  const binInfo = new Map<string, { code: string; name: string; category: string; qty: number }>()
+  // bin id → TẤT CẢ mặt hàng trong ô đó. Trước đây map 1 ô = 1 mặt hàng ("mỗi ô
+  // đúng 1 mã") — sai, ràng buộc DB là (ô, mặt hàng) duy nhất nên 1 ô chứa được
+  // nhiều mã khác nhau. Ô nào có 3 mã thì bản đồ chỉ hiện mã nạp sau cùng, 2 mã
+  // kia biến mất khỏi bản đồ lẫn khỏi ô tìm kiếm.
+  const binItems = new Map<string, InventoryItem[]>()
   for (const i of inv.data?.items ?? []) {
-    binInfo.set(String(i.bin), {
-      code: i.part || i.torch || '?', name: i.item_name, category: i.category ?? '', qty: i.qty_on_hand,
-    })
+    const key = String(i.bin)
+    ;(binItems.get(key) ?? binItems.set(key, []).get(key)!).push(i)
   }
+  const codeOf = (i: InventoryItem) => i.part || i.torch || '?'
+  const qtyOf = (arr: InventoryItem[]) => arr.reduce((s, i) => s + (i.qty_on_hand || 0), 0)
   const list = bins.data?.items ?? []
 
   // Tên kệ = loại hàng trong kệ; nhãn tầng = dải mã trên tầng.
   const keLabel = (tangs: Record<string, Bin[]>) => {
     for (const arr of Object.values(tangs)) for (const b of arr) {
-      const c = binInfo.get(String(b.id))?.category
+      const c = (binItems.get(String(b.id)) ?? []).find((i) => i.category)?.category
       if (c) return catVi(c)
     }
     return ''
   }
   const tangLabel = (arr: Bin[]) => {
-    const codes = arr.map((b) => binInfo.get(String(b.id))?.code).filter(Boolean).sort() as string[]
+    const codes = arr.flatMap((b) => (binItems.get(String(b.id)) ?? []).map(codeOf)).sort()
     if (!codes.length) return ''
     return codes.length === 1 ? codes[0] : `${codes[0]}…${codes[codes.length - 1]}`
   }
@@ -81,12 +86,20 @@ export function WarehouseMapPage() {
   let firstMatchId = ''
   if (query) {
     for (const b of list) {
-      const info = binInfo.get(String(b.id))
-      const hay = `${info?.code ?? ''} ${info?.name ?? ''} ${b.full_code}`.toLowerCase()
+      // Dò TẤT CẢ mặt hàng trong ô, không chỉ mặt hàng đầu — ô nhiều mã mà tìm
+      // theo mã thứ 2 thì trước đây báo "không tìm thấy" dù hàng nằm ngay đó.
+      const items = binItems.get(String(b.id)) ?? []
+      const hay = `${b.full_code} ${items.map((i) => `${codeOf(i)} ${i.item_name} ${i.display_name ?? ''}`).join(' ')}`.toLowerCase()
       if (hay.includes(query)) { matched.add(b.id); if (!firstMatchId) firstMatchId = b.id }
     }
   }
-  const firstMatchRef = useRef<HTMLDivElement>(null)
+
+  // Cửa sổ chi tiết: bấm ô / tầng / kệ → liệt kê mọi mặt hàng bên trong.
+  const [detail, setDetail] = useState<{ title: string; bins: Bin[] } | null>(null)
+  const detailRows = (detail?.bins ?? []).flatMap((b) =>
+    (binItems.get(String(b.id)) ?? []).map((i) => ({ bin: b, item: i })))
+  const detailQty = detailRows.reduce((s, r) => s + (r.item.qty_on_hand || 0), 0)
+  const firstMatchRef = useRef<HTMLButtonElement>(null)
   useEffect(() => {
     if (firstMatchId) firstMatchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
   }, [firstMatchId])
@@ -135,34 +148,46 @@ export function WarehouseMapPage() {
                   <div className="flex flex-wrap gap-3">
                     {Object.entries(kes).map(([ke, tangs]) => (
                       <div key={ke} className="border border-line rounded-lg p-2 bg-ink-2/40">
-                        <div className="mb-1.5 text-center leading-tight">
-                          <div className="text-[10px] font-mono text-txt-2">Kệ {ke}</div>
+                        <button type="button" className="w-full mb-1.5 text-center leading-tight hover:opacity-80"
+                          title="Xem toàn bộ hàng trong kệ này"
+                          onClick={() => setDetail({ title: `Kệ ${ke}`, bins: Object.values(tangs).flat() })}>
+                          <div className="text-[10px] font-mono text-txt-2 underline decoration-dotted">Kệ {ke}</div>
                           {keLabel(tangs) && <div className="text-[10px] text-flame/90 font-medium">{keLabel(tangs)}</div>}
-                        </div>
+                        </button>
                         <div className="space-y-1.5">
                           {tangKeys(tangs).map((t) => (
                             <div key={t}>
                               {t !== '-' && (
-                                <div className="text-[9px] text-txt-2 mb-0.5">
-                                  Tầng {t} <span className="font-mono text-txt-3">· {tangLabel(tangs[t])}</span>
-                                </div>
+                                <button type="button" className="text-[9px] text-txt-2 mb-0.5 hover:text-txt"
+                                  title="Xem toàn bộ hàng trên tầng này"
+                                  onClick={() => setDetail({ title: `Kệ ${ke} · Tầng ${t}`, bins: tangs[t] })}>
+                                  <span className="underline decoration-dotted">Tầng {t}</span>
+                                  <span className="font-mono text-txt-3"> · {tangLabel(tangs[t])}</span>
+                                </button>
                               )}
                               <div className="flex gap-1">
                                 {tangs[t].map((b) => {
-                                  const info = binInfo.get(String(b.id))
-                                  const has = (info?.qty ?? 0) > 0
+                                  const items = binItems.get(String(b.id)) ?? []
+                                  const has = qtyOf(items) > 0
                                   const isMatch = matched.has(b.id)
+                                  // Ô nhiều mã thì hiện "N mã" — hiện 1 mã như trước
+                                  // là nói dối, người xem tưởng ô chỉ có món đó.
+                                  const label = items.length === 0 ? b.bin_code
+                                    : items.length === 1 ? codeOf(items[0]) : `${items.length} mã`
+                                  const tip = items.length === 0 ? `${b.full_code} — trống`
+                                    : `${b.full_code} — ${items.map((i) => `${codeOf(i)} (${i.qty_on_hand})`).join(', ')}`
                                   return (
-                                    <div key={b.id}
+                                    <button type="button" key={b.id}
                                       ref={b.id === firstMatchId ? firstMatchRef : undefined}
-                                      title={`${b.full_code} — ${info?.name ?? 'trống'}${info ? ` (tồn ${info.qty})` : ''}`}
-                                      className={`min-w-[3.5rem] h-6 px-1 grid place-items-center rounded text-[9px] font-mono border truncate transition-opacity ${
+                                      onClick={() => setDetail({ title: `Ô ${b.full_code}`, bins: [b] })}
+                                      title={tip}
+                                      className={`min-w-[3.5rem] h-6 px-1 grid place-items-center rounded text-[9px] font-mono border truncate transition-opacity hover:brightness-125 ${
                                         has ? 'bg-flame/25 border-flame/50 text-flame' : 'bg-ink-3 border-line text-txt-2'
                                       } ${isMatch ? 'ring-2 ring-yellow-400 ring-offset-1 ring-offset-ink-2 !text-yellow-300 !border-yellow-400' : ''} ${
                                         query && !isMatch ? 'opacity-25' : ''
                                       }`}>
-                                      {info?.code ?? b.bin_code}
-                                    </div>
+                                      {label}
+                                    </button>
                                   )
                                 })}
                               </div>
@@ -179,6 +204,39 @@ export function WarehouseMapPage() {
         ))}
         {!bins.isLoading && list.length === 0 && <p className="text-txt-2 text-sm">Chưa có vị trí kho.</p>}
       </div>
+
+      <Modal open={!!detail} onClose={() => setDetail(null)} wide
+        title={detail?.title ?? ''} icon={<MapIcon size={18} className="text-flame" />}>
+        {detailRows.length === 0 ? (
+          <p className="text-sm text-txt-2">Chỗ này đang trống — chưa có hàng nào.</p>
+        ) : (
+          <>
+            <p className="text-xs text-txt-2 mb-2">
+              {detailRows.length} mặt hàng · tổng tồn <b className="text-txt">{detailQty}</b>
+              {detail!.bins.length > 1 && <> · trong {detail!.bins.length} ô</>}
+            </p>
+            <TableCard>
+              <thead><tr className="border-b border-line">
+                {detail!.bins.length > 1 && <Th>Ô</Th>}
+                <Th>Mã</Th><Th>Tên hàng hóa</Th><Th>ĐVT</Th>
+                <Th className="text-right">Tồn</Th><Th className="text-right">Giữ</Th>
+              </tr></thead>
+              <tbody>
+                {detailRows.map(({ bin, item }) => (
+                  <tr key={`${bin.id}-${item.id}`} className="border-b border-line/50 last:border-0">
+                    {detail!.bins.length > 1 && <Td className="font-mono text-xs whitespace-nowrap">{bin.full_code}</Td>}
+                    <Td className="font-mono text-flame">{codeOf(item)}</Td>
+                    <Td className="font-medium">{item.display_name ?? item.item_name}</Td>
+                    <Td className="text-txt-2">{item.unit || '—'}</Td>
+                    <Td className="text-right tabular-nums">{item.qty_on_hand}</Td>
+                    <Td className="text-right tabular-nums text-txt-2">{item.qty_reserved}</Td>
+                  </tr>
+                ))}
+              </tbody>
+            </TableCard>
+          </>
+        )}
+      </Modal>
     </div>
   )
 }
