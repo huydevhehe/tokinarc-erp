@@ -106,7 +106,7 @@ class Zone(models.Model):
 class Bin(models.Model):
     zone      = models.ForeignKey(Zone, on_delete=models.CASCADE, related_name='bins')
     rack      = models.CharField(max_length=10)
-    bin_code  = models.CharField(max_length=10)
+    bin_code  = models.CharField(max_length=10, blank=True)
     full_code = models.CharField(max_length=30, unique=True, db_index=True)  # 'HCM-A-R01-B03'
     capacity  = models.IntegerField(null=True, blank=True)
 

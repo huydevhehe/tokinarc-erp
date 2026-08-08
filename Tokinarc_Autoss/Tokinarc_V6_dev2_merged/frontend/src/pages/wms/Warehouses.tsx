@@ -157,10 +157,10 @@ function BinManager({ warehouse, zone, onClose, onChanged }: {
     pattern: { value: /^\d+(-\d+)?$/, message: 'Chỉ nhập số, dạng "kệ-tầng" (VD: 1-1)' },
   })
   const sanitizeRack = (v: string) => v.replace(/[^0-9-]/g, '').replace(/^-+/, '').replace(/-{2,}/g, '-')
-  // Mã ô: chỉ số nguyên dương — chặn chữ, chặn số âm.
+  // Mã ô: không bắt buộc — bỏ trống vẫn tạo ô được (chỉ ghép rỗng vào full_code).
+  // Có nhập thì chỉ nhận số nguyên dương — chặn chữ, chặn số âm.
   const binCodeReg = register('bin_code', {
-    required: 'Bắt buộc',
-    pattern: { value: /^\d+$/, message: 'Chỉ nhập số nguyên dương' },
+    pattern: { value: /^\d*$/, message: 'Chỉ nhập số nguyên dương' },
   })
   const sanitizeBinCode = (v: string) => v.replace(/[^0-9]/g, '')
   const add = useMutation({
@@ -193,7 +193,7 @@ function BinManager({ warehouse, zone, onClose, onChanged }: {
         <TextInput label="Kệ-Tầng *" placeholder="1-1" error={errors.rack?.message}
           {...rackReg}
           onChange={(e) => { e.target.value = sanitizeRack(e.target.value); rackReg.onChange(e) }} />
-        <TextInput label="Mã ô *" placeholder="09" error={errors.bin_code?.message}
+        <TextInput label="Mã ô" placeholder="09" error={errors.bin_code?.message}
           {...binCodeReg}
           onChange={(e) => { e.target.value = sanitizeBinCode(e.target.value); binCodeReg.onChange(e) }} />
         <Button onClick={handleSubmit((d) => add.mutate(d))} disabled={add.isPending}><Plus size={14} /> Thêm ô</Button>
