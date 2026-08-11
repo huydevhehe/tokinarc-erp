@@ -146,7 +146,13 @@ export function BarcodeAssignPage() {
     },
     enabled: tab === 'scan' && lookupQ.trim().length >= 2,
   })
-  const notFound = !!lookup.data && lookup.data.parts.length === 0 && lookup.data.serials.length === 0 && lookupQ.trim().length >= 2
+  // "Tìm thấy sản phẩm" ≠ "mã này đã được gán" — search khớp cả qua Part
+  // Number/tên sản phẩm, không riêng mã Barcode/QR đã gán. Chỉ coi là ĐÃ GÁN
+  // khi mã quét thực sự nằm trong p.barcodes; nếu chỉ trùng Part Number
+  // (VD tem in mã của NCC trùng với mã nội bộ) thì vẫn phải cho gán mã đó.
+  const assignedParts = (lookup.data?.parts ?? []).filter((p) => p.barcodes.includes(lookupQ.trim()))
+  const unassignedMatch = (lookup.data?.parts ?? []).find((p) => !p.barcodes.includes(lookupQ.trim()))
+  const notFound = !!lookup.data && assignedParts.length === 0 && lookup.data.serials.length === 0 && lookupQ.trim().length >= 2
 
   // Mã lạ (chưa gán) — gộp lại xem đã "nhận" được Barcode và/hoặc QR nào từ
   // lượt quét/tải ảnh vừa rồi, để hiện rõ ràng ngay (1 ảnh có 2 mã thì phải
@@ -229,7 +235,9 @@ export function BarcodeAssignPage() {
     const resolved = await Promise.all(results.map(async (r) => {
       try {
         const res = await api.get<{ results: CatalogPart[] }>('/catalog/parts/', { params: { search: r.code } })
-        return { ...r, part: res.data.results[0] ?? null }
+        // Chỉ tính là "đã khớp" khi mã quét thực sự nằm trong barcodes đã
+        // gán — trùng Part Number không tính (chưa gán thật).
+        return { ...r, part: res.data.results.find((p) => p.barcodes.includes(r.code)) ?? null }
       } catch { return { ...r, part: null } }
     }))
     const found = resolved.filter((r) => r.part)
@@ -260,7 +268,10 @@ export function BarcodeAssignPage() {
   const notifyIfAlreadyAssigned = async (code: string) => {
     try {
       const r = await api.get<{ results: CatalogPart[] }>('/catalog/parts/', { params: { search: code } })
-      const p = r.data.results[0]
+      // Chỉ báo "đã gán sẵn" khi mã quét thực sự có trong barcodes đã gán —
+      // trùng Part Number (chưa gán) thì để thẻ kết quả bên dưới xử lý (hiện
+      // nút Gán), không báo nhầm là xong việc.
+      const p = r.data.results.find((x) => x.barcodes.includes(code))
       if (p) toast.success(`✓ Mã "${code}" đã gán sẵn cho: ${p.tokin_part_no} — ${p.display_name_vi}`)
     } catch { /* im lặng — không chặn luồng chính, thẻ kết quả bên dưới vẫn hiển thị bình thường */ }
   }
@@ -432,7 +443,19 @@ export function BarcodeAssignPage() {
             </Button>
           </Card>
         )}
-        {notFound && !(guessedFromQr && guessedPartCheck.data) && (
+        {notFound && !(guessedFromQr && guessedPartCheck.data) && unassignedMatch && (
+          <Card>
+            <p className="text-sm text-txt-2">
+              Mã "<span className="font-mono text-flame">{lookupQ.trim()}</span>" trùng với <b>Part Number</b> của sản phẩm{' '}
+              <b>{unassignedMatch.tokin_part_no} — {unassignedMatch.display_name_vi}</b>, nhưng mã này{' '}
+              <b className="text-warn">chưa được gán chính thức</b> làm Barcode/QR cho sản phẩm đó.
+            </p>
+            <Button size="sm" className="mt-2" disabled={assignMut.isPending} onClick={() => assignMut.mutate(unassignedMatch.tokin_part_no)}>
+              <Link2 size={14} /> Gán mã này cho sản phẩm
+            </Button>
+          </Card>
+        )}
+        {notFound && !(guessedFromQr && guessedPartCheck.data) && !unassignedMatch && (
           <Card>
             {(scannedBarcode || scannedQr) && (
               <div className="space-y-1.5 mb-3 pb-3 border-b border-line">
@@ -521,7 +544,7 @@ export function BarcodeAssignPage() {
             )}
           </Card>
         )}
-        {(lookup.data?.parts ?? []).map((p) => <FoundPartCard key={p.tokin_part_no} p={p} />)}
+        {assignedParts.map((p) => <FoundPartCard key={p.tokin_part_no} p={p} />)}
         {(lookup.data?.serials ?? []).map((s) => (
           <Card key={s.serial}>
             <div className="flex items-center gap-2 text-sm">
