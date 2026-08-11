@@ -21,7 +21,7 @@ import { PartQuickAddModal } from '@/pages/crm/PartQuickAddModal'
 import { useAuth, isWmsControl } from '@/lib/auth/store'
 import type { InboundOrder } from '@/lib/types'
 
-interface BinLite { id: string; full_code: string }
+interface BinLite { id: string; full_code: string; warehouse_code: string }
 interface SupplierLite { id: string; name: string }
 interface POLineLite { part: string; qty: number; unit_cost: string | number; qty_received: number }
 interface POLite {
@@ -49,7 +49,7 @@ export function InboundForm({ open, onClose, editing }: {
   open: boolean; onClose: () => void; editing?: InboundOrder | null
 }) {
   const qc = useQueryClient()
-  const { options: whs } = useWarehouseOptions()
+  const { options: whs, items: whItems } = useWarehouseOptions()
   const { options: items, isLoading: itemsLoading, unitByValue } = useItemOptions()
   const bins = useQuery({ queryKey: ['wms-bins-opt'], queryFn: () => fetchAll<BinLite>('/wms/bins/') })
   const binItems = bins.data?.items ?? []
@@ -68,6 +68,24 @@ export function InboundForm({ open, onClose, editing }: {
   const purchaseOrder = useWatch({ control, name: 'purchase_order' })
   const manualPoNo = useWatch({ control, name: 'manual_po_no' })
   const watchedSupplier = (useWatch({ control, name: 'supplier' }) as string | undefined) ?? ''
+  // Ô "Bin đích" chỉ được liệt kê ô nằm trong ĐÚNG kho đã chọn. Trước đây liệt
+  // kê toàn bộ ô của mọi kho — chọn nhầm ô kho khác thì hàng cộng sang kho đó,
+  // tồn kho hai kho cùng sai mà nhìn phiếu không thấy gì lạ.
+  const watchedWarehouse = (useWatch({ control, name: 'warehouse' }) as string | undefined) ?? ''
+  const whCode = whItems.find((w) => w.id === watchedWarehouse)?.code ?? ''
+  const binOptions = binItems
+    .filter((b) => !whCode || b.warehouse_code === whCode)
+    .map((b) => ({ value: b.id, label: b.full_code }))
+  // Đổi kho giữa chừng → bỏ những bin đã chọn nay không còn thuộc kho mới,
+  // không thì nó nằm im trong form rồi bị backend chặn lúc bấm Tạo.
+  useEffect(() => {
+    if (!whCode) return
+    watched.forEach((l, i) => {
+      if (l?.target_bin && !binOptions.some((o) => o.value === l.target_bin)) {
+        setValue(`lines.${i}.target_bin` as const, '')
+      }
+    })
+  }, [whCode, binItems.length])   // eslint-disable-line react-hooks/exhaustive-deps
   const [supplierModalOpen, setSupplierModalOpen] = useState(false)
   const [addPartForLine, setAddPartForLine] = useState<number | null>(null)   // dòng đang thêm mặt hàng mới
   const role = useAuth((s) => s.user?.role)
@@ -112,13 +130,17 @@ export function InboundForm({ open, onClose, editing }: {
     if (!val) { toast.error(`Không tìm thấy mặt hàng cho mã "${raw}"`); return }
     const idx = watched.findIndex((l) => l?.item === val)
     if (idx >= 0) {
-      setValue(`lines.${idx}.qty_expected`, (Number(watched[idx].qty_expected) || 0) + 1)
-    } else {
-      const empty = watched.findIndex((l) => !l?.item)
-      if (empty >= 0) setValue(`lines.${empty}.item`, val)
-      else append({ ...EMPTY_LINE, item: val })
+      // Quét lại mã đã có → cộng dồn. Phải nói RÕ số cũ → số mới: trước đây chỉ
+      // hiện tên hàng nên số lượng tự nhảy mà người quét không hay biết.
+      const truoc = Number(watched[idx].qty_expected) || 0
+      setValue(`lines.${idx}.qty_expected`, truoc + 1)
+      toast.success(`${itemLabel(val)} — số lượng: ${truoc} → ${truoc + 1}`)
+      return
     }
-    toast.success(`✓ ${itemLabel(val)}`)
+    const empty = watched.findIndex((l) => !l?.item)
+    if (empty >= 0) setValue(`lines.${empty}.item`, val)
+    else append({ ...EMPTY_LINE, item: val })
+    toast.success(`✓ Đã thêm ${itemLabel(val)} — số lượng: 1`)
   }
 
   useEffect(() => {
@@ -178,6 +200,18 @@ export function InboundForm({ open, onClose, editing }: {
   const onSubmit = (d: Form) => {
     if (d.flow_type === 'supplier' && !d.purchase_order && !d.manual_po_no) {
       toast.error('Phiếu nhập NCC phải chọn hoặc nhập số Đơn mua'); return
+    }
+    // Ba chốt chặn dưới đây backend cũng chặn — kiểm sẵn ở đây để báo ngay tại
+    // chỗ, khỏi bắt người dùng bấm Tạo rồi mới biết sai.
+    if (d.flow_type === 'supplier' && !d.supplier.trim()) {
+      toast.error('Phiếu nhập từ Nhà cung cấp phải chọn nhà cung cấp'); return
+    }
+    if (d.received_at && d.received_at > new Date().toISOString().slice(0, 10)) {
+      toast.error('Ngày nhập kho không được ở tương lai — hàng chưa về thì chưa nhập kho được'); return
+    }
+    const sl = d.lines.filter((l) => l.item && !(Number(l.qty_expected) > 0))
+    if (sl.length) {
+      toast.error('Số lượng phải lớn hơn 0'); return
     }
     save.mutate(d)
   }
@@ -257,6 +291,7 @@ export function InboundForm({ open, onClose, editing }: {
           <TextInput label="Người giao hàng" placeholder="Tên nhân viên NCC/bên giao hàng"
             {...register('delivered_by_name')} />
           <TextInput label="Ngày nhập kho" type="date"
+            max={new Date().toISOString().slice(0, 10)}
             {...register('received_at')} />
         </FieldRow>
         <p className="text-[11px] text-txt-2 -mt-2 mb-3">
@@ -324,7 +359,7 @@ export function InboundForm({ open, onClose, editing }: {
                     SL{unitByValue[watched[i]?.item ?? ''] ? ` (${unitByValue[watched[i]?.item ?? '']})` : ''}
                   </label>
                   <input type="number" min={1} placeholder="SL"
-                    {...register(`lines.${i}.qty_expected` as const, { valueAsNumber: true })}
+                    {...register(`lines.${i}.qty_expected` as const, { valueAsNumber: true, min: 1 })}
                     onFocus={(e) => e.target.select()}
                     className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
                 </div>
@@ -351,8 +386,8 @@ export function InboundForm({ open, onClose, editing }: {
                   <SearchableSelect
                     value={watched[i]?.target_bin ?? ''}
                     onChange={(v) => setValue(`lines.${i}.target_bin` as const, v)}
-                    options={binItems.map((b) => ({ value: b.id, label: b.full_code }))}
-                    loading={bins.isLoading} placeholder="— Bin đích —" />
+                    options={binOptions} loading={bins.isLoading}
+                    placeholder={whCode ? '— Bin đích —' : '— Chọn kho trước —'} />
                 </div>
               </div>
               {isTorch && (

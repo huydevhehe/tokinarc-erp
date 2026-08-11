@@ -18,7 +18,9 @@ export function useWarehouseOptions() {
     staleTime: 5 * 60 * 1000,
   })
   const options: Option[] = (q.data?.items ?? []).map((w) => ({ value: w.id, label: `${w.code} — ${w.name}` }))
-  return { options, isLoading: q.isLoading }
+  // Trả kèm danh sách gốc: nơi gọi cần map id kho → mã kho (VD lọc ô theo kho
+  // đang chọn), lấy từ label "MÃ — Tên" thì hỏng ngay khi đổi cách hiển thị.
+  return { options, isLoading: q.isLoading, items: q.data?.items ?? [] }
 }
 
 export function useItemOptions() {

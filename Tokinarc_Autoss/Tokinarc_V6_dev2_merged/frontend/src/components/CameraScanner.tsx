@@ -78,7 +78,11 @@ export function CameraScanner({ onScan, onMultiScan, requireKind }: {
     // đâu — đúng lỗi tester báo "nhúc nhích nhẹ là thông báo nhảy liên tục").
     let lastText = ''
     let lastSeenAt = 0
-    const LOST_MS = 1200   // phải mất dấu mã liên tục >1.2s mới coi là "đã rời mã" — đủ trừ hao rung tay/mờ thoáng qua
+    // Nới 1,2s -> 3s (2026-08-11): tem QR nhiều thông tin (súng hàn) ô mã nhỏ,
+    // camera hay mất dấu vài nhịp dù người quét đứng yên — hết 1,2s là tính
+    // thành lần quét mới, số lượng tự nhảy 3–5 mà không ai hiểu vì sao. Quét
+    // nhiều thùng thật vẫn được: chỉ cần đưa tem ra khỏi khung giữa hai lần.
+    const LOST_MS = 3000
     // Chống đọc SAI (không phải đọc trùng) — barcode chỉ là dãy số, rung/lag
     // máy đúng lúc chụp 1 khung mờ có thể đọc RA SỐ SAI mà vẫn "hợp lệ" theo
     // checksum (hiếm nhưng không phải không thể). Bắt đọc phải KHỚP GIỐNG HỆT

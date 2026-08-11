@@ -9,7 +9,7 @@ from __future__ import annotations
 from rest_framework import serializers
 
 from .models import (
-    ASN, Bin, InboundLine, InboundOrder, InventoryItem, Lot,
+    ASN, Bin, InboundFlowType, InboundLine, InboundOrder, InventoryItem, Lot,
     OutboundLine, OutboundOrder, PickListItem, SerialNumber, StockMovement,
     Warehouse, Zone,
 )
@@ -145,6 +145,11 @@ class InboundLineSerializer(serializers.ModelSerializer):
     # tải thêm danh sách bin rồi tự dò id.
     target_bin_code = serializers.CharField(source='target_bin.full_code',
                                             default=None, read_only=True)
+    # Trước đây không chặn: SL = 0 tạo được phiếu rỗng (bấm Nhận đủ cộng 0 vào
+    # kho, nhìn phiếu tưởng đã nhận hàng), SL âm thì vỡ ràng buộc DB và hiện
+    # màn hình lỗi kỹ thuật thay vì câu thông báo người dùng hiểu được.
+    qty_expected = serializers.IntegerField(
+        min_value=1, error_messages={'min_value': 'Số lượng phải lớn hơn 0.'})
 
     class Meta:
         model  = InboundLine
@@ -176,6 +181,42 @@ class InboundOrderSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'status', 'received_by', 'created_at', 'updated_at']
         # code: nếu client không gửi → view tự sinh (IN-YYYY-NNN).
         extra_kwargs = {'code': {'required': False}}
+
+    def validate(self, attrs):
+        """Ba chốt chặn thêm 2026-08-11 (rà soát nhập liệu cùng ban lãnh đạo):
+
+        1. Bin đích phải thuộc ĐÚNG kho của phiếu. Trước đây không kiểm: phiếu
+           ghi nhập kho A nhưng chọn ô của kho B thì hàng cộng vào kho B —
+           tồn kho cả hai kho cùng sai mà nhìn phiếu không thấy gì bất thường.
+        2. Ngày nhập kho không được ở tương lai — hàng chưa về thì chưa nhập.
+        3. Phiếu Nhà cung cấp phải ghi rõ mua của ai.
+        """
+        from django.utils import timezone
+
+        wh = attrs.get('warehouse') or getattr(self.instance, 'warehouse', None)
+        lines = attrs.get('lines')
+        if lines is None and self.instance:
+            lines = [{'target_bin': l.target_bin} for l in self.instance.lines.all()]
+        if wh and lines:
+            sai = {l['target_bin'].full_code for l in lines
+                   if l.get('target_bin') and l['target_bin'].zone.warehouse_id != wh.id}
+            if sai:
+                raise serializers.ValidationError({'lines':
+                    f"Bin đích {', '.join(sorted(sai))} không thuộc kho {wh.code} — "
+                    f"chọn lại ô nằm trong kho của phiếu."})
+
+        received = attrs.get('received_at')
+        if received and received.date() > timezone.localdate():
+            raise serializers.ValidationError({'received_at':
+                'Ngày nhập kho không được ở tương lai — hàng chưa về thì chưa nhập kho được.'})
+
+        flow = attrs.get('flow_type') or getattr(self.instance, 'flow_type', '')
+        if flow == InboundFlowType.SUPPLIER:
+            sup = attrs.get('supplier', getattr(self.instance, 'supplier', '') if self.instance else '')
+            if not (sup or '').strip():
+                raise serializers.ValidationError({'supplier':
+                    'Phiếu nhập từ Nhà cung cấp phải chọn nhà cung cấp.'})
+        return attrs
 
     def create(self, validated_data):
         lines = validated_data.pop('lines', [])
