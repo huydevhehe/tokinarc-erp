@@ -31,6 +31,8 @@ interface POLite {
 interface LineForm {
   item: string; qty_expected: number; target_bin: string
   unit_cost: number; tax_pct: string; serials: string
+  // Lô chỉ dành cho vật tư (Part) — súng hàn quản theo từng cây bằng serial.
+  lot_no: string; lot_expires: string
 }
 interface Form {
   warehouse: string; supplier: string; invoice_no: string; invoice_date: string
@@ -38,7 +40,8 @@ interface Form {
   delivered_by_name: string; received_at: string; notes: string
   lines: LineForm[]
 }
-const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '', serials: '' }
+const EMPTY_LINE: LineForm = { item: '', qty_expected: 1, target_bin: '', unit_cost: 0, tax_pct: '',
+  serials: '', lot_no: '', lot_expires: '' }
 const EMPTY: Form = {
   warehouse: '', supplier: '', invoice_no: '', invoice_date: '',
   flow_type: '', purchase_order: '', manual_po_no: '', delivered_by_name: '', received_at: '', notes: '',
@@ -108,6 +111,7 @@ export function InboundForm({ open, onClose, editing }: {
       replace(remaining.map((l) => ({
         item: `part:${l.part}`, qty_expected: l.remaining, target_bin: '',
         unit_cost: Number(l.unit_cost), tax_pct: '', serials: '',
+        lot_no: '', lot_expires: '',
       })))
     }
   }
@@ -159,6 +163,7 @@ export function InboundForm({ open, onClose, editing }: {
         unit_cost: Number(l.unit_cost ?? 0),
         tax_pct: l.tax_pct != null ? String(l.tax_pct) : '',
         serials: l.serials_raw ?? '',
+        lot_no: l.lot_no ?? '', lot_expires: l.lot_expires ?? '',
       })),
     } : EMPTY)
   }, [open, editing, reset])
@@ -175,14 +180,22 @@ export function InboundForm({ open, onClose, editing }: {
         purchase_order: d.flow_type === 'supplier' ? (d.purchase_order || null) : null,
         manual_po_no: d.flow_type === 'supplier' ? d.manual_po_no : '',
         delivered_by_name: d.delivered_by_name, received_at: d.received_at || null, notes: d.notes,
-        lines: d.lines.map((l) => ({
-          ...splitItem(l.item),
-          qty_expected: Number(l.qty_expected) || 0,
-          target_bin: l.target_bin || null,
-          unit_cost: Number(l.unit_cost) || 0,
-          tax_pct: l.tax_pct !== '' ? Number(l.tax_pct) : null,
-          serials_raw: l.serials || '',
-        })),
+        lines: d.lines.map((l) => {
+          const it = splitItem(l.item)
+          return {
+            ...it,
+            qty_expected: Number(l.qty_expected) || 0,
+            target_bin: l.target_bin || null,
+            unit_cost: Number(l.unit_cost) || 0,
+            tax_pct: l.tax_pct !== '' ? Number(l.tax_pct) : null,
+            // Lô cho vật tư, serial cho súng hàn — không trộn. Backend bỏ qua
+            // lô của dòng súng mà không báo gì, nên chặn ngay từ đây cho khỏi
+            // có người gõ lô vào dòng súng rồi tưởng đã lưu.
+            lot_no: it.part ? (l.lot_no || '') : '',
+            lot_expires: (it.part && l.lot_expires) ? l.lot_expires : null,
+            serials_raw: it.torch ? (l.serials || '') : '',
+          }
+        }),
       }
       return editing
         ? api.patch(`/wms/inbound/${editing.id}/`, payload)
@@ -212,6 +225,25 @@ export function InboundForm({ open, onClose, editing }: {
     const sl = d.lines.filter((l) => l.item && !(Number(l.qty_expected) > 0))
     if (sl.length) {
       toast.error('Số lượng phải lớn hơn 0'); return
+    }
+    // Hạn dùng chỉ có ý nghĩa khi đi kèm số lô — backend bỏ qua hạn của dòng
+    // không có lô, người nhập sẽ tưởng đã lưu được hạn.
+    const thieuLo = d.lines.find((l) => l.item && l.lot_expires && !l.lot_no.trim())
+    if (thieuLo) {
+      toast.error('Có dòng điền hạn dùng nhưng bỏ trống số lô — điền số lô, hoặc xoá hạn dùng đi'); return
+    }
+    // Serial là để tra bảo hành từng cây: khai thiếu/thừa so với số lượng là lỗ
+    // hổng chỉ lộ ra khi khách mang súng tới bảo hành. Không khai serial thì
+    // vẫn cho qua (kho có thể chưa kịp ghi), chỉ chặn khi khai mà lệch.
+    for (const l of d.lines) {
+      const ser = (l.serials || '').split('\n').map((s) => s.trim()).filter(Boolean)
+      if (!ser.length) continue
+      if (ser.length !== Number(l.qty_expected)) {
+        toast.error(`Khai ${ser.length} serial nhưng số lượng là ${l.qty_expected} — phải khớp nhau`); return
+      }
+      if (new Set(ser).size !== ser.length) {
+        toast.error('Có serial bị khai trùng trong cùng một dòng'); return
+      }
     }
     save.mutate(d)
   }
@@ -328,7 +360,10 @@ export function InboundForm({ open, onClose, editing }: {
         )}
         <div className="space-y-2 mb-3">
           {fields.map((f, i) => {
-            const isTorch = !!splitItem(watched[i]?.item || '').torch
+            const picked = splitItem(watched[i]?.item || '')
+            const isTorch = !!picked.torch
+            // Lô chỉ hợp lý với vật tư; súng hàn quản theo từng cây bằng serial.
+            const isPart = !!picked.part
             return (
             <div key={f.id} className="border border-line/40 rounded-md p-2 space-y-1.5">
               <div className="flex items-start gap-2">
@@ -390,6 +425,24 @@ export function InboundForm({ open, onClose, editing }: {
                     placeholder={whCode ? '— Bin đích —' : '— Chọn kho trước —'} />
                 </div>
               </div>
+              {isPart && (
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">
+                      Số lô (để trống nếu hàng không theo lô)
+                    </label>
+                    <input type="text" placeholder="Số lô in trên thùng NCC — VD: A1"
+                      {...register(`lines.${i}.lot_no` as const)}
+                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Hạn dùng của lô</label>
+                    <input type="date"
+                      {...register(`lines.${i}.lot_expires` as const)}
+                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                  </div>
+                </div>
+              )}
               {isTorch && (
                 <textarea rows={2} placeholder="Serial từng cây súng hàn (mỗi dòng 1 serial) — cho bảo hành…"
                   {...register(`lines.${i}.serials` as const)}

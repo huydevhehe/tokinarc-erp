@@ -200,6 +200,8 @@ export interface InboundLine {
   /** Mã vị trí đọc được ('HCM-A-R01-B03') — target_bin chỉ là id số. */
   target_bin_code?: string | null
   lot_no: string
+  /** Hạn dùng của lô — chỉ dùng cho vật tư, súng hàn quản theo serial. */
+  lot_expires?: string | null
   unit_cost?: string | number
   tax_pct?: string | number | null
   serials_raw?: string

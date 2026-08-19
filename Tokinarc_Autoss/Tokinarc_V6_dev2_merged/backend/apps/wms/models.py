@@ -221,7 +221,10 @@ class SerialNumber(BaseModel, SoftDeleteMixin):
 
 class Lot(models.Model):
     """Lô part theo hạn dùng — FEFO."""
-    lot_no        = models.CharField(max_length=40, unique=True, db_index=True)
+    # Số lô do NCC in trên thùng — chỉ duy nhất TRONG PHẠM VI một mặt hàng, không
+    # duy nhất toàn kho: hai mặt hàng khác nhau trùng số lô là chuyện thường ngày
+    # (kể cả cùng một NCC), cấm trùng toàn kho là ép sai thực tế.
+    lot_no        = models.CharField(max_length=40, db_index=True)
     part          = models.ForeignKey('catalog.Part', on_delete=models.PROTECT,
                                       related_name='lots', db_column='part_no')
     qty_remaining = models.IntegerField()
@@ -232,6 +235,9 @@ class Lot(models.Model):
     class Meta:
         db_table = 'wms_lot'
         ordering = ['expires_at', 'received_date']
+        constraints = [
+            models.UniqueConstraint(fields=['part', 'lot_no'], name='lot_unique_per_part'),
+        ]
 
     def __str__(self) -> str:
         return f"{self.lot_no} ({self.part_id})"

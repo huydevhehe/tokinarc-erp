@@ -109,10 +109,14 @@ class SerialNumberSerializer(serializers.ModelSerializer):
 
 
 class LotSerializer(serializers.ModelSerializer):
+    # 'bin' trần chỉ là id số ('1') — vô nghĩa với người đi lấy hàng. Trả kèm mã
+    # ô đầy đủ ('HCM-A-R01-B01') để trang Truy xuất chỉ được chỗ mà tới.
+    bin_code = serializers.CharField(source='bin.full_code', default=None, read_only=True)
+
     class Meta:
         model  = Lot
         fields = ['id', 'lot_no', 'part', 'qty_remaining', 'received_date',
-                  'expires_at', 'bin']
+                  'expires_at', 'bin', 'bin_code']
 
 
 class StockMovementSerializer(serializers.ModelSerializer):

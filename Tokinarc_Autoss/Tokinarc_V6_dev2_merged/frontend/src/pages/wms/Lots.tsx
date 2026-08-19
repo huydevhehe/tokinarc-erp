@@ -13,6 +13,8 @@ import { Tag, Button, TableCard, Th, Td, RowMsg } from '@/components/ui'
 interface Lot {
   id: string; lot_no: string; part: string | null; qty_remaining: number
   received_date: string; expires_at: string | null; bin: string | null
+  /** Mã ô đọc được ('HCM-A-R01-B01') — 'bin' chỉ là id số, không chỉ được chỗ. */
+  bin_code?: string | null
 }
 
 function expiryTone(exp: string | null): { label: string; tone: 'ok' | 'warn' | 'danger' | 'gray' } {
@@ -59,7 +61,7 @@ export function LotsList() {
               <tr key={l.id} className="border-b border-line/50 last:border-0">
                 <Td className="font-mono text-flame">{l.lot_no}</Td>
                 <Td className="font-mono text-xs">{l.part || '—'}</Td>
-                <Td className="font-mono text-xs">{l.bin || '—'}</Td>
+                <Td className="font-mono text-xs">{l.bin_code || '—'}</Td>
                 <Td className="text-right tabular-nums">{l.qty_remaining}</Td>
                 <Td className="text-txt-2">{formatDate(l.received_date)}</Td>
                 <Td><Tag tone={e.tone}>{e.label}</Tag></Td>
