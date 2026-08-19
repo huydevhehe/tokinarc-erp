@@ -196,10 +196,17 @@ class InventoryItem(models.Model):
 
 
 class SerialNumber(BaseModel, SoftDeleteMixin):
-    """Mỗi súng hàn 1 serial — truy xuất từng cái + bảo hành."""
+    """Một serial = một cái hàng cụ thể — truy xuất từng cái + bảo hành.
+
+    Ban đầu chỉ dành cho súng hàn, nhưng NCC cũng đánh serial cho vật tư giá trị
+    cao, nên serial gắn được vào Part HOẶC Torch (đúng một trong hai)."""
     serial = models.CharField(max_length=40, unique=True, db_index=True)
-    torch  = models.ForeignKey('catalog.Torch', on_delete=models.PROTECT,
+    torch  = models.ForeignKey('catalog.Torch', null=True, blank=True,
+                               on_delete=models.PROTECT,
                                related_name='serials', db_column='torch_model')
+    part   = models.ForeignKey('catalog.Part', null=True, blank=True,
+                               on_delete=models.PROTECT,
+                               related_name='serials', db_column='part_no')
     bin    = models.ForeignKey(Bin, null=True, blank=True, on_delete=models.SET_NULL,
                                related_name='serials')
     status = models.CharField(max_length=20, choices=SerialStatus.choices,
@@ -214,19 +221,36 @@ class SerialNumber(BaseModel, SoftDeleteMixin):
         db_table = 'wms_serial'
         ordering = ['-created_at']
         indexes = [models.Index(fields=['status', 'torch'])]
+        constraints = [
+            models.CheckConstraint(
+                name='serial_part_xor_torch',
+                check=(models.Q(part__isnull=False, torch__isnull=True) |
+                       models.Q(part__isnull=True, torch__isnull=False)),
+            ),
+        ]
+
+    @property
+    def item_code(self) -> str:
+        """Mã mặt hàng của serial này, bất kể là súng hàn hay vật tư."""
+        return self.torch_id or self.part_id or ''
 
     def __str__(self) -> str:
-        return f"{self.serial} ({self.torch_id})"
+        return f"{self.serial} ({self.item_code})"
 
 
 class Lot(models.Model):
-    """Lô part theo hạn dùng — FEFO."""
+    """Lô hàng theo hạn dùng — FEFO. Gắn vào Part HOẶC Torch (đúng một trong hai):
+    súng hàn cũng về theo lô sản xuất, không riêng vật tư."""
     # Số lô do NCC in trên thùng — chỉ duy nhất TRONG PHẠM VI một mặt hàng, không
     # duy nhất toàn kho: hai mặt hàng khác nhau trùng số lô là chuyện thường ngày
     # (kể cả cùng một NCC), cấm trùng toàn kho là ép sai thực tế.
     lot_no        = models.CharField(max_length=40, db_index=True)
-    part          = models.ForeignKey('catalog.Part', on_delete=models.PROTECT,
+    part          = models.ForeignKey('catalog.Part', null=True, blank=True,
+                                      on_delete=models.PROTECT,
                                       related_name='lots', db_column='part_no')
+    torch         = models.ForeignKey('catalog.Torch', null=True, blank=True,
+                                      on_delete=models.PROTECT,
+                                      related_name='lots', db_column='torch_model')
     qty_remaining = models.IntegerField()
     received_date = models.DateField()
     expires_at    = models.DateField(null=True, blank=True, db_index=True)
@@ -237,10 +261,21 @@ class Lot(models.Model):
         ordering = ['expires_at', 'received_date']
         constraints = [
             models.UniqueConstraint(fields=['part', 'lot_no'], name='lot_unique_per_part'),
+            models.UniqueConstraint(fields=['torch', 'lot_no'], name='lot_unique_per_torch'),
+            models.CheckConstraint(
+                name='lot_part_xor_torch',
+                check=(models.Q(part__isnull=False, torch__isnull=True) |
+                       models.Q(part__isnull=True, torch__isnull=False)),
+            ),
         ]
 
+    @property
+    def item_code(self) -> str:
+        """Mã mặt hàng của lô này, bất kể là vật tư hay súng hàn."""
+        return self.part_id or self.torch_id or ''
+
     def __str__(self) -> str:
-        return f"{self.lot_no} ({self.part_id})"
+        return f"{self.lot_no} ({self.item_code})"
 
 
 # ─── Nhập kho (ASN → Inbound) ────────────────────────────────────────────────

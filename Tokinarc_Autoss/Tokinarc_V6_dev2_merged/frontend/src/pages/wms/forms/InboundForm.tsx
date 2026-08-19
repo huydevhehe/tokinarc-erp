@@ -188,12 +188,11 @@ export function InboundForm({ open, onClose, editing }: {
             target_bin: l.target_bin || null,
             unit_cost: Number(l.unit_cost) || 0,
             tax_pct: l.tax_pct !== '' ? Number(l.tax_pct) : null,
-            // Lô cho vật tư, serial cho súng hàn — không trộn. Backend bỏ qua
-            // lô của dòng súng mà không báo gì, nên chặn ngay từ đây cho khỏi
-            // có người gõ lô vào dòng súng rồi tưởng đã lưu.
-            lot_no: it.part ? (l.lot_no || '') : '',
-            lot_expires: (it.part && l.lot_expires) ? l.lot_expires : null,
-            serials_raw: it.torch ? (l.serials || '') : '',
+            // Lô và serial dùng được cho cả vật tư lẫn súng hàn, khai một trong
+            // hai hoặc cả hai đều được — kho cần truy xuất từ cả hai đường.
+            lot_no: l.lot_no || '',
+            lot_expires: l.lot_expires || null,
+            serials_raw: l.serials || '',
           }
         }),
       }
@@ -244,6 +243,18 @@ export function InboundForm({ open, onClose, editing }: {
       if (new Set(ser).size !== ser.length) {
         toast.error('Có serial bị khai trùng trong cùng một dòng'); return
       }
+    }
+    // Không lô, không serial → sau này không truy xuất được dòng hàng đó. Chỉ
+    // NHẮC rồi để người nhập quyết: hàng tiêu hao mua theo thùng thường chẳng có
+    // số nào cả, chặn cứng thì nhân viên sẽ bịa số cho qua — số bịa hại hơn để trống.
+    const khongTruyXuat = d.lines.filter((l) => l.item && !l.lot_no.trim() && !(l.serials || '').trim())
+    if (khongTruyXuat.length) {
+      const dsMa = khongTruyXuat.map((l) => splitItem(l.item).part || splitItem(l.item).torch).join(', ')
+      const ok = window.confirm(
+        `Chưa khai lô lẫn serial cho: ${dsMa}.\n\n` +
+        'Hàng nhập vẫn cộng tồn bình thường, nhưng sau này sẽ không truy xuất được ' +
+        'theo lô hay theo từng cái (thu hồi hàng lỗi, tra bảo hành).\n\nVẫn tạo phiếu?')
+      if (!ok) return
     }
     save.mutate(d)
   }
@@ -361,9 +372,9 @@ export function InboundForm({ open, onClose, editing }: {
         <div className="space-y-2 mb-3">
           {fields.map((f, i) => {
             const picked = splitItem(watched[i]?.item || '')
-            const isTorch = !!picked.torch
-            // Lô chỉ hợp lý với vật tư; súng hàn quản theo từng cây bằng serial.
-            const isPart = !!picked.part
+            // Chọn xong mặt hàng mới hiện ô lô/serial — cả hai đều dùng được cho
+            // vật tư lẫn súng hàn, khai một trong hai hoặc cả hai tuỳ hàng.
+            const daChonHang = !!(picked.part || picked.torch)
             return (
             <div key={f.id} className="border border-line/40 rounded-md p-2 space-y-1.5">
               <div className="flex items-start gap-2">
@@ -425,28 +436,37 @@ export function InboundForm({ open, onClose, editing }: {
                     placeholder={whCode ? '— Bin đích —' : '— Chọn kho trước —'} />
                 </div>
               </div>
-              {isPart && (
-                <div className="grid grid-cols-2 gap-2">
+              {daChonHang && (
+                <>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">
+                        Số lô
+                      </label>
+                      <input type="text" placeholder="Số lô in trên thùng NCC — VD: A1"
+                        {...register(`lines.${i}.lot_no` as const)}
+                        className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Hạn dùng của lô</label>
+                      <input type="date"
+                        {...register(`lines.${i}.lot_expires` as const)}
+                        className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                    </div>
+                  </div>
                   <div>
                     <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">
-                      Số lô (để trống nếu hàng không theo lô)
+                      Serial (mỗi dòng 1 serial)
                     </label>
-                    <input type="text" placeholder="Số lô in trên thùng NCC — VD: A1"
-                      {...register(`lines.${i}.lot_no` as const)}
-                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                    <textarea rows={2} placeholder="Serial từng cái — cho bảo hành, truy xuất từng cái…"
+                      {...register(`lines.${i}.serials` as const)}
+                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-xs focus:border-flame focus:outline-none" />
                   </div>
-                  <div>
-                    <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Hạn dùng của lô</label>
-                    <input type="date"
-                      {...register(`lines.${i}.lot_expires` as const)}
-                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
-                  </div>
-                </div>
-              )}
-              {isTorch && (
-                <textarea rows={2} placeholder="Serial từng cây súng hàn (mỗi dòng 1 serial) — cho bảo hành…"
-                  {...register(`lines.${i}.serials` as const)}
-                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-xs focus:border-flame focus:outline-none" />
+                  <p className="text-[10px] text-txt-2">
+                    Lô và serial đều không bắt buộc — khai một trong hai, hoặc cả hai. Bỏ trống
+                    cả hai thì sau này không truy xuất được lô hàng này.
+                  </p>
+                </>
               )}
             </div>
           )})}

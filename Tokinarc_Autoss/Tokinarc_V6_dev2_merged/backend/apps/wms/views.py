@@ -887,13 +887,15 @@ class InboundViewSet(viewsets.ModelViewSet):
                 line.qty_received = received
                 line.qty_putaway = received
                 line.save(update_fields=['qty_received', 'qty_putaway'])
-            # Súng hàn: tạo serial từng cây (bảo hành) — bỏ qua serial đã tồn tại (idempotent).
-            if line.torch_id and line.serials_raw:
+            # Tạo serial từng cái (bảo hành) — cho súng hàn lẫn vật tư được NCC
+            # đánh serial. Bỏ qua serial đã tồn tại (idempotent, bấm lại không lỗi).
+            if line.serials_raw:
                 from .models import SerialNumber
                 for s in line.serials_raw.splitlines():
                     s = s.strip()
                     if s and not SerialNumber.objects.filter(serial=s).exists():
                         SerialNumber.objects.create(serial=s, torch=line.torch,
+                                                    part=line.part,
                                                     bin=line.target_bin, status='in_stock')
             if line.qty_putaway < line.qty_expected:
                 fully = False
@@ -1251,9 +1253,9 @@ class OutboundViewSet(viewsets.ModelViewSet):
         # FEFO: cảnh báo nếu quét lô KHÔNG phải lô ưu tiên (hết hạn sớm nhất).
         lot_no = str(request.data.get('lot_no', '')).strip()
         confirm_lot = bool(request.data.get('confirm_lot'))
-        if line.part_id and lot_no and not confirm_lot:
-            priority = (Lot.objects.filter(part_id=line.part_id, qty_remaining__gt=0,
-                                           expires_at__isnull=False)
+        if (line.part_id or line.torch_id) and lot_no and not confirm_lot:
+            priority = (Lot.objects.filter(part_id=line.part_id, torch_id=line.torch_id,
+                                           qty_remaining__gt=0, expires_at__isnull=False)
                         .order_by('expires_at').first())
             if priority and priority.lot_no != lot_no:
                 return Response({

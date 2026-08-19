@@ -15,6 +15,9 @@ interface Lot {
   received_date: string; expires_at: string | null; bin: string | null
   /** Mã ô đọc được ('HCM-A-R01-B01') — 'bin' chỉ là id số, không chỉ được chỗ. */
   bin_code?: string | null
+  /** Lô gắn được cả vào súng hàn; item_code là mã đã gộp sẵn của hai loại. */
+  torch?: string | null
+  item_code?: string
 }
 
 function expiryTone(exp: string | null): { label: string; tone: 'ok' | 'warn' | 'danger' | 'gray' } {
@@ -60,7 +63,7 @@ export function LotsList() {
             return (
               <tr key={l.id} className="border-b border-line/50 last:border-0">
                 <Td className="font-mono text-flame">{l.lot_no}</Td>
-                <Td className="font-mono text-xs">{l.part || '—'}</Td>
+                <Td className="font-mono text-xs">{l.item_code || l.part || l.torch || '—'}</Td>
                 <Td className="font-mono text-xs">{l.bin_code || '—'}</Td>
                 <Td className="text-right tabular-nums">{l.qty_remaining}</Td>
                 <Td className="text-txt-2">{formatDate(l.received_date)}</Td>

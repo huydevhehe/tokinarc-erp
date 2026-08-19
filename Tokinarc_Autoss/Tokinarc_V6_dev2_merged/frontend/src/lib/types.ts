@@ -160,8 +160,14 @@ export type SerialStatus = 'in_stock' | 'reserved' | 'shipped' | 'sold' | 'retur
 export interface SerialNumber {
   id: string
   serial: string
-  torch: string
+  torch: string | null
+  /** Serial gắn được cả vào vật tư, không riêng súng hàn. */
+  part?: string | null
+  /** Mã mặt hàng đã gộp sẵn (súng hàn hoặc vật tư) — dùng cột này để hiển thị. */
+  item_code?: string
   bin: string | null
+  /** Mã ô đọc được ('HCM-A-R01-B01') — 'bin' chỉ là id số. */
+  bin_code?: string | null
   status: SerialStatus
   sold_to_customer: string | null
   sold_order: string

@@ -59,8 +59,8 @@ export function SerialsList() {
           {data?.results.map((s) => (
             <tr key={s.id} className="border-b border-line/50 last:border-0 hover:bg-ink-3/40">
               <Td className="font-mono text-flame">{s.serial}</Td>
-              <Td className="font-medium">{s.torch}</Td>
-              <Td className="font-mono text-txt-2">{s.bin || '—'}</Td>
+              <Td className="font-medium">{s.item_code || s.torch || s.part || '—'}</Td>
+              <Td className="font-mono text-txt-2">{s.bin_code || '—'}</Td>
               <Td><Tag tone={SERIAL_STATUS_TONE[s.status]}>{SERIAL_STATUS_LABEL[s.status]}</Tag></Td>
               <Td className="text-txt-2">{formatDate(s.warranty_until)}</Td>
             </tr>

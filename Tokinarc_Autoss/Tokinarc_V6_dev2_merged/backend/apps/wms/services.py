@@ -110,15 +110,14 @@ def receive_stock(*, bin_obj: Bin, part=None, torch=None, qty: int,
         delta=qty, reason=reason, ref_kind=ref_kind,
         ref_id=ref_id, by_user=user, note=(f'lot {lot_no}' if lot_no else ''),
     )
-    # Lot tracking: tạo/cộng lô (chỉ cho part có lô). Tìm theo CẶP mã hàng + số
-    # lô, không theo mỗi số lô: NCC hay đặt trùng số lô giữa các mặt hàng ('A1',
-    # '2608'), tìm thiếu mã hàng thì hàng này bị cộng vào lô của hàng kia.
-    if lot_no and part is not None:
+    # Lot tracking: tạo/cộng lô cho vật tư lẫn súng hàn. Tìm theo CẶP mã hàng +
+    # số lô, không theo mỗi số lô: NCC hay đặt trùng số lô giữa các mặt hàng
+    # ('A1', '2608'), tìm thiếu mã hàng thì hàng này bị cộng vào lô của hàng kia.
+    if lot_no and (part is not None or torch is not None):
         lot, created = Lot.objects.select_for_update().get_or_create(
-            lot_no=lot_no, part=part, defaults={'qty_remaining': 0,
-                                                'received_date': date.today(),
-                                                'expires_at': lot_expires,
-                                                'bin': bin_obj})
+            lot_no=lot_no, part=part, torch=torch,
+            defaults={'qty_remaining': 0, 'received_date': date.today(),
+                      'expires_at': lot_expires, 'bin': bin_obj})
         Lot.objects.filter(pk=lot.pk).update(qty_remaining=F('qty_remaining') + qty)
         if not created and lot_expires and lot.expires_at != lot_expires:
             Lot.objects.filter(pk=lot.pk).update(expires_at=lot_expires)
@@ -205,8 +204,10 @@ def generate_pick_list(outbound: OutboundOrder) -> list[PickListItem]:
             if take <= 0:
                 continue
             lot = None
-            if line.part_id and outbound.rule == OutboundRule.FEFO:
-                lot = (Lot.objects.filter(part=line.part, bin=item.bin, qty_remaining__gt=0)
+            # Súng hàn giờ cũng có lô → xếp FEFO cho cả hai loại, không riêng vật tư.
+            if outbound.rule == OutboundRule.FEFO and (line.part_id or line.torch_id):
+                lot = (Lot.objects.filter(part=line.part, torch=line.torch, bin=item.bin,
+                                          qty_remaining__gt=0)
                        .order_by('expires_at').first())
             pick = PickListItem.objects.create(
                 outbound_line=line, bin=item.bin, lot=lot, qty=take)

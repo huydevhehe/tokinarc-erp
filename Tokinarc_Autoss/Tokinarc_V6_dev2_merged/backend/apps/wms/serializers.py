@@ -100,9 +100,15 @@ class InventoryItemSerializer(serializers.ModelSerializer):
 
 
 class SerialNumberSerializer(serializers.ModelSerializer):
+    # Serial gắn vào súng hàn HOẶC vật tư — FE chỉ cần một cột "Mặt hàng", khỏi
+    # phải tự đoán lấy cột nào.
+    item_code = serializers.CharField(read_only=True)
+    bin_code  = serializers.CharField(source='bin.full_code', default=None, read_only=True)
+
     class Meta:
         model  = SerialNumber
-        fields = ['id', 'serial', 'torch', 'bin', 'status', 'sold_to_customer',
+        fields = ['id', 'serial', 'torch', 'part', 'item_code', 'bin', 'bin_code',
+                  'status', 'sold_to_customer',
                   'sold_order', 'received_at', 'warranty_until',
                   'created_at', 'updated_at']
         read_only_fields = ['id', 'created_at', 'updated_at']
@@ -112,11 +118,13 @@ class LotSerializer(serializers.ModelSerializer):
     # 'bin' trần chỉ là id số ('1') — vô nghĩa với người đi lấy hàng. Trả kèm mã
     # ô đầy đủ ('HCM-A-R01-B01') để trang Truy xuất chỉ được chỗ mà tới.
     bin_code = serializers.CharField(source='bin.full_code', default=None, read_only=True)
+    # Lô gắn vào vật tư HOẶC súng hàn — gộp sẵn cho FE một cột "Mặt hàng".
+    item_code = serializers.CharField(read_only=True)
 
     class Meta:
         model  = Lot
-        fields = ['id', 'lot_no', 'part', 'qty_remaining', 'received_date',
-                  'expires_at', 'bin', 'bin_code']
+        fields = ['id', 'lot_no', 'part', 'torch', 'item_code', 'qty_remaining',
+                  'received_date', 'expires_at', 'bin', 'bin_code']
 
 
 class StockMovementSerializer(serializers.ModelSerializer):
