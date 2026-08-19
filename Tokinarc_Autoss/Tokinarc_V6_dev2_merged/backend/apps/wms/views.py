@@ -14,7 +14,7 @@ from __future__ import annotations
 import io
 
 from django.db import transaction
-from django.db.models import F, ProtectedError
+from django.db.models import F, ProtectedError, Q
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters, serializers, status, viewsets
@@ -615,8 +615,12 @@ class SerialNumberViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ['serial']
 
     def get_queryset(self):
-        return (SerialNumber.objects.select_related('torch', 'bin', 'sold_to_customer')
-                .filter(torch__is_active=True))   # torch đã ẩn không tính vào số liệu
+        # Bỏ hàng đã ẩn khỏi danh mục, nhưng KHÔNG được lọc thẳng
+        # `torch__is_active=True`: serial của vật tư có torch rỗng, lọc kiểu đó
+        # là loại sạch chúng khỏi trang Truy xuất (mất hẳn, không báo gì).
+        return (SerialNumber.objects
+                .select_related('torch', 'part', 'bin', 'sold_to_customer')
+                .filter(Q(torch__is_active=True) | Q(part__is_active=True)))
 
     @action(detail=True, methods=['get'])
     def history(self, request, pk=None):
@@ -892,7 +896,10 @@ class InboundViewSet(viewsets.ModelViewSet):
             if line.serials_raw:
                 from .models import SerialNumber
                 for s in line.serials_raw.splitlines():
-                    s = s.strip()
+                    # Chuẩn hoá y hệt SerialNumber.save() để dò trùng cho khớp —
+                    # nếu không, 'sn-001' dò không thấy 'SN-001' rồi tạo mới, tới
+                    # lúc lưu mới vỡ vì trùng khoá.
+                    s = s.strip().upper()
                     if s and not SerialNumber.objects.filter(serial=s).exists():
                         SerialNumber.objects.create(serial=s, torch=line.torch,
                                                     part=line.part,

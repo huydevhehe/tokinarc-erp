@@ -234,6 +234,15 @@ class SerialNumber(BaseModel, SoftDeleteMixin):
         """Mã mặt hàng của serial này, bất kể là súng hàn hay vật tư."""
         return self.torch_id or self.part_id or ''
 
+    def save(self, *args, **kwargs):
+        # Serial luôn lưu CHỮ HOA, cắt khoảng trắng — thống nhất một kiểu duy
+        # nhất. Cơ sở dữ liệu phân biệt hoa/thường, nên không chuẩn hoá thì
+        # 'sn-001' và 'SN-001' thành hai hồ sơ cho cùng một cây hàng: kho đếm
+        # thừa, mà lúc khách mang đi bảo hành lại tra không ra.
+        if self.serial:
+            self.serial = self.serial.strip().upper()
+        super().save(*args, **kwargs)
+
     def __str__(self) -> str:
         return f"{self.serial} ({self.item_code})"
 

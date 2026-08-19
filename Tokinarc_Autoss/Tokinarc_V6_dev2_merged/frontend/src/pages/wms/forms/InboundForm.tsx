@@ -240,8 +240,11 @@ export function InboundForm({ open, onClose, editing }: {
       if (ser.length !== Number(l.qty_expected)) {
         toast.error(`Khai ${ser.length} serial nhưng số lượng là ${l.qty_expected} — phải khớp nhau`); return
       }
-      if (new Set(ser).size !== ser.length) {
-        toast.error('Có serial bị khai trùng trong cùng một dòng'); return
+      // So trùng KHÔNG phân biệt hoa/thường: 'SN-001' và 'sn-001' là cùng một
+      // cây hàng ngoài đời. Serial vẫn lưu nguyên như tem in, chỉ việc dò trùng
+      // mới bỏ qua hoa/thường.
+      if (new Set(ser.map((s) => s.toLowerCase())).size !== ser.length) {
+        toast.error('Có serial bị khai trùng trong cùng một dòng (không tính hoa/thường)'); return
       }
     }
     // Không lô, không serial → sau này không truy xuất được dòng hàng đó. Chỉ
@@ -458,9 +461,12 @@ export function InboundForm({ open, onClose, editing }: {
                     <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">
                       Serial (mỗi dòng 1 serial)
                     </label>
+                    {/* Hiện chữ hoa ngay lúc gõ: serial luôn được lưu chữ hoa,
+                        cho người nhập thấy đúng thứ sẽ vào máy. */}
                     <textarea rows={2} placeholder="Serial từng cái — cho bảo hành, truy xuất từng cái…"
                       {...register(`lines.${i}.serials` as const)}
-                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-xs focus:border-flame focus:outline-none" />
+                      onChange={(e) => setValue(`lines.${i}.serials` as const, e.target.value.toUpperCase())}
+                      className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-xs uppercase focus:border-flame focus:outline-none" />
                   </div>
                   <p className="text-[10px] text-txt-2">
                     Lô và serial đều không bắt buộc — khai một trong hai, hoặc cả hai. Bỏ trống
