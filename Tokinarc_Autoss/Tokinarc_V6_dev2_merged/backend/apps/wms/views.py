@@ -40,7 +40,7 @@ WAREHOUSE_STAFF = frozenset({Role.WAREHOUSE, Role.WAREHOUSE_MANAGER})
 from . import services
 from .models import (
     ASN, Bin, CycleCount, CycleCountLine, InboundFlowType, InboundOrder, InventoryItem, Lot,
-    OutboundOrder, PickListItem, SerialNumber, StockMovement, Warehouse, Zone,
+    MovementReason, OutboundOrder, PickListItem, SerialNumber, StockMovement, Warehouse, Zone,
 )
 from .permissions import WMSPermission, WmsControlAccess
 from .serializers import (
@@ -920,6 +920,95 @@ class InboundViewSet(viewsets.ModelViewSet):
             self._sync_purchase_order(inbound)
         _publish('StockReceived', {'inbound': inbound.code, 'warehouse': inbound.warehouse.code,
                                    'partial': not fully})
+        return Response(InboundOrderSerializer(inbound).data)
+
+    @action(detail=True, methods=['post'], url_path='bo-sung-truy-xuat')
+    def bo_sung_truy_xuat(self, request, pk=None):
+        """Bổ sung SỐ LÔ / SERIAL cho phiếu ĐÃ NHẬN — quản lý kho trở lên.
+
+        Nhận hàng lúc gấp thường chưa kịp ghi lô/serial, mà phiếu đã nhận thì
+        khoá sửa (tránh lệch tồn). Endpoint này mở đúng ba trường phục vụ truy
+        xuất, không đụng số lượng / mặt hàng / ô kệ, nên tồn kho không đổi.
+
+        KHÔNG dùng đường sửa phiếu thông thường được: lô và serial chỉ sinh ra
+        lúc bấm Nhận, mà phiếu đã nhận thì không bấm lại được — sửa chữ trên
+        dòng phiếu sẽ lưu mà chẳng tạo ra lô/serial nào, tưởng xong mà không.
+        """
+        from apps.accounts.roles import WMS_CONTROL_ROLES, Role, role_of
+        if role_of(request.user) not in WMS_CONTROL_ROLES | {Role.ADMIN}:
+            return Response({'detail': 'Chỉ Quản lý kho trở lên được bổ sung lô/serial.'},
+                            status=403)
+        inbound = self.get_object()
+        if inbound.status not in ('partial', 'putaway'):
+            return Response({'detail': 'Chỉ bổ sung cho phiếu đã nhận hàng. Phiếu chưa nhận '
+                                       'thì sửa thẳng trên phiếu.', 'code': 'CONFLICT'},
+                            status=status.HTTP_409_CONFLICT)
+
+        from .models import SerialNumber
+        dong_theo_id = {l.id: l for l in inbound.lines.all()}
+        yeu_cau = request.data.get('lines') or []
+        with transaction.atomic():
+            for item in yeu_cau:
+                line = dong_theo_id.get(item.get('id'))
+                if line is None:
+                    return Response({'detail': f"Dòng hàng {item.get('id')} không thuộc phiếu này."},
+                                    status=400)
+                lot_no = str(item.get('lot_no') or '').strip()
+                lot_expires = item.get('lot_expires') or None
+                serials_raw = str(item.get('serials_raw') or '')
+                serials = [s.strip().upper() for s in serials_raw.splitlines() if s.strip()]
+
+                if len(set(serials)) != len(serials):
+                    return Response({'detail': f'Dòng {line.part_id or line.torch_id}: '
+                                               'có serial khai trùng nhau.'}, status=400)
+                if serials and len(serials) != line.qty_putaway:
+                    return Response({
+                        'detail': f'Dòng {line.part_id or line.torch_id}: khai {len(serials)} '
+                                  f'serial nhưng đã nhận {line.qty_putaway} — phải khớp nhau.'},
+                        status=400)
+
+                # Lô ghi theo SỐ CÒN THỰC TRONG Ô, không theo số nhập ban đầu: hàng
+                # xuất bớt rồi mới bổ sung mà ghi số cũ thì lô ghi thừa ngay từ lúc
+                # tạo — lúc xuất hệ thống không trừ lô nào vì khi đó chưa có lô.
+                if lot_no and lot_no != line.lot_no:
+                    if line.target_bin_id is None:
+                        return Response({'detail': f'Dòng {line.part_id or line.torch_id} chưa có '
+                                                   'ô kệ nên không gắn lô được.'}, status=400)
+                    ton = InventoryItem.objects.filter(
+                        bin=line.target_bin, part=line.part, torch=line.torch).first()
+                    con_lai = ton.qty_on_hand if ton else 0
+                    if con_lai <= 0:
+                        return Response({
+                            'detail': f'Dòng {line.part_id or line.torch_id}: ô '
+                                      f'{line.target_bin.full_code} không còn hàng nên gắn lô '
+                                      'sẽ ra số sai. Hàng đã xuất hết rồi.'}, status=400)
+                    lot, tao_moi = Lot.objects.get_or_create(
+                        lot_no=lot_no, part=line.part, torch=line.torch,
+                        defaults={'qty_remaining': con_lai, 'received_date': timezone.now().date(),
+                                  'expires_at': lot_expires, 'bin': line.target_bin})
+                    if not tao_moi:
+                        Lot.objects.filter(pk=lot.pk).update(
+                            qty_remaining=F('qty_remaining') + con_lai)
+                    if lot_expires:
+                        Lot.objects.filter(pk=lot.pk).update(expires_at=lot_expires)
+                    StockMovement.objects.create(
+                        warehouse=inbound.warehouse, part=line.part, torch=line.torch,
+                        bin=line.target_bin, delta=0, reason=MovementReason.INBOUND,
+                        ref_kind='inbound', ref_id=inbound.code, by_user=request.user,
+                        note=f'bổ sung lô {lot_no} ({con_lai})')
+
+                for s in serials:
+                    if not SerialNumber.objects.filter(serial=s).exists():
+                        SerialNumber.objects.create(serial=s, torch=line.torch, part=line.part,
+                                                    bin=line.target_bin, status='in_stock')
+
+                line.lot_no = lot_no
+                line.lot_expires = lot_expires
+                line.serials_raw = '\n'.join(serials)
+                line.save(update_fields=['lot_no', 'lot_expires', 'serials_raw'])
+
+            inbound.updated_by = request.user
+            inbound.save(update_fields=['updated_by'])
         return Response(InboundOrderSerializer(inbound).data)
 
     @staticmethod

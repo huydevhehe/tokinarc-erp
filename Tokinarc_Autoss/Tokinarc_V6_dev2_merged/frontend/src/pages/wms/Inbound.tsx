@@ -5,7 +5,7 @@
  */
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
-import { PackageCheck, Check, Plus, ScanLine, Eye, Pencil, Trash2, CalendarClock, Undo2, PackageMinus } from 'lucide-react'
+import { PackageCheck, Check, Plus, ScanLine, Eye, Pencil, Trash2, CalendarClock, Undo2, PackageMinus, Barcode } from 'lucide-react'
 import { toast } from 'sonner'
 import { api, apiError } from '@/lib/api'
 import { downloadFile } from '@/lib/download'
@@ -14,6 +14,7 @@ import { useDebounced } from '@/lib/useDebounced'
 import { formatDate, compactVnd } from '@/lib/crm'
 import { INBOUND_STATUS_LABEL, INBOUND_STATUS_TONE, DATE_QUICK_RANGES } from '@/lib/wms'
 import type { InboundFlowType, InboundOrder, InboundStatus } from '@/lib/types'
+import { useAuth, isWmsControl } from '@/lib/auth/store'
 import {
   PageHeader, SearchInput, Tag, Button, Card, TableCard, Th, Td, RowMsg, Pagination,
 } from '@/components/ui'
@@ -33,8 +34,15 @@ export function InboundPage() {
   const [reason, setReason] = useState('')
   const [fullFor, setFullFor] = useState<InboundOrder | null>(null)   // xác nhận nhận đủ khi chưa quét
   const [editOrder, setEditOrder] = useState<InboundOrder | null>(null)   // sửa phiếu Nháp
+  const canControl = isWmsControl(useAuth((s) => s.user?.role))
   const [dateEditFor, setDateEditFor] = useState<InboundOrder | null>(null)   // sửa Ngày nhập kho
   const [newReceivedAt, setNewReceivedAt] = useState('')
+  // Bổ sung lô/serial cho phiếu ĐÃ NHẬN — chỉ ba trường truy xuất, không đụng
+  // SL/mặt hàng/ô kệ (mấy thứ đó đã cộng vào tồn, sửa là lệch).
+  const [traceFor, setTraceFor] = useState<InboundOrder | null>(null)
+  const [traceLines, setTraceLines] = useState<
+    { id: number; ten: string; qty: number; lot_no: string; lot_expires: string; serials_raw: string }[]
+  >([])
   const [flowTab, setFlowTab] = useState<InboundFlowType>('internal')   // 2 tab song song: Nội bộ / Nhà cung cấp
   const [status, setStatus] = useState<InboundStatus | ''>('')
   const [search, setSearch] = useState('')
@@ -83,6 +91,18 @@ export function InboundPage() {
       toast.success('Đã cập nhật ngày nhập kho')
       qc.invalidateQueries({ queryKey: ['wms-inbound-list'] })
       setDateEditFor(null)
+    },
+    onError: (e) => toast.error(apiError(e)),
+  })
+
+  const boSungTruyXuat = useMutation({
+    mutationFn: (v: { id: string; lines: unknown[] }) =>
+      api.post(`/wms/inbound/${v.id}/bo-sung-truy-xuat/`, { lines: v.lines }),
+    onSuccess: () => {
+      toast.success('Đã bổ sung lô/serial')
+      qc.invalidateQueries({ queryKey: ['wms-inbound-list'] })
+      qc.invalidateQueries({ queryKey: ['wms'] })
+      setTraceFor(null)
     },
     onError: (e) => toast.error(apiError(e)),
   })
@@ -212,6 +232,19 @@ export function InboundPage() {
                   <Button variant="ghost" size="sm" className="!px-2" title="Sửa ngày nhập kho"
                     onClick={() => { setNewReceivedAt(o.received_at!.slice(0, 10)); setDateEditFor(o) }}>
                     <CalendarClock size={13} />
+                  </Button>
+                )}
+                {canControl && o.is_active && (o.status === 'putaway' || o.status === 'partial') && (
+                  <Button variant="ghost" size="sm" className="!px-2" title="Bổ sung lô / serial"
+                    onClick={() => {
+                      setTraceLines((o.lines ?? []).map((l) => ({
+                        id: Number(l.id), ten: l.part || l.torch || '', qty: l.qty_expected,
+                        lot_no: l.lot_no ?? '', lot_expires: l.lot_expires ?? '',
+                        serials_raw: l.serials_raw ?? '',
+                      })))
+                      setTraceFor(o)
+                    }}>
+                    <Barcode size={13} />
                   </Button>
                 )}
                 {o.is_active && (
@@ -364,6 +397,67 @@ export function InboundPage() {
         <label className="block text-[11px] uppercase tracking-wide text-txt-2 font-semibold mb-1">Ngày nhập kho</label>
         <input type="date" value={newReceivedAt} onChange={(e) => setNewReceivedAt(e.target.value)} autoFocus
           className="w-full bg-ink-3 border border-line rounded-md px-3 py-2 text-sm focus:border-flame focus:outline-none" />
+      </Modal>
+
+      {/* Bổ sung lô/serial cho phiếu ĐÃ NHẬN — Quản lý kho trở lên. Chỉ ba trường
+          truy xuất; SL/mặt hàng/ô kệ vẫn khoá vì tồn kho đã cộng theo số cũ. */}
+      <Modal open={!!traceFor} onClose={() => setTraceFor(null)}
+        title={`Bổ sung lô / serial — ${traceFor?.code ?? ''}`}
+        icon={<Barcode size={18} className="text-flame" />}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setTraceFor(null)}>Hủy</Button>
+            <Button disabled={boSungTruyXuat.isPending}
+              onClick={() => traceFor && boSungTruyXuat.mutate({
+                id: traceFor.id,
+                lines: traceLines.map((l) => ({
+                  id: l.id, lot_no: l.lot_no.trim(),
+                  lot_expires: l.lot_expires || null, serials_raw: l.serials_raw,
+                })),
+              })}>
+              {boSungTruyXuat.isPending ? 'Đang lưu…' : 'Lưu'}
+            </Button>
+          </>
+        }>
+        <p className="text-[11px] text-txt-2 mb-3">
+          Phiếu đã nhận nên số lượng, mặt hàng và ô kệ khoá lại — chỉ bổ sung được thông tin
+          truy xuất. Lô ghi theo số hàng còn thực trong ô.
+        </p>
+        <div className="space-y-3">
+          {traceLines.map((l, i) => (
+            <div key={l.id} className="border border-line/40 rounded-md p-2 space-y-1.5">
+              <div className="flex items-baseline gap-2">
+                <span className="font-mono text-flame text-sm">{l.ten}</span>
+                <span className="text-[11px] text-txt-2">× {l.qty}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Số lô</label>
+                  <input type="text" placeholder="Số lô in trên thùng NCC" value={l.lot_no}
+                    onChange={(e) => setTraceLines((cu) => cu.map((x, j) =>
+                      j === i ? { ...x, lot_no: e.target.value } : x))}
+                    className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                </div>
+                <div>
+                  <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">Hạn dùng của lô</label>
+                  <input type="date" value={l.lot_expires}
+                    onChange={(e) => setTraceLines((cu) => cu.map((x, j) =>
+                      j === i ? { ...x, lot_expires: e.target.value } : x))}
+                    className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-sm focus:border-flame focus:outline-none" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] uppercase tracking-wide text-txt-2 mb-0.5">
+                  Serial (mỗi dòng 1 serial — khai thì phải đủ {l.qty})
+                </label>
+                <textarea rows={2} value={l.serials_raw}
+                  onChange={(e) => setTraceLines((cu) => cu.map((x, j) =>
+                    j === i ? { ...x, serials_raw: e.target.value.toUpperCase() } : x))}
+                  className="w-full bg-ink-3 border border-line rounded-md px-2 py-1.5 text-xs uppercase focus:border-flame focus:outline-none" />
+              </div>
+            </div>
+          ))}
+        </div>
       </Modal>
     </div>
   )
